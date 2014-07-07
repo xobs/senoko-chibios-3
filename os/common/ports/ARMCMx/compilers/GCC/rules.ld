@@ -60,6 +60,7 @@ SECTIONS
         *(.glue_7t)
         *(.glue_7)
         *(.gcc*)
+        *(.note*)
     } > flash
 
     .ARM.extab :
@@ -119,6 +120,10 @@ SECTIONS
         . = ALIGN(4);
         PROVIDE(_edata = .);
     } > ram AT > flash
+
+    /* ld.bfd will segfault without this */
+    .rel.plt : ALIGN(16) SUBALIGN(16) { . = .; } > flash
+    .got.plt : ALIGN(16) SUBALIGN(16) { . = .; } > flash
 
     .bss :
     {
