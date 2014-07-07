@@ -1,0 +1,5 @@
+gitversion.c
+build/
+.dep/
+*.swp
+*.swo
