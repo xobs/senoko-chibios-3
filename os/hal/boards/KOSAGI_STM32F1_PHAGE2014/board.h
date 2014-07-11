@@ -182,21 +182,21 @@
         \
         | PIN_UNUSED(PA3) \
         \
-        /* ANA_METER */ \
-        | PIN_OSPEED_INPUT(PA4) \
-        | PIN_MODE_ANALOG(PA4) \
+        /* Radio CSEL (NSS) */ \
+        | PIN_OSPEED_10M(PA4) \
+        | PIN_OTYPE_PUSHPULL(PA4) \
         \
-        /* ADC_IN5 */ \
-        | PIN_OSPEED_INPUT(PA5) \
-        | PIN_MODE_ANALOG(PA5) \
+        /* Radio SCK */ \
+        | PIN_OSPEED_10M(PA5) \
+        | PIN_OTYPE_AF_PUSHPULL(PA5) \
         \
-        /* ADC_IN6 */ \
-        | PIN_OSPEED_INPUT(PA6) \
-        | PIN_MODE_ANALOG(PA6) \
+        /* Radio MISO */ \
+        | PIN_OSPEED_10M(PA6) \
+        | PIN_OTYPE_AF_PUSHPULL(PA6) \
         \
-        /* ADC_IN7 */ \
-        | PIN_OSPEED_INPUT(PA7) \
-        | PIN_MODE_ANALOG(PA7) \
+        /* Radio MOSI */ \
+        | PIN_OSPEED_10M(PA7) \
+        | PIN_OTYPE_AF_PUSHPULL(PA7) \
         \
         | 0)
 
@@ -221,15 +221,15 @@
         | PIN_OSPEED_2M(PA12) \
         | PIN_OTYPE_PUSHPULL(PA12) \
         \
-        /* JTMS-SWDIO */ \
-        | PIN_OTYPE_PUSHPULL(PA13) \
-        | PIN_OSPEED_2M(PA13) \
+        /* Key 2 */ \
+        | PIN_OSPEED_INPUT(PA13) \
+        | PIN_MODE_FLOATING(PA13) \
         \
         /* JTCK / SWCLK */ \
         | PIN_OSPEED_INPUT(PA14) \
         | PIN_MODE_FLOATING(PA14) \
         \
-        /* JTDI */ \
+        /* Key 1 */ \
         | PIN_OSPEED_INPUT(PA15) \
         | PIN_MODE_FLOATING(PA15) \
         \
@@ -243,12 +243,13 @@
 
 #define VAL_GPIOB_CRL   ( 0 \
         \
-        /* CHG_ICOUT */ \
+        /* LED strip 1 out */ \
         | PIN_OSPEED_50M(PB0) \
         | PIN_OTYPE_PUSHPULL(PB0) \
         \
-        /* NC */ \
-        | PIN_UNUSED(PB1) \
+        /* LED strip 2 */ \
+        | PIN_OSPEED_50M(PB1) \
+        | PIN_OTYPE_PUSHPULL(PB1) \
         \
         /* Programming mode */ \
         | PIN_UNUSED(PB2) \
@@ -257,12 +258,14 @@
         | PIN_OSPEED_2M(PB3) \
         | PIN_OTYPE_OPENDRAIN(PB3) \
         \
-        /* PM_JRST */ \
+        /* Key 0 */ \
         | PIN_OSPEED_INPUT(PB4) \
         | PIN_MODE_FLOATING(PB4) \
         \
-        /* NC */ \
-        | PIN_UNUSED(PB5) \
+        /* Key 3 */ \
+        | PIN_OSPEED_INPUT(PB5) \
+        | PIN_MODE_FLOATING(PB5) \
+        \
         | PIN_UNUSED(PB6) \
         | PIN_UNUSED(PB7) \
         \
@@ -284,26 +287,25 @@
         | PIN_OSPEED_2M(PB11) \
         | PIN_OTYPE_AF_OPENDRAIN(PB11) \
         \
-        /* CHG_ALERT */ \
-        | PIN_OSPEED_INPUT(PB12) \
-        | PIN_MODE_INPUT(PB12) \
+        /* Radio RF Power Up */ \
+        | PIN_OSPEED_2M(PB12) \
+        | PIN_OTYPE_PUSHPULL(PB12) \
         \
-        /* NC */ \
-        | PIN_UNUSED(PB13) \
+        /* Radio Tx enabled */ \
+        | PIN_OSPEED_2M(PB13) \
+        | PIN_OTYPE_PUSHPULL(PB13) \
         \
-        /* CHG_PWRSWITCH */ \
+        /* Radio Tx/Rx selection */ \
         | PIN_OSPEED_INPUT(PB14) \
         | PIN_MODE_FLOATING(PB14) \
         \
-        /* CHG_MASTERPWR */ \
-        | PIN_OSPEED_2M(PB15) \
-        | PIN_OTYPE_PUSHPULL(PB15) \
+        /* NC */ \
+        | PIN_UNUSED(PB15) \
         \
         | 0 )
 
-/* master power (PB15) on */
-/* Pull alert (PB15) high */
-#define VAL_GPIOB_ODR ((1U << 15) | (1U << 12))
+/* Turn on radio RF, and enable TX */
+#define VAL_GPIOB_ODR ((1U << 13) | (1U << 12))
 
 #define VAL_GPIOC_CRL   ( 0 \
         | PIN_NOTPRESENT(PC0) \

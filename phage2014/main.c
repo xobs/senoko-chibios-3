@@ -17,9 +17,11 @@
 #include "ch.h"
 #include "uart.h"
 #include "hal.h"
+#include "ext.h"
 #include "shell.h"
 #include "chprintf.h"
-#include "i2c.h"
+#include "LEDDriver.h"
+#include "radio.h"
 
 #include "phage2014.h"
 #include "phage2014-shell.h"
@@ -31,6 +33,62 @@ static const SerialConfig serialConfig = {
   0,
 };
 
+void key0Pressed(EXTDriver *extp, expchannel_t channel)
+{
+  chprintf(stream, "Pressed Key 0\r\n");
+}
+
+void key1Pressed(EXTDriver *extp, expchannel_t channel)
+{
+  chprintf(stream, "Pressed Key 1\r\n");
+}
+
+void key2Pressed(EXTDriver *extp, expchannel_t channel)
+{
+  chprintf(stream, "Pressed Key 2\r\n");
+}
+
+void key3Pressed(EXTDriver *extp, expchannel_t channel)
+{
+  chprintf(stream, "Pressed Key 3\r\n");
+}
+
+static const EXTConfig extConfig = {
+  {
+    {EXT_CH_MODE_FALLING_EDGE     /* PA0 */
+      | EXT_CH_MODE_AUTOSTART
+      | EXT_MODE_GPIOA, radioAddressMatch},
+    {EXT_CH_MODE_DISABLED, NULL}, /* PA1 */
+    {EXT_CH_MODE_DISABLED, NULL}, /* PA2 */
+    {EXT_CH_MODE_DISABLED, NULL}, /* PA3 */
+    {EXT_CH_MODE_FALLING_EDGE     /* PB4 */
+      | EXT_CH_MODE_AUTOSTART
+      | EXT_MODE_GPIOB, key0Pressed},
+    {EXT_CH_MODE_FALLING_EDGE     /* PB5 */
+      | EXT_CH_MODE_AUTOSTART
+      | EXT_MODE_GPIOB, key3Pressed},
+    {EXT_CH_MODE_DISABLED, NULL}, /* PA6 */
+    {EXT_CH_MODE_DISABLED, NULL}, /* PA7 */
+    {EXT_CH_MODE_DISABLED, NULL}, /* PA8 */
+    {EXT_CH_MODE_DISABLED, NULL}, /* PA9 */
+    {EXT_CH_MODE_DISABLED, NULL}, /* PA10 */
+    {EXT_CH_MODE_FALLING_EDGE     /* PA11 */
+      | EXT_CH_MODE_AUTOSTART
+      | EXT_MODE_GPIOA, radioDataReceived},
+    {EXT_CH_MODE_FALLING_EDGE     /* PA12 */
+      | EXT_CH_MODE_AUTOSTART
+      | EXT_MODE_GPIOA, radioCarrier},
+    {EXT_CH_MODE_FALLING_EDGE     /* PA13 */
+      | EXT_CH_MODE_AUTOSTART
+      | EXT_MODE_GPIOA, key2Pressed},
+    {EXT_CH_MODE_DISABLED, NULL}, /* PA14 */
+    {EXT_CH_MODE_FALLING_EDGE     /* PA15 */
+      | EXT_CH_MODE_AUTOSTART
+      | EXT_MODE_GPIOA, key2Pressed},
+  }
+};
+
+#if ANNOYING_BLINK
 static THD_WORKING_AREA(waThread1, 128);
 static msg_t Thread1(void *arg)
 {
@@ -50,12 +108,14 @@ static msg_t Thread1(void *arg)
   }
   return 0;
 }
+#endif
 
 /*
  * Application entry point.
  */
 int main(void) {
   int i = 0;
+  uint8_t *framebuffer;
 
   /*
    * System initializations.
@@ -77,11 +137,22 @@ int main(void) {
       PHAGE2014_OS_VERSION_MINOR,
       gitversion);
 
+  /* Begin listening to GPIOs (e.g. the button) */
+  extStart(&EXTD1, &extConfig);
+
+  radioStart();
+
+//  ledDriverInit(1, GPIOB, 0b11, &framebuffer);
+  chprintf(stream, "Framebuffer address: 0x%08x\n", framebuffer);
+
+#if ANNOYING_BLINK
   chprintf(stream, "Launching Thread1...\r\n");
   chThdCreateStatic(waThread1, sizeof(waThread1),
                     NORMALPRIO + 10, Thread1, stream);
+#endif
 
   while (TRUE) {
+    testPatternFB(framebuffer);
     if (shellTerminated()) {
       chprintf(stream, "Spawning new shell (shell #%d)\r\n", i++);
       shellRestart();

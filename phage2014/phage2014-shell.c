@@ -18,6 +18,8 @@
 #include "hal.h"
 #include "shell.h"
 #include "chprintf.h"
+
+#include "radio.h"
 #include "phage2014.h"
 
 void cmd_threads(BaseSequentialStream *chp, int argc, char *argv[]);
@@ -26,6 +28,7 @@ void cmd_mem(BaseSequentialStream *chp, int argc, char *argv[]);
 static const ShellCommand shellCommands[] = {
   {"mem", cmd_mem},
   {"threads", cmd_threads},
+  {"radio", cmdRadio},
   {NULL, NULL}
 };
 

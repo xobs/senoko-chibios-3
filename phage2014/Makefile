@@ -107,6 +107,7 @@ CSRC = $(PORTSRC) \
        cmd-threads.c \
        gitversion.c \
        phage2014-shell.c \
+       radio.c \
        main.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
