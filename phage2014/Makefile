@@ -35,7 +35,7 @@ endif
 
 # If enabled, this option allows to compile the application in THUMB mode.
 ifeq ($(USE_THUMB),)
-  USE_THUMB = yes
+  USE_THUMB = no
 endif
 
 # Enable this if you want to see the full log while compiling.
@@ -101,12 +101,12 @@ CSRC = $(PORTSRC) \
        $(BOARDSRC) \
        $(CHIBIOS)/os/various/shell.c \
        $(CHIBIOS)/os/various/chprintf.c \
-       LEDDriver.c \
        bionic.c \
        cmd-mem.c \
        cmd-threads.c \
        gitversion.c \
        phage2014-shell.c \
+       radio.c \
        main.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
@@ -134,7 +134,8 @@ TCSRC =
 TCPPSRC =
 
 # List ASM source files here
-ASMSRC = $(PORTASM)
+ASMSRC = $(PORTASM) \
+         ws2812b.s
 
 INCDIR = $(PORTINC) $(KERNINC) \
          $(HALINC) $(OSALINC) $(PLATFORMINC) $(BOARDINC) \

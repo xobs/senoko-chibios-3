@@ -20,9 +20,15 @@
 #include "shell.h"
 #include "chprintf.h"
 #include "i2c.h"
+#include "LEDDriver.h"
+#include "radio.h"
 
 #include "phage2014.h"
 #include "phage2014-shell.h"
+
+#define NUMPIX 240
+uint32_t fb[NUMPIX];  // pixels stored in xGRB format
+extern int ws2812_send(uint32_t *fb, uint32_t len);
 
 static const SerialConfig serialConfig = {
   115200,
@@ -44,9 +50,108 @@ static msg_t Thread1(void *arg)
     i++;
 
     /* Blink the LED */
-    palWritePad(GPIOA, PA2, (i & 1) ? PAL_LOW : PAL_HIGH);
+    //    palWritePad(GPIOA, PA2, (i & 1) ? PAL_LOW : PAL_HIGH);
+    palWritePad(GPIOA, PA2, PAL_LOW);
 
     chThdSleepMilliseconds(250);
+  }
+  return 0;
+}
+
+static THD_WORKING_AREA(waThread3, 128);
+static msg_t Thread3(void *arg)
+{
+
+  int i = 0;
+
+  (void)arg;
+
+  chRegSetThreadName("text3");
+  while (TRUE) {
+    i++;
+
+    if( PAL_LOW == palReadPad(GPIOA, PA13) ) {
+      radio_TX(0xC3);
+    }
+
+    chThdSleepMilliseconds(100);
+  }
+  return 0;
+}
+
+static THD_WORKING_AREA(waThread4, 128);
+static msg_t Thread4(void *arg)
+{
+
+  uint8_t c;
+
+  (void)arg;
+
+  chRegSetThreadName("text4");
+  while (TRUE) {
+    if( PAL_HIGH == palReadPad(GPIOA, PA11) ) {  // DR is asserted
+      c = radio_RX();
+      if( c == 0xC3 ) {
+	palWritePad(GPIOA, PA2, PAL_HIGH);
+      }
+    }
+
+    chThdSleepMilliseconds(10);
+  }
+  return 0;
+}
+
+#define COLOR(r,g,b)  ((((g) & 0xFF) << 16) | (((r) & 0xFF) << 8) | ((b) & 0xFF))
+// Input a value 0 to 255 to get a color value.
+// The colours are a transition r - g - b - back to r.
+uint32_t Wheel(uint8_t WheelPos) {
+  if(WheelPos < 85) {
+    return COLOR(WheelPos * 3, 255 - WheelPos * 3, 0);
+  }
+  else if(WheelPos < 170) {
+    WheelPos -= 85;
+    return COLOR(255 - WheelPos * 3, 0, WheelPos * 3);
+  }
+  else {
+    WheelPos -= 170;
+    return COLOR(0, WheelPos * 3, 255 - WheelPos * 3);
+  }
+}
+
+static THD_WORKING_AREA(waThread2, 128);
+static msg_t Thread2(void *arg)
+{
+  int i, j = 0;
+  uint32_t color;
+  (void)arg;
+
+  chRegSetThreadName("text2");
+  while (TRUE) {
+
+#if 1    
+    j = j % (256 * 5);
+    for( i = 0; i < NUMPIX; i++ ) {
+      color = Wheel( (i * (256 / NUMPIX) + j) & 0xFF );
+      fb[i] = color;
+    }
+    j += 2;
+#else
+    for( i = 0; i < NUMPIX; i++ ) {
+      if( j == i ) {
+	fb[i] = 0xFFFFFF;
+      } else
+	fb[i] = 0;
+    }
+    j++;
+    j %= NUMPIX;
+#endif
+    
+    /* Blink the LED */
+    chSysLock(); // locks out interrupts
+    ws2812_send(fb, NUMPIX);
+    chSysUnlock(); // restore interrupts
+
+    chThdSleepMilliseconds(20);
   }
   return 0;
 }
@@ -77,9 +182,30 @@ int main(void) {
       PHAGE2014_OS_VERSION_MINOR,
       gitversion);
 
+  radioStart();
+
   chprintf(stream, "Launching Thread1...\r\n");
   chThdCreateStatic(waThread1, sizeof(waThread1),
-                    NORMALPRIO + 10, Thread1, stream);
+                    NORMALPRIO, Thread1, stream);
+
+
+  chprintf(stream, "Launching Thread2...\r\n");
+  chThdCreateStatic(waThread2, sizeof(waThread2),
+                    HIGHPRIO, Thread2, stream);
+
+  chprintf(stream, "Launching Thread3...\r\n");
+  chThdCreateStatic(waThread3, sizeof(waThread3),
+                    NORMALPRIO, Thread3, stream);
+
+  chprintf(stream, "Launching Thread4...\r\n");
+  chThdCreateStatic(waThread4, sizeof(waThread4),
+                    NORMALPRIO, Thread4, stream);
+
+#if 1
+  for( i = 0; i < 0x28; i += 4 ) {
+    chprintf(stream, "RCC + %x: %x\r\n", i, *((unsigned int *) (0x40021000 + i)) );
+  }
+#endif
 
   while (TRUE) {
     if (shellTerminated()) {
@@ -87,6 +213,7 @@ int main(void) {
       shellRestart();
     }
     chThdSleepMilliseconds(500);
+
   }
 
   return 0;

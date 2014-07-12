@@ -21,7 +21,7 @@ static uint8_t dma_source[1];
 // timer 3 as slave, during active time creates a 1.25 uS signal, with duty cycle controlled by frame buffer values
 /* master mode selection */
 static const PWMConfig pwmc3 = {
-  72000000,/* 72Mhz PWM clock frequency.   */
+  36000000,/* 36Mhz PWM clock frequency.   */
   90, /* 90 cycles period (1.25 uS per period @72Mhz       */
   NULL,
   {
@@ -34,8 +34,8 @@ static const PWMConfig pwmc3 = {
   0,
 };
 static const PWMConfig pwmc4 = {
-  72000000 / 90, /* 800Khz PWM clock frequency. 1/90 of PWMC3   */
-  (72000000 / 90) * 0.05, /*Total period is 50ms (20FPS), including sLeds cycles + reset length for ws2812b and FB writes  */
+  36000000 / 90, /* 800Khz PWM clock frequency. 1/90 of PWMC3   */
+  (362000000 / 90) * 0.05, /*Total period is 50ms (20FPS), including sLeds cycles + reset length for ws2812b and FB writes  */
   NULL,
   {
     {PWM_OUTPUT_ACTIVE_HIGH, NULL},
