@@ -20,7 +20,8 @@
 #include "ext.h"
 #include "shell.h"
 #include "chprintf.h"
-#include "LEDDriver.h"
+#include "ledDriver.h"
+#include "keypress.h"
 #include "radio.h"
 
 #include "phage2014.h"
@@ -33,26 +34,6 @@ static const SerialConfig serialConfig = {
   0,
 };
 
-void key0Pressed(EXTDriver *extp, expchannel_t channel)
-{
-  chprintf(stream, "Pressed Key 0\r\n");
-}
-
-void key1Pressed(EXTDriver *extp, expchannel_t channel)
-{
-  chprintf(stream, "Pressed Key 1\r\n");
-}
-
-void key2Pressed(EXTDriver *extp, expchannel_t channel)
-{
-  chprintf(stream, "Pressed Key 2\r\n");
-}
-
-void key3Pressed(EXTDriver *extp, expchannel_t channel)
-{
-  chprintf(stream, "Pressed Key 3\r\n");
-}
-
 static const EXTConfig extConfig = {
   {
     {EXT_CH_MODE_FALLING_EDGE     /* PA0 */
@@ -61,12 +42,12 @@ static const EXTConfig extConfig = {
     {EXT_CH_MODE_DISABLED, NULL}, /* PA1 */
     {EXT_CH_MODE_DISABLED, NULL}, /* PA2 */
     {EXT_CH_MODE_DISABLED, NULL}, /* PA3 */
-    {EXT_CH_MODE_FALLING_EDGE     /* PB4 */
+    {EXT_CH_MODE_BOTH_EDGES     /* PB4 */
       | EXT_CH_MODE_AUTOSTART
-      | EXT_MODE_GPIOB, key0Pressed},
-    {EXT_CH_MODE_FALLING_EDGE     /* PB5 */
+      | EXT_MODE_GPIOB, keyISR},
+    {EXT_CH_MODE_BOTH_EDGES     /* PB5 */
       | EXT_CH_MODE_AUTOSTART
-      | EXT_MODE_GPIOB, key3Pressed},
+      | EXT_MODE_GPIOB, keyISR},
     {EXT_CH_MODE_DISABLED, NULL}, /* PA6 */
     {EXT_CH_MODE_DISABLED, NULL}, /* PA7 */
     {EXT_CH_MODE_DISABLED, NULL}, /* PA8 */
@@ -78,13 +59,13 @@ static const EXTConfig extConfig = {
     {EXT_CH_MODE_FALLING_EDGE     /* PA12 */
       | EXT_CH_MODE_AUTOSTART
       | EXT_MODE_GPIOA, radioCarrier},
-    {EXT_CH_MODE_FALLING_EDGE     /* PA13 */
+    {EXT_CH_MODE_BOTH_EDGES     /* PA13 */
       | EXT_CH_MODE_AUTOSTART
-      | EXT_MODE_GPIOA, key2Pressed},
+      | EXT_MODE_GPIOA, keyISR},
     {EXT_CH_MODE_DISABLED, NULL}, /* PA14 */
-    {EXT_CH_MODE_FALLING_EDGE     /* PA15 */
+    {EXT_CH_MODE_BOTH_EDGES     /* PA15 */
       | EXT_CH_MODE_AUTOSTART
-      | EXT_MODE_GPIOA, key2Pressed},
+      | EXT_MODE_GPIOA, keyISR},
   }
 };
 
@@ -115,7 +96,8 @@ static msg_t Thread1(void *arg)
  */
 int main(void) {
   int i = 0;
-  uint8_t *framebuffer;
+  uint32_t *framebuffer;
+  event_listener_t keyListener;
 
   /*
    * System initializations.
@@ -140,10 +122,13 @@ int main(void) {
   /* Begin listening to GPIOs (e.g. the button) */
   extStart(&EXTD1, &extConfig);
 
-  radioStart();
+  keyInit();
+  keyRegisterListener(&keyListener);
 
-//  ledDriverInit(1, GPIOB, 0b11, &framebuffer);
-  chprintf(stream, "Framebuffer address: 0x%08x\n", framebuffer);
+//  radioStart();
+
+  ledDriverInit(28, GPIOB, 0b11, &framebuffer);
+  chprintf(stream, "Framebuffer address: 0x%08x\r\n", framebuffer);
 
 #if ANNOYING_BLINK
   chprintf(stream, "Launching Thread1...\r\n");
@@ -151,13 +136,26 @@ int main(void) {
                     NORMALPRIO + 10, Thread1, stream);
 #endif
 
+  int loop = 0;
   while (TRUE) {
-    testPatternFB(framebuffer);
+    eventmask_t event;
+
+    calmPatternFB(framebuffer, loop++);
+    //testPatternFB(framebuffer);
+
     if (shellTerminated()) {
       chprintf(stream, "Spawning new shell (shell #%d)\r\n", i++);
       shellRestart();
     }
-    chThdSleepMilliseconds(500);
+
+    /* Wait 500ms for an event */
+    chThdSleepMilliseconds(20);
+    /*
+    event = chEvtWaitAnyTimeout(0xff, MS2ST(500));
+    if (event) {
+      chprintf(stream, "Got event: %d\r\n", event);
+    }
+    */
   }
 
   return 0;

@@ -101,11 +101,12 @@ CSRC = $(PORTSRC) \
        $(BOARDSRC) \
        $(CHIBIOS)/os/various/shell.c \
        $(CHIBIOS)/os/various/chprintf.c \
-       LEDDriver.c \
+       ledDriver.c \
        bionic.c \
        cmd-mem.c \
        cmd-threads.c \
        gitversion.c \
+       keypress.c \
        phage2014-shell.c \
        radio.c \
        main.c

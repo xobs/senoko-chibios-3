@@ -9,5 +9,4 @@ extern const char *gitversion;
 #define serialDriver (&SD1)
 #define stream ((BaseSequentialStream *)&SD1)
 
-
 #endif /* __PHAGE2014_H__ */
