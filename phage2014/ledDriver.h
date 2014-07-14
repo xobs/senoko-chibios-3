@@ -14,14 +14,21 @@
 
 typedef struct Color Color;
 struct Color {
-  uint8_t R;
-  uint8_t G;
-  uint8_t B;
+  uint8_t r;
+  uint8_t g;
+  uint8_t b;
 };
 
-void ledDriverInit(int leds, GPIO_TypeDef *port, uint32_t mask, uint32_t **o_fb);
-void setColorRGB(Color c, uint32_t *buf, uint32_t mask);
-void testPatternFB(uint32_t *fb);
-void calmPatternFB(uint32_t *fb, int count);
+void ledDriverInit(int leds, GPIO_TypeDef *port, uint32_t mask, uint8_t **o_fb);
+void ledDriverStart(uint8_t *fb);
+void ledDriverStop(void);
+
+enum pattern {
+  patternCalm,
+  patternTest,
+  patternShoot,
+};
+
+void runPatternFB(uint8_t *fb, enum pattern, int count, uint32_t param1);
 
 #endif /* LEDDRIVER_H_ */

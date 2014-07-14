@@ -6,16 +6,20 @@
 
 static virtual_timer_t vt;
 static uint8_t keyStates[4];
-static EVENTSOURCE_DECL(keyStateSource);
+
+#include "ledDriver.h"
+extern enum pattern currentPattern;
+
+extern void keyPressHook(enum keychar, int state);
 
 static void keyDown(void *arg)
 {
   int channel = (int)arg;
-  uint8_t key = -1;
-  uint8_t state;
+  enum keychar key = KEY_NONE;
+  int state;
 
   if (channel == 4) {
-    state = palReadPad(GPIOB, PB4);
+    state = !palReadPad(GPIOB, PB4);
     key = KEY_0;
   }
   else if (channel == 5) {
@@ -23,30 +27,28 @@ static void keyDown(void *arg)
     key = KEY_3;
   }
   else if (channel == 13) {
-    state = palReadPad(GPIOA, PA13);
+    state = !palReadPad(GPIOA, PA13);
     key = KEY_2;
   }
   else if (channel == 15) {
-    state = palReadPad(GPIOA, PA15);
+    state = !palReadPad(GPIOA, PA15);
     key = KEY_1;
   }
   else
     return;
 
-  if (state != keyStates[key])
+  if (state == keyStates[key])
     return;
 
   keyStates[key] = state;
 
-  if (state)
-    chEvtBroadcastFlags(&keyStateSource, key);
-  else
-    chEvtBroadcastFlags(&keyStateSource, key << 4);
+  keyPressHook(key, state);
 }
 
 void keyISR(EXTDriver *extp, expchannel_t channel)
 {
   (void)extp;
+
   chSysLockFromISR();
   chVTSetI(&vt, MS2ST(KEY_DEBOUNCE_MS), keyDown, (void *)channel);
   chSysUnlockFromISR();
@@ -54,11 +56,23 @@ void keyISR(EXTDriver *extp, expchannel_t channel)
 
 void keyInit(void)
 {
-  chEvtObjectInit(&keyStateSource);
+//  chEvtObjectInit(&keyStateSource);
   return;
 }
 
-void keyRegisterListener(event_listener_t *el)
+enum keychar keyIsPressed(void)
 {
-  chEvtRegisterMask(&keyStateSource, el, 0xff);
+  if (!palReadPad(GPIOB, PB4))
+    return KEY_0;
+
+  if (palReadPad(GPIOB, PB5))
+    return KEY_3;
+
+  if (!palReadPad(GPIOA, PA13))
+    return KEY_2;
+
+  if (!palReadPad(GPIOA, PA15))
+    return KEY_1;
+
+  return KEY_NONE;
 }

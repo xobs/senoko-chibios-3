@@ -201,7 +201,7 @@
         | 0)
 
 #define VAL_GPIOA_CRH   ( 0 \
-        /* CHG_ACOK */ \
+        /* Accelerometer IRQ1 */ \
         | PIN_OSPEED_INPUT(PA8) \
         | PIN_MODE_FLOATING(PA8) \
         \
@@ -299,8 +299,9 @@
         | PIN_OSPEED_INPUT(PB14) \
         | PIN_MODE_FLOATING(PB14) \
         \
-        /* NC */ \
-        | PIN_UNUSED(PB15) \
+        /* Accelerometer IRQ2 */ \
+        | PIN_OSPEED_INPUT(PB15) \
+        | PIN_MODE_FLOATING(PB15) \
         \
         | 0 )
 

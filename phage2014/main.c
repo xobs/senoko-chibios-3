@@ -27,6 +27,8 @@
 #include "phage2014.h"
 #include "phage2014-shell.h"
 
+static uint32_t currentPattern = patternCalm;
+
 static const SerialConfig serialConfig = {
   115200,
   0,
@@ -91,13 +93,23 @@ static msg_t Thread1(void *arg)
 }
 #endif
 
+
+void keyPressHook(enum keychar key, int state)
+{
+  if (state && (key == KEY_0))
+    currentPattern = patternCalm;
+  if (state && (key == KEY_1))
+    currentPattern = patternTest;
+  if (state && (key == KEY_2))
+    currentPattern = patternShoot;
+}
 /*
  * Application entry point.
  */
 int main(void) {
   int i = 0;
-  uint32_t *framebuffer;
-  event_listener_t keyListener;
+  uint8_t *framebuffer;
+  //event_listener_t keyListener;
 
   /*
    * System initializations.
@@ -123,12 +135,12 @@ int main(void) {
   extStart(&EXTD1, &extConfig);
 
   keyInit();
-  keyRegisterListener(&keyListener);
 
 //  radioStart();
 
-  ledDriverInit(28, GPIOB, 0b11, &framebuffer);
+  ledDriverInit((60 * 4), GPIOB, 0b11, &framebuffer);
   chprintf(stream, "Framebuffer address: 0x%08x\r\n", framebuffer);
+  ledDriverStart(framebuffer);
 
 #if ANNOYING_BLINK
   chprintf(stream, "Launching Thread1...\r\n");
@@ -138,10 +150,8 @@ int main(void) {
 
   int loop = 0;
   while (TRUE) {
-    eventmask_t event;
 
-    calmPatternFB(framebuffer, loop++);
-    //testPatternFB(framebuffer);
+    runPatternFB(framebuffer, currentPattern, loop, 0);
 
     if (shellTerminated()) {
       chprintf(stream, "Spawning new shell (shell #%d)\r\n", i++);
@@ -150,12 +160,7 @@ int main(void) {
 
     /* Wait 500ms for an event */
     chThdSleepMilliseconds(20);
-    /*
-    event = chEvtWaitAnyTimeout(0xff, MS2ST(500));
-    if (event) {
-      chprintf(stream, "Got event: %d\r\n", event);
-    }
-    */
+    loop++;
   }
 
   return 0;
