@@ -2,8 +2,8 @@
 #include "ch.h"
 #include "hal.h"
 
-#include "chprintf.h"
 #include <stdlib.h>
+#include "chprintf.h"
 
 #include "radio.h"
 #include "phage2014.h"
@@ -13,7 +13,6 @@ void radioAddressMatch(EXTDriver *extp, expchannel_t channel)
 {
   (void)extp;
   (void)channel;
-  chprintf(stream, "RADIO: Detected address match\r\n");
 }
 
 /* PA11 */
@@ -21,7 +20,6 @@ void radioDataReceived(EXTDriver *extp, expchannel_t channel)
 {
   (void)extp;
   (void)channel;
-  chprintf(stream, "RADIO: Received data\r\n");
 }
 
 /* PA12 */
@@ -29,7 +27,6 @@ void radioCarrier(EXTDriver *extp, expchannel_t channel)
 {
   (void)extp;
   (void)channel;
-  chprintf(stream, "RADIO: Detected carrier\r\n");
 }
 
 static int radioUseCount = 0;
