@@ -247,6 +247,9 @@ static void i2c_lld_serve_event_interrupt(I2CDriver *i2cp) {
   uint32_t regSR2 = dp->SR2;
   uint32_t event = dp->SR1;
 
+  #if I2C_USE_SLAVE_MODE
+  if (!i2cp->slave_mode) {
+  #endif /* I2C_USE_SLAVE_MODE */
   /* Interrupts are disabled just before dmaStreamEnable() because there
      is no need of interrupts until next transaction begin. All the work is
      done by the DMA.*/
@@ -292,6 +295,46 @@ static void i2c_lld_serve_event_interrupt(I2CDriver *i2cp) {
   /* Clear ADDR flag. */
   if (event & (I2C_SR1_ADDR | I2C_SR1_ADD10))
     (void)dp->SR2;
+  #if I2C_USE_SLAVE_MODE
+  }
+  else {
+    if (event & (I2C_SR1_ADDR | I2C_SR1_ADD10)) {
+      /* Reset buffer pointers for tx and rx.*/
+      i2cp->rxind = 0;
+      i2cp->txind = 0;
+
+      /* Clear Addr Flag by reading SR1, followed by SR2.*/
+      event = dp->SR1;
+      regSR2 = dp->SR2;
+    }
+    if (event & I2C_SR1_TXE) {
+      dp->DR = i2cp->txbuf[i2cp->txind++];
+      if (i2cp->txind >= i2cp->txbytes)
+        i2cp->txind = 0;
+    }
+    if (event & I2C_SR1_RXNE) {
+      i2cp->rxbuf[i2cp->rxind++] = dp->DR;
+      if (i2cp->rxind >= i2cp->rxbytes)
+        i2cp->rxind = 0;
+    }
+    if (event & I2C_SR1_STOPF) {
+      /* Clear STOPF bit by writing to CR1.*/
+      event = dp->SR1;
+      dp->CR1 |= I2C_CR1_PE;
+
+      /* Notify user about receive finish.*/
+      if (i2cp->rxcb)
+        i2cp->rxcb(i2cp);
+    }
+    if (event & I2C_SR1_AF) {
+      dp->SR1 &= ~I2C_SR1_AF;
+
+      /* Notify user about transfer finish.*/
+      if (i2cp->txcb)
+        i2cp->txcb(i2cp);
+    }
+  }
+  #endif /* I2C_USE_SLAVE_MODE */
 }
 
 /**
@@ -316,10 +359,17 @@ static void i2c_lld_serve_rx_end_irq(I2CDriver *i2cp, uint32_t flags) {
 
   dmaStreamDisable(i2cp->dmarx);
 
+#if I2C_USE_SLAVE_MODE
+  if ( !i2cp->slave_mode )
+  {
+#endif
   dp->CR2 &= ~I2C_CR2_LAST;
   dp->CR1 &= ~I2C_CR1_ACK;
   dp->CR1 |= I2C_CR1_STOP;
   _i2c_wakeup_isr(i2cp);
+#if I2C_USE_SLAVE_MODE
+  }
+#endif
 }
 
 /**
@@ -369,12 +419,28 @@ static void i2c_lld_serve_error_interrupt(I2CDriver *i2cp, uint16_t sr) {
 
   if (sr & I2C_SR1_ARLO)                            /* Arbitration lost.    */
     i2cp->errors |= I2C_ARBITRATION_LOST;
-
+#if I2C_USE_SLAVE_MODE
+  if ( !i2cp->slave_mode )
+  {
+#endif
   if (sr & I2C_SR1_AF) {                            /* Acknowledge fail.    */
     i2cp->i2c->CR2 &= ~I2C_CR2_ITEVTEN;
     i2cp->i2c->CR1 |= I2C_CR1_STOP;                 /* Setting stop bit.    */
     i2cp->errors |= I2C_ACK_FAILURE;
   }
+#if I2C_USE_SLAVE_MODE
+  }
+  else
+  {
+      /* In slave mode it is not an error it is end of slave transfer.
+         Just clear AF flag.*/
+      i2cp->i2c->SR1 &= ~I2C_SR1_AF;
+
+      /* Notify user about transfer finish.*/
+      if ( i2cp->txcb )
+          i2cp->txcb( i2cp );
+  }
+#endif
 
   if (sr & I2C_SR1_OVR)                             /* Overrun.             */
     i2cp->errors |= I2C_OVERRUN;
@@ -757,6 +823,10 @@ msg_t i2c_lld_master_receive_timeout(I2CDriver *i2cp, i2caddr_t addr,
     osalSysUnlock();
   }
 
+#if I2C_USE_SLAVE_MODE
+  i2cp->slave_mode = 0;
+#endif
+
   /* Starts the operation.*/
   dp->CR2 |= I2C_CR2_ITEVTEN;
   dp->CR1 |= I2C_CR1_START | I2C_CR1_ACK;
@@ -842,6 +912,10 @@ msg_t i2c_lld_master_transmit_timeout(I2CDriver *i2cp, i2caddr_t addr,
     osalSysUnlock();
   }
 
+#if I2C_USE_SLAVE_MODE
+  i2cp->slave_mode = 0;
+#endif
+
   /* Starts the operation.*/
   dp->CR2 |= I2C_CR2_ITEVTEN;
   dp->CR1 |= I2C_CR1_START;
@@ -849,6 +923,102 @@ msg_t i2c_lld_master_transmit_timeout(I2CDriver *i2cp, i2caddr_t addr,
   /* Waits for the operation completion or a timeout.*/
   return osalThreadSuspendTimeoutS(&i2cp->thread, timeout);
 }
+#include "chprintf.h"
+
+#if I2C_USE_SLAVE_MODE
+/**
+ * @brief   Sets up I2C slave mode
+ * @details Puts the I2C device in slave mode, and specifies buffers for
+ *          reading and writing, in addition to callbacks for when data
+ *          is transferred.
+ *
+ * @param[in] i2cp      pointer to the @p I2CDriver object
+ * @param[in] addr      slave device address for listening
+ * @param[in] txbuf     pointer to the transmit buffer
+ * @param[in] txbytes   maximum number of bytes to be transmitted
+ * @param[out] rxbuf    pointer to the receive buffer
+ * @param[in] rxbytes   maxumum number of bytes to be received
+ * @param[in] timeout   the number of ticks before the operation timeouts,
+ *                      the following special values are allowed:
+ *                      - @a TIME_INFINITE no timeout.
+ *                      - @a TIME_IMMEDIATE no waiting.
+ *                      .
+ * @return              The operation status.
+ * @retval MSG_OK       if the I2C block is prepared to transmit
+ * @retval MSG_TIMEOUT  if a timeout occurred while waiting for ths bus to
+ *                      become idle.
+ *
+ * @notapi
+ */
+msg_t i2c_lld_slave_io_timeout(I2CDriver *i2cp, i2caddr_t addr,
+                               uint8_t *txbuf, size_t txbytes,
+                               uint8_t *rxbuf, size_t rxbytes,
+                               TI2cSlaveCb txcb,
+                               TI2cSlaveCb rxcb,
+                               systime_t timeout)
+{
+  I2C_TypeDef *dp = i2cp->i2c;
+  systime_t start, end;
+  (void)timeout;
+
+  /* Releases the lock from high level driver.*/
+  osalSysUnlock();
+
+  /* Calculating the time window for the timeout on the busy bus condition.*/
+  start = osalOsGetSystemTimeX();
+  end = start + OSAL_MS2ST(STM32_I2C_BUSY_TIMEOUT);
+
+  /* Waits until BUSY flag is reset and the STOP from the previous operation
+     is completed, alternatively for a timeout condition.*/
+  while (true) {
+    osalSysLock();
+
+    /* If the bus is not busy then the operation can continue, note, the
+       loop is exited in the locked state.*/
+    if (!(dp->SR2 & I2C_SR2_BUSY) && !(dp->CR1 & I2C_CR1_STOP))
+      break;
+
+    /* If the system time went outside the allowed window then a timeout
+       condition is returned.*/
+    if (!osalOsIsTimeWithinX(osalOsGetSystemTimeX(), start, end))
+      return MSG_TIMEOUT;
+
+    osalSysUnlock();
+  }
+
+  /* Initializes driver fields, LSB = 1 -> read.*/
+  i2cp->addr    = (addr << 1);
+  i2cp->errors  = 0;
+
+  i2cp->rxbuf   = rxbuf;
+  i2cp->rxbytes = rxbytes;
+  i2cp->rxind   = 0;
+  i2cp->rxcb    = rxcb;
+
+  i2cp->txbuf   = txbuf;
+  i2cp->txbytes = txbytes;
+  i2cp->txind   = 0;
+  i2cp->txcb    = txcb;
+
+  i2cp->slave_mode = 1;
+  /* Starts the operation.*/
+  /* No start - slave mode.*/
+  dp->CR1 &= ~(I2C_CR1_START);
+  /* Turn off ISR and DMA.*/
+  dp->CR2 &= ~(I2C_CR2_DMAEN);
+  /* Own address.*/
+  dp->OAR1 = ((addr << 1) & (0xFE));
+  /* Turn interrupts and buffer interrupts on.*/
+  dp->CR2 |= (I2C_CR2_ITEVTEN | I2C_CR2_ITBUFEN);
+  /* Generate Ack on address match and IOs.*/
+  dp->CR1 |= I2C_CR1_ACK;
+
+  /* Waits for the operation completion or a timeout.*/
+  //return osalThreadSuspendTimeoutS(&i2cp->thread, timeout);
+  return MSG_OK;
+}
+
+#endif
 
 #endif /* HAL_USE_I2C */
 
