@@ -102,9 +102,15 @@ CSRC = $(PORTSRC) \
        $(CHIBIOS)/os/various/shell.c \
        $(CHIBIOS)/os/various/chprintf.c \
        bionic.c \
+       chg.c \
+       cmd-chg.c \
+       cmd-gg.c \
        cmd-mem.c \
+       cmd-stats.c \
        cmd-threads.c \
+       gg.c \
        gitversion.c \
+       power.c \
        senoko-i2c.c \
        senoko-shell.c \
        main.c
