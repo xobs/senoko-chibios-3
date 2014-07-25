@@ -299,9 +299,8 @@ static void i2c_lld_serve_event_interrupt(I2CDriver *i2cp) {
   }
   else {
     if (event & (I2C_SR1_ADDR | I2C_SR1_ADD10)) {
-      /* Reset buffer pointers for tx and rx.*/
+      /* Reset rx buffer pointer when starting new reception.*/
       i2cp->rxind = 0;
-      i2cp->txind = 0;
 
       /* Clear Addr Flag by reading SR1, followed by SR2.*/
       event = dp->SR1;
@@ -324,14 +323,14 @@ static void i2c_lld_serve_event_interrupt(I2CDriver *i2cp) {
 
       /* Notify user about receive finish.*/
       if (i2cp->rxcb)
-        i2cp->rxcb(i2cp);
+        i2cp->rxcb(i2cp, i2cp->rxbytes);
     }
     if (event & I2C_SR1_AF) {
       dp->SR1 &= ~I2C_SR1_AF;
 
       /* Notify user about transfer finish.*/
       if (i2cp->txcb)
-        i2cp->txcb(i2cp);
+        i2cp->txcb(i2cp, i2cp->txbytes);
     }
   }
   #endif /* I2C_USE_SLAVE_MODE */
@@ -360,8 +359,7 @@ static void i2c_lld_serve_rx_end_irq(I2CDriver *i2cp, uint32_t flags) {
   dmaStreamDisable(i2cp->dmarx);
 
 #if I2C_USE_SLAVE_MODE
-  if ( !i2cp->slave_mode )
-  {
+  if (!i2cp->slave_mode) {
 #endif
   dp->CR2 &= ~I2C_CR2_LAST;
   dp->CR1 &= ~I2C_CR1_ACK;
@@ -420,8 +418,7 @@ static void i2c_lld_serve_error_interrupt(I2CDriver *i2cp, uint16_t sr) {
   if (sr & I2C_SR1_ARLO)                            /* Arbitration lost.    */
     i2cp->errors |= I2C_ARBITRATION_LOST;
 #if I2C_USE_SLAVE_MODE
-  if ( !i2cp->slave_mode )
-  {
+  if (!i2cp->slave_mode) {
 #endif
   if (sr & I2C_SR1_AF) {                            /* Acknowledge fail.    */
     i2cp->i2c->CR2 &= ~I2C_CR2_ITEVTEN;
@@ -430,15 +427,14 @@ static void i2c_lld_serve_error_interrupt(I2CDriver *i2cp, uint16_t sr) {
   }
 #if I2C_USE_SLAVE_MODE
   }
-  else
-  {
-      /* In slave mode it is not an error it is end of slave transfer.
-         Just clear AF flag.*/
-      i2cp->i2c->SR1 &= ~I2C_SR1_AF;
+  else {
+    /* In slave mode it is not an error it is end of slave transfer.
+       Just clear AF flag.*/
+    i2cp->i2c->SR1 &= ~I2C_SR1_AF;
 
-      /* Notify user about transfer finish.*/
-      if ( i2cp->txcb )
-          i2cp->txcb( i2cp );
+    /* Notify user about transfer finish.*/
+    if (i2cp->txcb)
+      i2cp->txcb(i2cp, i2cp->txbytes);
   }
 #endif
 
@@ -955,8 +951,7 @@ msg_t i2c_lld_slave_io_timeout(I2CDriver *i2cp, i2caddr_t addr,
                                uint8_t *rxbuf, size_t rxbytes,
                                TI2cSlaveCb txcb,
                                TI2cSlaveCb rxcb,
-                               systime_t timeout)
-{
+                               systime_t timeout) {
   I2C_TypeDef *dp = i2cp->i2c;
   systime_t start, end;
   (void)timeout;
@@ -1013,11 +1008,21 @@ msg_t i2c_lld_slave_io_timeout(I2CDriver *i2cp, i2caddr_t addr,
   /* Generate Ack on address match and IOs.*/
   dp->CR1 |= I2C_CR1_ACK;
 
-  /* Waits for the operation completion or a timeout.*/
-  //return osalThreadSuspendTimeoutS(&i2cp->thread, timeout);
+  /* The Tx/Rx is primed, so return.*/
   return MSG_OK;
 }
+ 
+size_t i2c_lld_slave_get_tx_offset(I2CDriver *i2cp) {
+  return i2cp->txind;
+}
 
+void i2c_lld_slave_set_tx_offset(I2CDriver *i2cp, size_t offset) {
+  i2cp->txind = offset % i2cp->txbytes;
+}
+
+size_t i2c_lld_slave_get_rx_offset(I2CDriver *i2cp) {
+  return i2cp->rxind;
+}
 #endif
 
 #endif /* HAL_USE_I2C */

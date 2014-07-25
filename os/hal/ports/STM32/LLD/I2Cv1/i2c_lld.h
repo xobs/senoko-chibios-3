@@ -402,7 +402,7 @@ typedef struct {
 typedef struct I2CDriver I2CDriver;
 
 #if I2C_USE_SLAVE_MODE
-    typedef void (* TI2cSlaveCb)( I2CDriver * i2cp );
+    typedef void (* TI2cSlaveCb)(I2CDriver * i2cp, size_t bytes);
 #endif
 
 /**
@@ -518,12 +518,15 @@ extern "C" {
                                        uint8_t *rxbuf, size_t rxbytes,
                                        systime_t timeout);
 #if I2C_USE_SLAVE_MODE
-    msg_t i2c_lld_slave_io_timeout(I2CDriver *i2cp, i2caddr_t addr,
-                                   uint8_t *txbuf, size_t txbytes,
-                                   uint8_t *rxbuf, size_t rxbytes,
-                                   TI2cSlaveCb txcb,
-                                   TI2cSlaveCb rxcb,
-                                   systime_t timeout);
+  msg_t i2c_lld_slave_io_timeout(I2CDriver *i2cp, i2caddr_t addr,
+                                 uint8_t *txbuf, size_t txbytes,
+                                 uint8_t *rxbuf, size_t rxbytes,
+                                 TI2cSlaveCb txcb,
+                                 TI2cSlaveCb rxcb,
+                                 systime_t timeout);
+  size_t i2c_lld_slave_get_tx_offset(I2CDriver *i2cp);
+  void i2c_lld_slave_set_tx_offset(I2CDriver *i2cp, size_t offset);
+  size_t i2c_lld_slave_get_rx_offset(I2CDriver *i2cp);
 #endif
 #ifdef __cplusplus
 }
