@@ -38,7 +38,7 @@
 #include "bionic.h"
 typedef unsigned char u_char;
 typedef unsigned int size_t;
-extern int errno;
+int bionic_errno;
 
 #if !defined(NULL)
 #define NULL ((void *)0)
@@ -172,15 +172,12 @@ typedef	long word;		/* "word" used for optimal copy speed */
  * (the portable versions of) bcopy, memcpy, and memmove.
  */
 #ifdef MEMCOPY
-void *
-memcpy(void *dst0, const void *src0, size_t length)
+void *memcpy(void *dst0, const void *src0, size_t length)
 #else
 #ifdef MEMMOVE
-void *
-memmove(void *dst0, const void *src0, size_t length)
+void *memmove(void *dst0, const void *src0, size_t length)
 #else
-void
-bcopy(const void *src0, void *dst0, size_t length)
+void bcopy(const void *src0, void *dst0, size_t length)
 #endif
 #endif
 {
@@ -328,7 +325,7 @@ unsigned long strtoul(const char *nptr, char **endptr, int base)
 		if (acc > cutoff || (acc == cutoff && c > cutlim)) {
 			any = -1;
 			acc = ULONG_MAX;
-			errno = ERANGE;
+			bionic_errno = ERANGE;
 		} else {
 			any = 1;
 			acc *= (unsigned long)base;

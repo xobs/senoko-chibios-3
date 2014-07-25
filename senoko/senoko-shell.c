@@ -22,10 +22,16 @@
 
 void cmd_threads(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_mem(BaseSequentialStream *chp, int argc, char *argv[]);
+void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]);
+void cmd_stats(BaseSequentialStream *chp, int argc, char *argv[]);
+void cmd_chg(BaseSequentialStream *chp, int argc, char *argv[]);
 
 static const ShellCommand shellCommands[] = {
   {"mem", cmd_mem},
   {"threads", cmd_threads},
+  {"gg", cmd_gg},
+  {"chg", cmd_chg},
+  {"stats", cmd_stats},
   {NULL, NULL}
 };
 
