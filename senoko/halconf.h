@@ -198,6 +198,13 @@
 #define I2C_USE_MUTUAL_EXCLUSION    TRUE
 #endif
 
+/**
+ * @brief   Allow this device to act as an I2C slave device.
+ */
+#if !defined(I2C_USE_SLAVE_MODE) || defined(__DOXYGEN__)
+#define I2C_USE_SLAVE_MODE          TRUE
+#endif
+
 /*===========================================================================*/
 /* MAC driver related settings.                                              */
 /*===========================================================================*/

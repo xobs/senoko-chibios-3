@@ -25,25 +25,16 @@
 #include "senoko-i2c.h"
 #include "senoko-shell.h"
 
+#include "chg.h"
+#include "power.h"
+#include "gg.h"
+
 static const SerialConfig serialConfig = {
   115200,
   0,
   0,
   0,
 };
-
-static THD_WORKING_AREA(waThread1, 128);
-static msg_t Thread1(void *arg) {
-
-  int i = 0;
-  BaseSequentialStream *chp = arg;
-  chRegSetThreadName("text");
-  while (TRUE) {
-    chprintf(chp, "Thread 1 (loop %d)\r\n", i++);
-    chThdSleepMilliseconds(25000);
-  }
-  return 0;
-}
 
 /*
  * Application entry point.
@@ -77,9 +68,9 @@ int main(void) {
       SENOKO_OS_VERSION_MINOR,
       gitversion);
 
-  chprintf(stream, "Launching Thread1...\r\n");
-  chThdCreateStatic(waThread1, sizeof(waThread1),
-                    NORMALPRIO + 10, Thread1, stream);
+  chgInit();
+  powerInit();
+  ggInit();
 
   while (TRUE) {
     if (shellTerminated()) {
