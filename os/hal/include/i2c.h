@@ -167,6 +167,10 @@ extern "C" {
                           TI2cSlaveCb txcb,
                           TI2cSlaveCb rxcb,
                           systime_t timeout);
+  size_t i2cSlaveGetTxOffset(I2CDriver *i2cp);
+  void i2cSlaveSetTxOffset(I2CDriver *i2cp, size_t offset);
+  size_t i2cSlaveGetRxOffset(I2CDriver *i2cp);
+
 #endif /* I2C_ISE_SLAVE_MODE */
 
 #ifdef __cplusplus
