@@ -285,8 +285,7 @@ msg_t i2cSlaveIoTimeout(I2CDriver *i2cp,
                         uint8_t *rxbuf, size_t rxbytes,
                         TI2cSlaveCb txcb,
                         TI2cSlaveCb rxcb,
-                        systime_t timeout)
-{
+                        systime_t timeout) {
   msg_t rdymsg;
 
   osalSysLock();
@@ -305,6 +304,18 @@ msg_t i2cSlaveIoTimeout(I2CDriver *i2cp,
     i2cp->state = I2C_READY;
   osalSysUnlock();
   return rdymsg;
+}
+
+size_t i2cSlaveGetTxOffset(I2CDriver *i2cp) {
+  return i2c_lld_slave_get_tx_offset(i2cp);
+}
+
+void i2cSlaveSetTxOffset(I2CDriver *i2cp, size_t offset) {
+  i2c_lld_slave_set_tx_offset(i2cp, offset);
+}
+
+size_t i2cSlaveGetRxOffset(I2CDriver *i2cp) {
+  return i2c_lld_slave_get_rx_offset(i2cp);
 }
 
 #endif /* I2C_ISE_SLAVE_MODE */
