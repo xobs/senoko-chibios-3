@@ -13,7 +13,7 @@
 static uint8_t i2c_registers[0x23];
 static uint8_t i2c_buffer[sizeof(i2c_registers)];
 static int current_register = 0;
-static mutex_t client_mutex;
+static mutex_t client_mutex, transmit_mutex;
 
 enum client_mode {
   I2C_MODE_SLAVE,
@@ -84,7 +84,8 @@ void senokoI2cInit(void)
   for (reg = 3; reg < sizeof(i2c_registers); reg++)
     i2c_registers[reg] = counter++;
 
-  chMtxObjectInit(&client_mutex);
+  osalMutexObjectInit(&client_mutex);
+  osalMutexObjectInit(&transmit_mutex);
   senokoI2cReinit();
   return;
 }
@@ -138,6 +139,8 @@ msg_t senokoI2cMasterTransmitTimeout(i2caddr_t addr,
   else
     rxbuf_do_hack = 0;
 
+  osalMutexLock(&transmit_mutex);
+
   /* If we're still in slave mode, temporarily flip to master mode.*/
   if (client_mode == I2C_MODE_SLAVE) {
     i2cStop(i2cBus);
@@ -170,30 +173,34 @@ msg_t senokoI2cMasterTransmitTimeout(i2caddr_t addr,
     senokoI2cReinit();
   }
 
-//  chMtxUnlock(&client_mutex);
+  osalMutexUnlock(&transmit_mutex);
 
   return ret;
 }
 
 void senokoI2cAcquireBus(void) {
 
-//  chMtxLock(&client_mutex);
+  osalMutexLock(&transmit_mutex); /* Prevent transmissions.*/
+  osalMutexLock(&client_mutex);
 
   client_mode = I2C_MODE_MASTER;
   i2cStop(i2cBus);
   i2cStart(i2cBus, &senokoI2cDevice);
-  i2cAcquireBus(i2cBus);
+//  i2cAcquireBus(i2cBus);
 
-//  chMtxUnlock(&client_mutex);
+  osalMutexUnlock(&client_mutex);
+  osalMutexUnlock(&transmit_mutex);
 }
 
 void senokoI2cReleaseBus(void) {
 
-//  chMtxLock(&client_mutex);
+  osalMutexLock(&transmit_mutex); /* Prevent transmissions.*/
+  osalMutexLock(&client_mutex);
 
-  i2cReleaseBus(i2cBus);
+//  i2cReleaseBus(i2cBus);
   i2cStop(i2cBus);
   senokoI2cReinit();
 
-//  chMtxUnlock(&client_mutex);
+  osalMutexUnlock(&client_mutex);
+  osalMutexUnlock(&transmit_mutex);
 }

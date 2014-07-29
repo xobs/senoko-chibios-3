@@ -92,12 +92,22 @@ void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]) {
       }
     }
   }
+  else if (is_command(argc, argv, "pfreset")) {
+    chprintf(chp, "Resetting permanent failure flags...");
+    ret = ggPermanentFailureReset();
+    if (ret != MSG_OK)
+      chprintf(chp, "Error: %x\r\n", ret);
+    else
+      chprintf(chp, " ok.\r\n");
+  }
+
   else {
     chprintf(chp,
       "Usage:\r\n"
       "gg dsg +/-       Force dsg fet on or off\r\n"
       "gg cells [3/4]   Set cell count\r\n"
       "gg cal           Calibrate battery pack\r\n"
+      "gg pfreset       Reset permanent failure fuse\r\n"
       );
     return;
   }

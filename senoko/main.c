@@ -35,6 +35,7 @@ static const SerialConfig serialConfig = {
   0,
   0,
 };
+void *stream;
 
 /*
  * Application entry point.
@@ -60,6 +61,7 @@ int main(void) {
 
   /* Start serial, so we can get status output */
   sdStart(serialDriver, &serialConfig);
+  stream = stream_driver;
 
   shellInit();
 
@@ -71,6 +73,16 @@ int main(void) {
   chgInit();
   powerInit();
   ggInit();
+
+  chThdSleepMilliseconds(1500);
+  ggSetLeds(1);
+  chThdSleepMilliseconds(1500);
+  ggPermanentFailureReset();
+  ggSetLeds(-1);
+  chThdSleepMilliseconds(1500);
+  ggSetLeds(1);
+  chThdSleepMilliseconds(1500);
+  ggSetLeds(0);
 
   while (TRUE) {
     if (shellTerminated()) {

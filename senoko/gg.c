@@ -160,7 +160,6 @@ static int gg_getmfgr(uint16_t reg, void *data, int size)
   bfr[1] = reg;
   bfr[2] = reg >> 8;
 
-  senokoI2cAcquireBus();
   status = senokoI2cMasterTransmitTimeout(GG_ADDR,
                                           bfr, 3,
                                           NULL, 0,
@@ -170,8 +169,6 @@ static int gg_getmfgr(uint16_t reg, void *data, int size)
                                             bfr, 1,
                                             data, size,
                                             tmo);
-  senokoI2cReleaseBus();
-
   if (status != MSG_OK)
     return status;
 
@@ -204,10 +201,8 @@ static int gg_getflash(uint8_t subclass, uint8_t offset, void *data, int size) {
   uint8_t reg;
   int ptr;
 
-  for (ptr=0; ptr<size; ptr++)
+  for (ptr = 0; ptr < size; ptr++)
     cdata[ptr] = 0;
-
-  senokoI2cAcquireBus();
 
   bfr[0] = 0x77; /* SetSubclassID register */
   bfr[1] = subclass;
@@ -229,14 +224,14 @@ static int gg_getflash(uint8_t subclass, uint8_t offset, void *data, int size) {
      * If we're starting at a non-divisible offset,
      * copy the data into an intermediate buffer first.
      */
-    if (offset&31) {
+    if (offset & 31) {
       uint8_t temp_buffer[33];
       int i = 1 + (offset & 31);
       status = senokoI2cMasterTransmitTimeout(GG_ADDR,
                                               &reg, sizeof(reg),
                                               temp_buffer, 33,
                                               tmo);
-      while ((offset&31) && (size>0)) {
+      while ((offset & 31) && (size > 0)) {
         *cdata++ = temp_buffer[i++];
         offset++;
         size--;
@@ -254,7 +249,7 @@ static int gg_getflash(uint8_t subclass, uint8_t offset, void *data, int size) {
                                               &reg, sizeof(reg),
                                               temp_buffer, to_read,
                                               tmo);
-      memcpy(cdata, temp_buffer+1, to_read-1);
+      memcpy(cdata, temp_buffer + 1, to_read - 1);
       size  -= 32;
       cdata += 32;
     }
@@ -265,11 +260,9 @@ static int gg_getflash(uint8_t subclass, uint8_t offset, void *data, int size) {
     reg++;
   }
 
-  senokoI2cReleaseBus();
   return 0;
 
 err:
-  senokoI2cReleaseBus();
   return status;
 }
 
@@ -293,8 +286,6 @@ static int gg_setflash(uint8_t subclass, uint8_t offset, void *data, int size) {
   memcpy(eeprom_cache + offset, data, size);
 
   chThdSleepMilliseconds(25);
-
-  senokoI2cAcquireBus();
 
   bfr[0] = 0x77; /* SetSubclassID register */
   bfr[1] = subclass;
@@ -324,9 +315,7 @@ static int gg_setflash(uint8_t subclass, uint8_t offset, void *data, int size) {
 
     temp_buffer[0] = 0x78 + ptr;
     temp_buffer[1] = write_size - 2;
-    memcpy(temp_buffer + 2,
-      eeprom_cache + (32 * ptr),
-      write_size - 2);
+    memcpy(temp_buffer + 2, eeprom_cache + (32 * ptr), write_size - 2);
 
     status = senokoI2cMasterTransmitTimeout(GG_ADDR,
                                             temp_buffer, write_size,
@@ -341,11 +330,9 @@ static int gg_setflash(uint8_t subclass, uint8_t offset, void *data, int size) {
     chThdSleepMilliseconds(100);
   }
 
-  senokoI2cReleaseBus();
   return 0;
 
 err:
-  senokoI2cReleaseBus();
   return status;
 }
 
@@ -355,7 +342,6 @@ static int gg_setflash_word(uint8_t subclass, uint8_t offset, uint16_t data) {
   return gg_setflash(subclass, offset, &val, 2);
 }
 
-/*
 static int gg_getflash_word(uint8_t subclass, uint8_t offset, uint16_t *data) {
   int ret;
   ret = gg_getflash(subclass, offset, data, 2);
@@ -364,7 +350,6 @@ static int gg_getflash_word(uint8_t subclass, uint8_t offset, uint16_t *data) {
   *data = ((*data >> 8) & 0xff) | ((*data << 8) & 0xff00);
   return 0;
 }
-*/
 
 static int gg_getword(uint8_t reg, void *word) {
   return gg_getblock(reg, word, 2);
@@ -528,7 +513,7 @@ int ggChemistry(uint8_t *chem) {
   return gg_getstring(gg_strings[2].reg, chem, gg_strings[2].size);
 }
 
-int ggSerial(void *serial) {
+int ggSerial(uint16_t *serial) {
   return gg_getword(0x1c, serial);
 }
 
@@ -536,7 +521,7 @@ int ggPercent(uint8_t *capacity) {
   return gg_getbyte(0x0d, capacity);
 }
 
-int ggCellVoltage(int cell, void *voltage) {
+int ggCellVoltage(int cell, uint16_t *voltage) {
   if (cell <= 0 || cell > 4)
     return -1;
   cell--;
@@ -582,28 +567,28 @@ int ggSetCapacity(int cells, uint16_t capacity) {
   return 0;
 }
 
-int ggMode(void *word) {
+int ggMode(uint16_t *word) {
   return gg_getword(0x03, word);
 }
 
 int ggSetPrimary(void) {
-  uint8_t reg[2];
+  uint16_t reg;
   int ret;
-  ret = ggMode(reg);
+  ret = ggMode(&reg);
   if (ret < 0)
     return ret;
-  reg[0] |= (1<<1);
-  return gg_setblock(0x03, reg, 2);
+  reg |= (1 << 1);
+  return gg_setblock(0x03, &reg, 2);
 }
 
 int ggSetSecondary(void) {
-  uint8_t reg[2];
+  uint16_t reg;
   int ret;
-  ret = ggMode(reg);
+  ret = ggMode(&reg);
   if (ret < 0)
     return ret;
-  reg[0] &= ~(1<<1);
-  return gg_setblock(0x03, reg, 2);
+  reg &= ~(1 << 1);
+  return gg_setblock(0x03, &reg, 2);
 }
 
 int ggTemperature(int16_t *word) {
@@ -624,31 +609,31 @@ int ggTimeToEmpty(uint16_t *minutes) {
   return gg_getword(0x12, minutes);
 }
 
-int ggVoltage(void *word) {
+int ggVoltage(uint16_t *word) {
   return gg_getword(0x09, word);
 }
 
-int ggCurrent(void *word) {
+int ggCurrent(int16_t *word) {
   return gg_getword(0x0a, word);
 }
 
-int ggChargingCurrent(void *word) {
+int ggChargingCurrent(int16_t *word) {
   return gg_getword(0x14, word);
 }
 
-int ggChargingVoltage(void *word) {
+int ggChargingVoltage(uint16_t *word) {
   return gg_getword(0x15, word);
 }
 
-int ggFullCapacity(int16_t *word) {
+int ggFullCapacity(uint16_t *word) {
   return gg_getword(0x10, word);
 }
 
-int ggDesignCapacity(int16_t *word) {
+int ggDesignCapacity(uint16_t *word) {
   return gg_getword(0x18, word);
 }
 
-int ggAverageCurrent(void *word) {
+int ggAverageCurrent(int16_t *word) {
   int ret;
   ret = gg_getword(0xb, word);
   if (ret < 0)
@@ -656,15 +641,15 @@ int ggAverageCurrent(void *word) {
   return 0;
 }
 
-int ggStatus(void *word) {
+int ggStatus(uint16_t *word) {
   return gg_getword(0x16, word);
 }
 
-int ggFirmwareVersion(void *word) {
+int ggFirmwareVersion(uint16_t *word) {
   return gg_getmfgr(0x0001, word, 2);
 }
 
-int ggState(void *word) {
+int ggState(uint16_t *word) {
   int ret;
   ret = gg_getmfgr(0x0006, word, 2);
   if (ret < 0)
@@ -696,9 +681,9 @@ int ggSetChargeControl(int state) {
   if (ret < 0)
     return ret;
   if (state == 0) /* Inverse logic */
-    reg[0] |= 1<<6;
+    reg[0] |= 1 << 6;
   else
-    reg[0] &= ~(1<<6);
+    reg[0] &= ~(1 << 6);
   ret = gg_setblock(0x03, reg, 2);
   if (ret < 0)
     return ret;
@@ -717,4 +702,85 @@ int ggForceDischarge(int state) {
   else
     val &= ~(1<<1);
   return gg_setword(0x46, val);
+}
+
+int ggPermanentFailureFlags(uint16_t *flags) {
+  return gg_getflash_word(96, 0, flags);
+}
+
+int ggFuseFlag(uint16_t *flags) {
+  return gg_getflash_word(96, 2, flags);
+}
+
+int ggPermanentFailureVoltage(uint16_t *voltage) {
+  return gg_getflash_word(96, 4, voltage);
+}
+
+int ggPermanentFailureCellVoltage(int cell, uint16_t *voltage) {
+  /* Cell 4 voltage is at offset 6, cell 1 voltage is at offset 12.*/
+  return gg_getflash_word(96, 6 + ((3 - cell) * 2), voltage);
+}
+
+int ggPermanentFailureCurrent(int16_t *current) {
+  return gg_getflash_word(96, 14, (uint16_t *)current);
+}
+
+int ggPermanentFailureTemperature(int16_t *temperature) {
+  return gg_getflash_word(96, 16, (uint16_t *)temperature);
+}
+
+int ggPermanentFailureBatteryStatus(uint16_t *stat) {
+  return gg_getflash_word(96, 18, stat);
+}
+
+int ggPermanentFailureRemainingCapacity(uint16_t *capacity) {
+  return gg_getflash_word(96, 20, capacity);
+}
+
+int ggPermanentFailureChargeStatus(uint16_t *stat) {
+  return gg_getflash_word(96, 24, stat);
+}
+
+int ggPermanentFailureSafetyStatus(uint16_t *stat) {
+  return gg_getflash_word(96, 26, stat);
+}
+
+int ggPermanentFailureFlags2(uint16_t *flags) {
+  return gg_getflash_word(96, 28, flags);
+}
+
+int ggPermanentFailureReset(void) {
+  msg_t status;
+  uint8_t tx_bfr[5];
+  uint8_t rx_bfr[4];
+
+  tx_bfr[0] = 0x62;
+  status = senokoI2cMasterTransmitTimeout(GG_ADDR,
+                                          tx_bfr, 1,
+                                          rx_bfr, 4,
+                                          tmo);
+  if (status != MSG_OK)
+    return status;
+
+  tx_bfr[0] = 0x00; /* Manufacturer command.*/
+  tx_bfr[1] = rx_bfr[1]; /* PFkey is in SBS order, not TI order.  Reverse it.*/
+  tx_bfr[2] = rx_bfr[0]; /* PFkey is in SBS order, not TI order.  Reverse it.*/
+  tx_bfr[3] = rx_bfr[3]; /* PFkey is in SBS order, not TI order.  Reverse it.*/
+  tx_bfr[4] = rx_bfr[2]; /* PFkey is in SBS order, not TI order.  Reverse it.*/
+
+  status = senokoI2cMasterTransmitTimeout(GG_ADDR,
+                                          tx_bfr, 3,
+                                          NULL, 0,
+                                          tmo);
+  if (status != MSG_OK)
+    return status;
+
+  tx_bfr[0] = 0x00; /* Manufacturer command.*/
+  tx_bfr[1] = rx_bfr[3]; /* PFkey is in SBS order, not TI order.  Reverse it.*/
+  tx_bfr[2] = rx_bfr[2]; /* PFkey is in SBS order, not TI order.  Reverse it.*/
+  status = senokoI2cMasterTransmitTimeout(GG_ADDR,
+                                          tx_bfr, 3,
+                                          NULL, 0,
+                                          tmo);
+  return status;
 }
