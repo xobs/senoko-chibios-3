@@ -1,0 +1,52 @@
+/*
+    ChibiOS/RT - Copyright (C) 2006-2013 Giovanni Di Sirio
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+*/
+
+#include "ch.h"
+#include "hal.h"
+#include "chprintf.h"
+
+#include "bionic.h"
+#include "senoko.h"
+#include "senoko-i2c.h"
+#include "gg.h"
+
+void cmd_leds(BaseSequentialStream *chp, int argc, char *argv[]) {
+  int ret;
+  int state;
+
+  if (argc == 1 && argv[0][0] == '+') {
+    state = 1;
+    chprintf(chp, "Setting all LEDs on...");
+  }
+  else if (argc == 1 && argv[0][0] == '-') {
+    state = -1;
+    chprintf(chp, "Setting all LEDs off...");
+  }
+  else {
+    chprintf(chp,
+        "Try \"leds +\" to turn LEDs on, and \"leds -\" to turn them off.\r\n");
+    chprintf(chp, "Setting all LEDs to default state...");
+    state = 0;
+  }
+
+  ret = ggSetLeds(state);
+  if (ret)
+    chprintf(chp, " error: 0x%x\r\n", ret);
+  else
+    chprintf(chp, " ok.\r\n");
+
+  return;
+}

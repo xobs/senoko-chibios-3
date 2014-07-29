@@ -484,7 +484,10 @@
  *          the system is halted.
  */
 #define CH_CFG_SYSTEM_HALT_HOOK(reason) {                                   \
-  /* System halt code here.*/                                               \
+  int i;                                                                    \
+  extern BaseSequentialStream *stream;                                      \
+  for (i = 0; reason[i]; i++)                                               \
+    chSequentialStreamPut(stream, (uint8_t)reason[i]);                      \
 }
 
 /** @} */

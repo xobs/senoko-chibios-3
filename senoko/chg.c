@@ -57,6 +57,8 @@ int chgSet(uint16_t current, uint16_t voltage, uint16_t input) {
   int ret;
   uint8_t bfr[3];
 
+#warning "Charging disabled"
+  return 0;
 
   if (current > 8064)
     return -1;
@@ -74,15 +76,13 @@ int chgSet(uint16_t current, uint16_t voltage, uint16_t input) {
   input >>= 1;
   input &= 0x1f80;
 
-  senokoI2cAcquireBus();
-
   g_input = input;
   bfr[0] = 0x3f;
   bfr[1] = g_input;
   bfr[2] = g_input >> 8;
   ret = chg_setblock(bfr, sizeof(bfr));
   if (ret)
-    goto out;
+    return ret;
 
   g_current = current;
   bfr[0] = 0x14;
@@ -90,7 +90,7 @@ int chgSet(uint16_t current, uint16_t voltage, uint16_t input) {
   bfr[2] = g_current >> 8;
   ret = chg_setblock(bfr, sizeof(bfr));
   if (ret)
-    goto out;
+    return ret;
 
   g_voltage = voltage;
   bfr[0] = 0x15;
@@ -98,11 +98,9 @@ int chgSet(uint16_t current, uint16_t voltage, uint16_t input) {
   bfr[2] = g_voltage >> 8;
   ret = chg_setblock(bfr, sizeof(bfr));
   if (ret)
-    goto out;
+    return ret;
 
-out:
-  senokoI2cReleaseBus();
-  return ret;
+  return 0;
 }
 
 int chgRefresh(uint16_t *current, uint16_t *voltage, uint16_t *input) {
@@ -133,15 +131,18 @@ static msg_t chg_thread(void *arg) {
   chRegSetThreadName("charge controller");
   chThdSleepMilliseconds(200);
 
+  senokoI2cAcquireBus();
   while (1) {
-    int16_t cell_mv;
+    uint16_t cell_mv;
     int cell;
     int ret;
     uint8_t cell_count;
     uint8_t capacity;
     int16_t current;
 
+    senokoI2cReleaseBus();
     chThdSleepMilliseconds(THREAD_SLEEP_MS);
+    senokoI2cAcquireBus();
 
     /*
      * Determine the battery's capacity and charge current,
