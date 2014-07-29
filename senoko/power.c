@@ -11,14 +11,16 @@ enum power_state {
 };
 static enum power_state power_state;
 
-static void power_set_state(enum power_state _power_state) {
-  palWritePad(GPIOB, PB15, _power_state);
-  power_state = _power_state;
+static void power_set_state(enum power_state state) {
+  palWritePad(GPIOB, PB15, state);
+  power_state = state;
   return;
 }
 
 void powerOff(void) {
-  power_set_state(power_off);
+  //power_set_state(power_off);
+#warning "Power off is disabled!"
+  power_set_state(power_on);
   return;
 }
 
@@ -35,7 +37,7 @@ void powerToggle(void) {
   return;
 }
 
-static THD_WORKING_AREA(waPower, 256);
+static THD_WORKING_AREA(waPower, 128);
 static msg_t power_thread(void *arg) {
   (void)arg;
 
@@ -55,5 +57,6 @@ static msg_t power_thread(void *arg) {
 }
 
 void powerInit(void) {
+  powerOn();
   chThdCreateStatic(waPower, sizeof(waPower), HIGHPRIO, power_thread, NULL);
 }

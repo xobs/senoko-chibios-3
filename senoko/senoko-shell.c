@@ -25,18 +25,20 @@ void cmd_mem(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_stats(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_chg(BaseSequentialStream *chp, int argc, char *argv[]);
+void cmd_leds(BaseSequentialStream *chp, int argc, char *argv[]);
 
 static const ShellCommand shellCommands[] = {
   {"mem", cmd_mem},
   {"threads", cmd_threads},
   {"gg", cmd_gg},
+  {"leds", cmd_leds},
   {"chg", cmd_chg},
   {"stats", cmd_stats},
   {NULL, NULL}
 };
 
 static const ShellConfig shellConfig = {
-  stream,
+  stream_driver,
   shellCommands
 };
 
