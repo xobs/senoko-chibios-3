@@ -23,6 +23,7 @@
 #include "iwdg.h"
 
 #include "senoko.h"
+#include "senoko-events.h"
 #include "senoko-i2c.h"
 #include "senoko-shell.h"
 #include "senoko-wdt.h"
@@ -39,15 +40,40 @@ static void shell_termination_handler(eventid_t id) {
   senokoShellRestart();
 }
 
+static void power_button_pressed_handler(eventid_t id) {
+  (void)id;
+  chprintf(stream, " [Button pressed] ");
+}
+
+static void power_button_released_handler(eventid_t id) {
+  (void)id;
+  chprintf(stream, " [Button released] ");
+}
+
+static void ac_unplugged_handler(eventid_t id) {
+  (void)id;
+  chprintf(stream, " [AC unplugged] ");
+}
+
+static void ac_plugged_handler(eventid_t id) {
+  (void)id;
+  chprintf(stream, " [AC plugged] ");
+}
+
 static evhandler_t event_handlers[] = {
   shell_termination_handler,
+  power_button_pressed_handler,
+  power_button_released_handler,
+  ac_unplugged_handler,
+  ac_plugged_handler,
 };
+
+static event_listener_t event_listeners[ARRAY_SIZE(event_handlers)];
 
 /*
  * Application entry point.
  */
 int main(void) {
-  event_listener_t event_listener;
 
   /*
    * System initializations.
@@ -59,13 +85,19 @@ int main(void) {
   halInit();
   chSysInit();
 
-  /* Set up I2C early, to prevent conflicting with the RAM DDC. */
+  /* Set up I2C early, to prevent conflicting with the RAM DDC.*/
   senokoI2cInit();
 
-  /* Start serial, so we can get status output */
+  /* Start serial, so we can get status output.*/
   senokoShellInit();
+  chEvtRegister(&shell_terminated, &event_listeners[0], 0);
 
-  chEvtRegister(&shell_terminated, &event_listener, 0);
+  /* Listen to GPIO events (e.g. button presses, status changes).*/
+  senokoEventsInit();
+  chEvtRegister(&power_button_pressed, &event_listeners[1], 1);
+  chEvtRegister(&power_button_released, &event_listeners[2], 2);
+  chEvtRegister(&ac_unplugged, &event_listeners[3], 3);
+  chEvtRegister(&ac_plugged, &event_listeners[4], 4);
 
   chprintf(stream, "\r\nStarting Senoko (Ver %d.%d, git version %s)\r\n", 
       SENOKO_OS_VERSION_MAJOR,

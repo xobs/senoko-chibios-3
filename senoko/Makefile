@@ -113,6 +113,7 @@ CSRC = $(PORTSRC) \
        gg.c \
        gitversion.c \
        power.c \
+       senoko-events.c \
        senoko-i2c.c \
        senoko-shell.c \
        senoko-wdt.c \
