@@ -50,5 +50,6 @@ int ggPermanentFailureChargeStatus(uint16_t *stat);
 int ggPermanentFailureSafetyStatus(uint16_t *stat);
 int ggPermanentFailureFlags2(uint16_t *flags);
 int ggPermanentFailureReset(void);
+int ggFullReset(void);
 
 #endif /* __SENOKO_GG_H__ */

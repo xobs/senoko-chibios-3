@@ -59,7 +59,7 @@ static void print_str(BaseSequentialStream *chp,
 
   ret = _func(bfr);
   if (ret < 0)
-    chprintf(chp, "%-20s error 0x%x\r\n", item, ret);
+    chprintf(chp, "%-19s error 0x%x\r\n", item, ret);
   else {
     chprintf(chp, "%-19s ", item);
     chprintf(chp, fmt, bfr);
@@ -77,8 +77,8 @@ static void print_byte(BaseSequentialStream *chp,
   uint8_t bfr;
 
   ret = func(&bfr);
-  if (ret < 0)
-    chprintf(chp, "%-20s error 0x%x\r\n", item, ret);
+  if (ret)
+    chprintf(chp, "%-19s error 0x%x\r\n", item, ret);
   else {
     chprintf(chp, "%-19s ", item);
     chprintf(chp, fmt, bfr);
@@ -96,8 +96,8 @@ static void print_word(BaseSequentialStream *chp,
   uint16_t bfr;
 
   ret = func(&bfr);
-  if (ret < 0)
-    chprintf(chp, "%-20s error 0x%x\r\n", item, ret);
+  if (ret)
+    chprintf(chp, "%-19s error 0x%x\r\n", item, ret);
   else {
     chprintf(chp, "%-19s ", item);
     chprintf(chp, fmt, bfr);
@@ -115,8 +115,8 @@ static void print_signed_word(BaseSequentialStream *chp,
   int16_t bfr;
 
   ret = func(&bfr);
-  if (ret < 0)
-    chprintf(chp, "%-20s error 0x%x\r\n", item, ret);
+  if (ret)
+    chprintf(chp, "%-19s error 0x%x\r\n", item, ret);
   else {
     chprintf(chp, "%-19s ", item);
     chprintf(chp, fmt, bfr);
@@ -140,7 +140,7 @@ void cmd_stats(BaseSequentialStream *chp, int argc, char *argv[]) {
   print_word(chp, "Firmware version:", ggFirmwareVersion, "0x%x");
 
   ret = ggState(&word);
-  if (ret < 0)
+  if (ret)
     chprintf(chp, "State:              error 0x%x\r\n", ret);
   else {
     int chgfet, dsgfet;

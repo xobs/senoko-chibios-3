@@ -3,24 +3,25 @@
 #include "i2c.h"
 
 #include "senoko.h"
+#include "power.h"
 
-#if !defined(HAL_USE_I2C)
+#if !HAL_USE_I2C
 #error "I2C is not enabled"
 #endif
 
 #define i2cBus (&I2CD2)
 
+static const systime_t timeout = MS2ST(25);
+
 static uint8_t i2c_registers[0x23];
 static uint8_t i2c_buffer[sizeof(i2c_registers)];
 static int current_register = 0;
-static mutex_t client_mutex, transmit_mutex;
+static binary_semaphore_t client_sem, transmit_sem;
 
-enum client_mode {
+static enum client_mode {
   I2C_MODE_SLAVE,
   I2C_MODE_MASTER,
-};
-
-static enum client_mode client_mode;
+} client_mode;
 
 static const I2CConfig senokoI2cHost = {
   OPMODE_SMBUS_HOST,
@@ -56,21 +57,30 @@ static void i2cTxFinished(I2CDriver *i2cp, size_t bytes)
 
 static void senokoI2cReinit(void)
 {
-  client_mode = I2C_MODE_SLAVE;
-  i2cStart(i2cBus, &senokoI2cDevice);
-  i2cSlaveIoTimeout(i2cBus, SENOKO_I2C_SLAVE_ADDR,
+  i2cStart(i2cBus, &senokoI2cMode);
 
-                    /* Tx buffer */
-                    i2c_registers, sizeof(i2c_registers),
+  /*
+   * Only enable I2C slave mode when the mainboard is on.  The gas gauge
+   * goes to sleep if it detects that there's nothing on the bus.
+   */
+  if (powerIsOn()) {
+    client_mode = I2C_MODE_SLAVE;
+    i2cSlaveIoTimeout(i2cBus, SENOKO_I2C_SLAVE_ADDR,
 
-                    /* Rx buffer */
-                    i2c_buffer, sizeof(i2c_buffer),
+                      /* Tx buffer */
+                      i2c_registers, sizeof(i2c_registers),
 
-                    /* Event-done callbacks */
-                    i2cTxFinished, i2cRxFinished,
+                      /* Rx buffer */
+                      i2c_buffer, sizeof(i2c_buffer),
 
-                    /* Timeout */
-                    TIME_INFINITE);
+                      /* Event-done callbacks */
+                      i2cTxFinished, i2cRxFinished,
+
+                      /* Timeout */
+                      TIME_INFINITE);
+  }
+  else
+    client_mode = I2C_MODE_MASTER;
 }
 
 void senokoI2cInit(void)
@@ -78,14 +88,15 @@ void senokoI2cInit(void)
   uint32_t reg = 0;
   int counter = 0x40;
 
+  i2cStart(i2cBus, &senokoI2cMode);
   i2c_registers[0] = 'S';
   i2c_registers[1] = SENOKO_OS_VERSION_MAJOR;
   i2c_registers[2] = SENOKO_OS_VERSION_MINOR;
   for (reg = 3; reg < sizeof(i2c_registers); reg++)
     i2c_registers[reg] = counter++;
 
-  osalMutexObjectInit(&client_mutex);
-  osalMutexObjectInit(&transmit_mutex);
+  chBSemObjectInit(&client_sem, 0);
+  chBSemObjectInit(&transmit_sem, 0);
   senokoI2cReinit();
   return;
 }
@@ -103,9 +114,6 @@ void senokoI2cInit(void)
  * @param[out] rxbuf    pointer to receive buffer
  * @param[in] rxbytes   number of bytes to be received, set it to 0 if
  *                      you want transmit only
- * @param[in] timeout   the number of ticks before the operation timeouts,
- *                      the following special values are allowed:
- *                      - @a TIME_INFINITE no timeout.
  *                      .
  *
  * @return              The operation status.
@@ -121,8 +129,7 @@ msg_t senokoI2cMasterTransmitTimeout(i2caddr_t addr,
                                      const uint8_t *txbuf,
                                      size_t txbytes,
                                      uint8_t *rxbuf,
-                                     size_t rxbytes,
-                                     systime_t timeout) {
+                                     size_t rxbytes) {
   msg_t ret;
   uint8_t rxbuf_hack[2];
   uint8_t *rxbuf_orig;
@@ -139,12 +146,12 @@ msg_t senokoI2cMasterTransmitTimeout(i2caddr_t addr,
   else
     rxbuf_do_hack = 0;
 
-  osalMutexLock(&transmit_mutex);
+  chBSemWait(&transmit_sem);
 
   /* If we're still in slave mode, temporarily flip to master mode.*/
   if (client_mode == I2C_MODE_SLAVE) {
     i2cStop(i2cBus);
-    i2cStart(i2cBus, &senokoI2cDevice);
+    i2cStart(i2cBus, &senokoI2cMode);
   }
 
   /* Work around DMA bug, where it locks up if we transfer only one byte.*/
@@ -173,34 +180,34 @@ msg_t senokoI2cMasterTransmitTimeout(i2caddr_t addr,
     senokoI2cReinit();
   }
 
-  osalMutexUnlock(&transmit_mutex);
+  chBSemSignal(&transmit_sem);
 
   return ret;
 }
 
 void senokoI2cAcquireBus(void) {
-
-  osalMutexLock(&transmit_mutex); /* Prevent transmissions.*/
-  osalMutexLock(&client_mutex);
+  chBSemWait(&client_sem);     /* Prevent use of the bus from others.*/
+  chBSemWait(&transmit_sem);   /* Prevent transmissions while switching modes.*/
 
   client_mode = I2C_MODE_MASTER;
   i2cStop(i2cBus);
-  i2cStart(i2cBus, &senokoI2cDevice);
-//  i2cAcquireBus(i2cBus);
+  i2cStart(i2cBus, &senokoI2cMode);
+  i2cAcquireBus(i2cBus);
 
-  osalMutexUnlock(&client_mutex);
-  osalMutexUnlock(&transmit_mutex);
+  chBSemSignal(&transmit_sem); /* Allow transmissions again.*/
 }
 
 void senokoI2cReleaseBus(void) {
+  chBSemWait(&transmit_sem);   /* Prevent transmissions while switching modes.*/
 
-  osalMutexLock(&transmit_mutex); /* Prevent transmissions.*/
-  osalMutexLock(&client_mutex);
-
-//  i2cReleaseBus(i2cBus);
+  i2cReleaseBus(i2cBus);
   i2cStop(i2cBus);
   senokoI2cReinit();
 
-  osalMutexUnlock(&client_mutex);
-  osalMutexUnlock(&transmit_mutex);
+  chBSemSignal(&transmit_sem); /* Allow transmissions again.*/
+  chBSemSignal(&client_sem);   /* Allow use of the bus.*/
+}
+
+int senokoI2cErrors(void) {
+  return i2cGetErrors(i2cBus);
 }
