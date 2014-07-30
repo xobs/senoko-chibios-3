@@ -737,7 +737,6 @@ int ggPermanentFailureFlags2(uint16_t *flags) {
   return gg_getflash_word(96, 28, flags);
 }
 
-#include "chprintf.h"
 int ggFullReset(void) {
   return gg_getmfgr(0x0041, NULL, 0);
 }
@@ -753,7 +752,6 @@ int ggPermanentFailureReset(void) {
                                           rx_bfr, sizeof(rx_bfr));
   if (status != MSG_OK)
     return (1 << 24) | senokoI2cErrors();
-  chprintf(stream, "PFKey: %02x %02x %02x %02x %02x", rx_bfr[0], rx_bfr[1], rx_bfr[2], rx_bfr[3], rx_bfr[4]);
 
   tx_bfr[0] = 0x00; /* Manufacturer command.*/
   tx_bfr[1] = rx_bfr[2]; /* PFkey is in SBS order, not TI order.  Reverse it.*/

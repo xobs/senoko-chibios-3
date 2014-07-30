@@ -20,6 +20,9 @@
 #include "chprintf.h"
 #include "senoko.h"
 
+/* Global stream variable, lets modules use chprintf().*/
+void *stream;
+
 void cmd_threads(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_mem(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]);
@@ -29,13 +32,13 @@ void cmd_leds(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_reboot(BaseSequentialStream *chp, int argc, char *argv[]);
 
 static const ShellCommand shellCommands[] = {
-  {"mem", cmd_mem},
-  {"threads", cmd_threads},
+  {"chg", cmd_chg},
   {"gg", cmd_gg},
   {"leds", cmd_leds},
-  {"chg", cmd_chg},
+  {"mem", cmd_mem},
   {"stats", cmd_stats},
   {"reboot", cmd_reboot},
+  {"threads", cmd_threads},
   {NULL, NULL}
 };
 
@@ -50,8 +53,6 @@ static const SerialConfig serialConfig = {
   0,
   0,
 };
-
-void *stream;
 
 static thread_t *shell_tp = NULL;
 static THD_WORKING_AREA(waShellThread, 2048);
