@@ -107,6 +107,7 @@ CSRC = $(PORTSRC) \
        cmd-gg.c \
        cmd-leds.c \
        cmd-mem.c \
+       cmd-reboot.c \
        cmd-stats.c \
        cmd-threads.c \
        gg.c \

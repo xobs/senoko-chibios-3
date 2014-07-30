@@ -3,6 +3,8 @@
 
 void powerOff(void);
 void powerOn(void);
+int powerIsOn(void);
+int powerIsOff(void);
 void powerToggle(void);
 void powerInit(void);
 

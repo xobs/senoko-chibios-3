@@ -20,6 +20,7 @@
 #include "shell.h"
 #include "chprintf.h"
 #include "i2c.h"
+#include "iwdg.h"
 
 #include "senoko.h"
 #include "senoko-i2c.h"
@@ -35,6 +36,12 @@ static const SerialConfig serialConfig = {
   0,
   0,
 };
+
+static const IWDGConfig watchdogConfig = {
+  MS2ST(1000), /* counter */
+  IWDG_DIV_64, /* div */
+};
+
 void *stream;
 
 /*
@@ -56,16 +63,14 @@ int main(void) {
   /* Set up I2C early, to prevent conflicting with the RAM DDC. */
   senokoI2cInit();
 
-  /* Pull GG_SYSPRES low to bring it out of reset, and enable RAM DDC. */
-  palWritePad(GPIOA, PA11, 0);
-
   /* Start serial, so we can get status output */
   sdStart(serialDriver, &serialConfig);
   stream = stream_driver;
 
   shellInit();
+  iwdgInit();
 
-  chprintf(stream, "\r\nResetting Senoko (Ver %d.%d, git version %s)\r\n", 
+  chprintf(stream, "\r\nStarting Senoko (Ver %d.%d, git version %s)\r\n", 
       SENOKO_OS_VERSION_MAJOR,
       SENOKO_OS_VERSION_MINOR,
       gitversion);
@@ -74,15 +79,7 @@ int main(void) {
   powerInit();
   ggInit();
 
-  chThdSleepMilliseconds(1500);
-  ggSetLeds(1);
-  chThdSleepMilliseconds(1500);
-  ggPermanentFailureReset();
-  ggSetLeds(-1);
-  chThdSleepMilliseconds(1500);
-  ggSetLeds(1);
-  chThdSleepMilliseconds(1500);
-  ggSetLeds(0);
+  iwdgStart(&IWDGD, &watchdogConfig);
 
   while (TRUE) {
     if (shellTerminated()) {
@@ -90,6 +87,7 @@ int main(void) {
       shellRestart();
     }
     chThdSleepMilliseconds(500);
+    iwdgReset(&IWDGD);
   }
 
   return 0;
