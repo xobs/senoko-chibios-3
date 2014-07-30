@@ -115,6 +115,7 @@ CSRC = $(PORTSRC) \
        power.c \
        senoko-i2c.c \
        senoko-shell.c \
+       senoko-wdt.c \
        main.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
