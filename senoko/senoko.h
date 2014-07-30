@@ -12,4 +12,8 @@ extern const char *gitversion;
 #define stream_driver ((BaseSequentialStream *)serialDriver)
 extern void *stream;
 
+#ifndef ARRAY_SIZE
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof(*x))
+#endif
+
 #endif /* __SENOKO_H__ */
