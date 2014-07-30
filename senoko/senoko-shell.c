@@ -44,23 +44,29 @@ static const ShellConfig shellConfig = {
   shellCommands
 };
 
-static thread_t *shellTp = NULL;
+static const SerialConfig serialConfig = {
+  115200,
+  0,
+  0,
+  0,
+};
+
+void *stream;
+
+static thread_t *shell_tp = NULL;
 static THD_WORKING_AREA(waShellThread, 2048);
 
-int shellTerminated(void)
-{
-  if (!shellTp)
-    return TRUE;
-  if (chThdTerminatedX(shellTp)) {
-    /* Recovers memory of the previous shell. */
-    chThdRelease(shellTp);
-    return TRUE;
-  }
-  return FALSE;
+void senokoShellInit(void) {
+  sdStart(serialDriver, &serialConfig);
+  stream = stream_driver;
+
+  shellInit();
 }
 
-void shellRestart(void)
-{
-  shellTp = shellCreateStatic(&shellConfig, waShellThread,
+void senokoShellRestart(void) {
+  /* Recovers memory of the previous shell. */
+  if (shell_tp && chThdTerminatedX(shell_tp))
+    chThdRelease(shell_tp);
+  shell_tp = shellCreateStatic(&shellConfig, waShellThread,
                               sizeof(waShellThread), NORMALPRIO);
 }
