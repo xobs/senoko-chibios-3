@@ -25,30 +25,29 @@
 #include "senoko.h"
 #include "senoko-i2c.h"
 #include "senoko-shell.h"
+#include "senoko-wdt.h"
 
 #include "chg.h"
 #include "power.h"
 #include "gg.h"
 
-static const SerialConfig serialConfig = {
-  115200,
-  0,
-  0,
-  0,
-};
+static void shell_termination_handler(eventid_t id) {
+  static int i = 1;
+  (void)id;
 
-static const IWDGConfig watchdogConfig = {
-  MS2ST(1000), /* counter */
-  IWDG_DIV_64, /* div */
-};
+  chprintf(stream, "\r\nRespawning shell (shell #%d)\r\n", ++i);
+  senokoShellRestart();
+}
 
-void *stream;
+static evhandler_t event_handlers[] = {
+  shell_termination_handler,
+};
 
 /*
  * Application entry point.
  */
 int main(void) {
-  int i = 0;
+  event_listener_t event_listener;
 
   /*
    * System initializations.
@@ -64,31 +63,30 @@ int main(void) {
   senokoI2cInit();
 
   /* Start serial, so we can get status output */
-  sdStart(serialDriver, &serialConfig);
-  stream = stream_driver;
+  senokoShellInit();
 
-  shellInit();
-  iwdgInit();
+  chEvtRegister(&shell_terminated, &event_listener, 0);
 
   chprintf(stream, "\r\nStarting Senoko (Ver %d.%d, git version %s)\r\n", 
       SENOKO_OS_VERSION_MAJOR,
       SENOKO_OS_VERSION_MINOR,
       gitversion);
 
+  /* Turn on the charger (and start charging, if necessary).*/
   chgInit();
+
+  /* Turn on mainboard and synchronize power state.*/
   powerInit();
+
+  /* Power up gas gauge.*/
   ggInit();
 
-  iwdgStart(&IWDGD, &watchdogConfig);
+  /* Start the Senoko watchdog timer thread.*/
+  senokoWatchdogInit();
 
-  while (TRUE) {
-    if (shellTerminated()) {
-      chprintf(stream, "Spawning new shell (shell #%d)\r\n", i++);
-      shellRestart();
-    }
-    chThdSleepMilliseconds(500);
-    iwdgReset(&IWDGD);
-  }
+  senokoShellRestart();
+  while (TRUE)
+    chEvtDispatch(event_handlers, chEvtWaitOne(ALL_EVENTS));
 
   return 0;
 }
