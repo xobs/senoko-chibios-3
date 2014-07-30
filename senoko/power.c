@@ -9,7 +9,7 @@ enum power_state {
   power_off = 0,
   power_on = 1,
 };
-static enum power_state power_state;
+static enum power_state power_state = power_off;
 
 static void power_set_state(enum power_state state) {
   palWritePad(GPIOB, PB15, state);
@@ -18,10 +18,16 @@ static void power_set_state(enum power_state state) {
 }
 
 void powerOff(void) {
-  //power_set_state(power_off);
-#warning "Power off is disabled!"
-  power_set_state(power_on);
+  power_set_state(power_off);
   return;
+}
+
+int powerIsOn(void) {
+  return power_state == power_on;
+}
+
+int powerIsOff(void) {
+  return power_state == power_off;
 }
 
 void powerOn(void) {

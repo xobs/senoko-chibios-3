@@ -96,7 +96,15 @@ void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]) {
     chprintf(chp, "Resetting permanent failure flags...");
     ret = ggPermanentFailureReset();
     if (ret != MSG_OK)
-      chprintf(chp, "Error: %x\r\n", ret);
+      chprintf(chp, " Error: %x\r\n", ret);
+    else
+      chprintf(chp, " ok.\r\n");
+  }
+  else if (is_command(argc, argv, "reset")) {
+    chprintf(chp, "Resetting gas gauge completely...");
+    ret = ggFullReset();
+    if (ret != MSG_OK)
+      chprintf(chp, " Error: %x\r\n", ret);
     else
       chprintf(chp, " ok.\r\n");
   }
@@ -108,6 +116,7 @@ void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]) {
       "gg cells [3/4]   Set cell count\r\n"
       "gg cal           Calibrate battery pack\r\n"
       "gg pfreset       Reset permanent failure fuse\r\n"
+      "gg reset         Reset gas gauge completely\r\n"
       );
     return;
   }

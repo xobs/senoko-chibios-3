@@ -87,6 +87,13 @@
 #endif
 
 /**
+ * @brief   Enables the watchdog subsystem.
+ */
+#if !defined(HAL_USE_IWDG) || defined(__DOXYGEN__)
+#define HAL_USE_IWDG                TRUE
+#endif
+
+/**
  * @brief   Enables the MAC subsystem.
  */
 #if !defined(HAL_USE_MAC) || defined(__DOXYGEN__)

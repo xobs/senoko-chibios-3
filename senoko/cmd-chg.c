@@ -28,12 +28,14 @@ void cmd_chg(BaseSequentialStream *chp, int argc, char *argv[]) {
   if (argc == 0) {
     uint16_t word = 0;
     uint16_t current, voltage, input;
-    chprintf(chp, "\tCurrent is measured in mA, voltage in mV\r\n");
+
+    chprintf(chp, "Current is measured in mA, voltage in mV\r\n");
 
     ret = chgGetManuf(&word);
     if (ret < 0)
       chprintf(chp, "\tError getting manufacturer: 0x%x\r\n", ret);
-    chprintf(chp, "\tChager manufacturer ID: 0x%04x\r\n", word);
+    else
+      chprintf(chp, "\tChager manufacturer ID: 0x%04x\r\n", word);
 
     chgGetDevice(&word);
     chprintf(chp, "\tChager device ID: 0x%04x\r\n", word);
@@ -45,7 +47,7 @@ void cmd_chg(BaseSequentialStream *chp, int argc, char *argv[]) {
     return;
   }
 
-  if (argc == 1) {
+  else if (argc == 1) {
     chprintf(chp, "Disabling charging\r\n");
     ret = chgSet(0, 0, 0);
     if (ret < 0)
@@ -53,16 +55,19 @@ void cmd_chg(BaseSequentialStream *chp, int argc, char *argv[]) {
     return;
   }
 
-  if (argc == 2 && argv[1][0] == '+') {
+  else if (argc == 2 && argv[1][0] == '+') {
     chprintf(chp, "Enabling CHG_CE\r\n");
     palWritePad(GPIOA, PA12, 1);
   }
+
   else if (argc == 2 && argv[1][0] == '-') {
     chprintf(chp, "Disabling CHG_CE\r\n");
     palWritePad(GPIOA, PA12, 0);
   }
+
   else {
     uint32_t current, voltage, input;
+
     input = 1024; /* mA */
     current = strtoul(argv[0], NULL, 0);
     voltage = strtoul(argv[1], NULL, 0);
@@ -81,7 +86,7 @@ void cmd_chg(BaseSequentialStream *chp, int argc, char *argv[]) {
 
     /* Figure/check voltage */
     if (voltage > 19200) {
-      chprintf(chp, "Error: That's an awful lot of voltage\r\n");
+      chprintf(chp, "Error: 19.2V is the max voltage\r\n");
       return;
     }
 

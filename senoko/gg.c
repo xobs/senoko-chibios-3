@@ -9,9 +9,6 @@
 
 #define GG_ADDR 0xb
 
-/* SMBus times out after 25ms in hardware */
-static const systime_t tmo = TIME_INFINITE;
-
 static const struct cell_cfg {
   uint16_t pov_threshold;
   uint16_t pov_recovery;
@@ -144,7 +141,7 @@ static const struct gg_string {
 };
 
 int ggInit(void) {
-  /* Pull GG_SYSPRES low to bring it out of reset */
+  /* Pull GG_SYSPRES low to bring gas gauge out of reset.*/
   palWritePad(GPIOA, PA11, 0);
   return 0;
 }
@@ -162,15 +159,13 @@ static int gg_getmfgr(uint16_t reg, void *data, int size)
 
   status = senokoI2cMasterTransmitTimeout(GG_ADDR,
                                           bfr, 3,
-                                          NULL, 0,
-                                          tmo);
+                                          NULL, 0);
   if (data && size)
     status = senokoI2cMasterTransmitTimeout(GG_ADDR,
                                             bfr, 1,
-                                            data, size,
-                                            tmo);
+                                            data, size);
   if (status != MSG_OK)
-    return status;
+    return senokoI2cErrors();
 
   if (data && size == 2) {
     tmp = data8[0];
@@ -186,11 +181,10 @@ static int gg_getblock(uint8_t reg, void *data, int size)
 
   status = senokoI2cMasterTransmitTimeout(GG_ADDR,
                                           &reg, sizeof(reg),
-                                          data, size,
-                                          tmo);
+                                          data, size);
 
   if (status != MSG_OK)
-    return status;
+    return senokoI2cErrors();
   return 0;
 }
 
@@ -211,10 +205,9 @@ static int gg_getflash(uint8_t subclass, uint8_t offset, void *data, int size) {
 
   status = senokoI2cMasterTransmitTimeout(GG_ADDR,
                                           bfr, sizeof(bfr),
-                                          NULL, 0,
-                                          tmo);
+                                          NULL, 0);
   if (status != MSG_OK) {
-    status = -1;
+    status = 1;
     goto err;
   }
 
@@ -229,8 +222,7 @@ static int gg_getflash(uint8_t subclass, uint8_t offset, void *data, int size) {
       int i = 1 + (offset & 31);
       status = senokoI2cMasterTransmitTimeout(GG_ADDR,
                                               &reg, sizeof(reg),
-                                              temp_buffer, 33,
-                                              tmo);
+                                              temp_buffer, 33);
       while ((offset & 31) && (size > 0)) {
         *cdata++ = temp_buffer[i++];
         offset++;
@@ -247,14 +239,13 @@ static int gg_getflash(uint8_t subclass, uint8_t offset, void *data, int size) {
 
       status = senokoI2cMasterTransmitTimeout(GG_ADDR,
                                               &reg, sizeof(reg),
-                                              temp_buffer, to_read,
-                                              tmo);
+                                              temp_buffer, to_read);
       memcpy(cdata, temp_buffer + 1, to_read - 1);
       size  -= 32;
       cdata += 32;
     }
     if (status != MSG_OK) {
-      status = -2;
+      status = 2;
       goto err;
     }
     reg++;
@@ -263,7 +254,7 @@ static int gg_getflash(uint8_t subclass, uint8_t offset, void *data, int size) {
   return 0;
 
 err:
-  return status;
+  return (status << 24) | senokoI2cErrors();
 }
 
 static int gg_setflash(uint8_t subclass, uint8_t offset, void *data, int size) {
@@ -292,10 +283,9 @@ static int gg_setflash(uint8_t subclass, uint8_t offset, void *data, int size) {
   bfr[2] = subclass>>8;
   status = senokoI2cMasterTransmitTimeout(GG_ADDR,
                                           bfr, sizeof(bfr),
-                                          NULL, 0,
-                                          tmo);
+                                          NULL, 0);
   if (status < 0) {
-    status = -3;
+    status = 3;
     goto err;
   }
 
@@ -319,10 +309,9 @@ static int gg_setflash(uint8_t subclass, uint8_t offset, void *data, int size) {
 
     status = senokoI2cMasterTransmitTimeout(GG_ADDR,
                                             temp_buffer, write_size,
-                                            NULL, 0,
-                                            tmo);
+                                            NULL, 0);
     if (status != MSG_OK) {
-      status = -4;
+      status = 4;
       goto err;
     }
 
@@ -333,7 +322,7 @@ static int gg_setflash(uint8_t subclass, uint8_t offset, void *data, int size) {
   return 0;
 
 err:
-  return status;
+  return (status << 24) | senokoI2cErrors();
 }
 
 static int gg_setflash_word(uint8_t subclass, uint8_t offset, uint16_t data) {
@@ -369,11 +358,10 @@ static int gg_setblock(uint8_t reg, void *data, int size) {
 
   status = senokoI2cMasterTransmitTimeout(GG_ADDR,
                                           bfr, size+1,
-                                          NULL, 0,
-                                          tmo);
+                                          NULL, 0);
 
   if (status != MSG_OK)
-    return status;
+    return senokoI2cErrors();
   return 0;
 }
 
@@ -749,38 +737,41 @@ int ggPermanentFailureFlags2(uint16_t *flags) {
   return gg_getflash_word(96, 28, flags);
 }
 
+#include "chprintf.h"
+int ggFullReset(void) {
+  return gg_getmfgr(0x0041, NULL, 0);
+}
+
 int ggPermanentFailureReset(void) {
   msg_t status;
-  uint8_t tx_bfr[5];
-  uint8_t rx_bfr[4];
+  uint8_t tx_bfr[3];
+  uint8_t rx_bfr[5];
 
-  tx_bfr[0] = 0x62;
+  tx_bfr[0] = 0x62; /* Get PFKey command.*/
   status = senokoI2cMasterTransmitTimeout(GG_ADDR,
                                           tx_bfr, 1,
-                                          rx_bfr, 4,
-                                          tmo);
+                                          rx_bfr, sizeof(rx_bfr));
   if (status != MSG_OK)
-    return status;
+    return (1 << 24) | senokoI2cErrors();
+  chprintf(stream, "PFKey: %02x %02x %02x %02x %02x", rx_bfr[0], rx_bfr[1], rx_bfr[2], rx_bfr[3], rx_bfr[4]);
 
   tx_bfr[0] = 0x00; /* Manufacturer command.*/
-  tx_bfr[1] = rx_bfr[1]; /* PFkey is in SBS order, not TI order.  Reverse it.*/
-  tx_bfr[2] = rx_bfr[0]; /* PFkey is in SBS order, not TI order.  Reverse it.*/
-  tx_bfr[3] = rx_bfr[3]; /* PFkey is in SBS order, not TI order.  Reverse it.*/
-  tx_bfr[4] = rx_bfr[2]; /* PFkey is in SBS order, not TI order.  Reverse it.*/
-
+  tx_bfr[1] = rx_bfr[2]; /* PFkey is in SBS order, not TI order.  Reverse it.*/
+  tx_bfr[2] = rx_bfr[1]; /* PFkey is in SBS order, not TI order.  Reverse it.*/
   status = senokoI2cMasterTransmitTimeout(GG_ADDR,
-                                          tx_bfr, 3,
-                                          NULL, 0,
-                                          tmo);
+                                          tx_bfr, sizeof(tx_bfr),
+                                          NULL, 0);
   if (status != MSG_OK)
-    return status;
+    return (2 << 24) | senokoI2cErrors();
 
-  tx_bfr[0] = 0x00; /* Manufacturer command.*/
-  tx_bfr[1] = rx_bfr[3]; /* PFkey is in SBS order, not TI order.  Reverse it.*/
-  tx_bfr[2] = rx_bfr[2]; /* PFkey is in SBS order, not TI order.  Reverse it.*/
+  tx_bfr[0] = 0x00;
+  tx_bfr[1] = rx_bfr[4]; /* PFkey is in SBS order, not TI order.  Reverse it.*/
+  tx_bfr[2] = rx_bfr[3]; /* PFkey is in SBS order, not TI order.  Reverse it.*/
   status = senokoI2cMasterTransmitTimeout(GG_ADDR,
-                                          tx_bfr, 3,
-                                          NULL, 0,
-                                          tmo);
-  return status;
+                                          tx_bfr, sizeof(tx_bfr),
+                                          NULL, 0);
+  if (status != MSG_OK)
+    return (3 << 24) | senokoI2cErrors();
+
+  return 0;
 }
