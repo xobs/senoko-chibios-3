@@ -27,6 +27,10 @@
 #define BOARD_KOSAGI_STM32F1_SENOKO
 #define BOARD_NAME                  "Senoko STM32F1"
 
+/*
+ * General ARM Cortex settings.
+ */
+#define CORTEX_ENABLE_WFI_IDLE              TRUE
 
 /*
  * Board oscillators-related settings.
@@ -39,7 +43,6 @@
 #if !defined(STM32_HSECLK)
 #define STM32_HSECLK                0
 #endif
-
 
 /*
  * Board voltages.
