@@ -61,9 +61,9 @@ static const PWMConfig pwmc3 = {
 void ledSetRGB(void *ptr, int x, uint8_t r, uint8_t g, uint8_t b)
 {
   uint8_t *buf = ((uint8_t *)ptr) + (3 * x);
-  buf[0] = g / 8;
-  buf[1] = r / 8;
-  buf[2] = b / 8;
+  buf[0] = g;
+  buf[1] = r;
+  buf[2] = b;
 }
 
 /**
@@ -127,26 +127,27 @@ static void unpackFramebuffer(void *ptr, uint32_t flags)
  *
  */
 
-void ledDriverInit(int leds, GPIO_TypeDef *port, uint32_t mask, uint8_t **fb)
-{
+void *ledDriverInit(int leds, GPIO_TypeDef *port, uint32_t mask) {
   int j;
+  uint8_t *fb;
   maxPixels = leds;
   sPort = port;
   sMask = (mask << 16) & 0xffff0000;
 
-  (*fb) = chHeapAlloc(NULL, maxPixels * 3);
+  fb = chHeapAlloc(NULL, maxPixels * 3);
   for (j = 0; j < maxPixels * 3; j++)
-    (*fb)[j] = 0;
+    fb[j] = 0;
 
   /* "SET" bits */
   dma_source[pin_set] = mask & 0xffff;
   dma_source[pin_clear] = (mask << 16) & 0xffff0000;
 
-  return;
+  return fb;
 }
 
-void ledDriverStart(uint8_t *fb)
+void ledDriverStart(void *_fb)
 {
+  uint8_t *fb = _fb;
   /* DMA stream 2, triggered by channel3 pwm signal.  If FB indicates,
      reset output value early to indicate "0" bit to ws2812. */
   dmaStreamAllocate(STM32_DMA1_STREAM2, 10, unpackFramebuffer, fb);
@@ -218,90 +219,3 @@ void ledDriverStop(void)
   dmaStreamDisable(STM32_DMA1_STREAM3);
 }
 
-#define ptr_start ((int *)0x08000000)
-#define ptr_end ((int *)0x8008000)
-static int rand(void)
-{
-  static int *ptr = ptr_start;
-  if (ptr > ptr_end)
-    ptr = ptr_start;
-  return *ptr++;
-}
-
-static Color Wheel(uint8_t wheelPos) {
-  Color c;
-
-  if (wheelPos < 85) {
-    c.r = wheelPos * 3;
-    c.g = 255 - wheelPos * 3;
-    c.b = 0;
-  }
-  else if (wheelPos < 170) {
-    wheelPos -= 85;
-    c.r = 255 - wheelPos * 3;
-    c.g = 0;
-    c.b = wheelPos * 3;
-  }
-  else {
-    wheelPos -= 170;
-    c.r = 0;
-    c.g = wheelPos * 3;
-    c.b = 255 - wheelPos * 3;
-  }
-  return c;
-}
-
-static void calmPatternFB(uint8_t *fb, int count)
-{
-  int i;
-  static int j = 0;
-  count &= 0xff;
-  
-  j = j % (256 * 5);
-  for (i = 0; i < maxPixels; i++) {
-    Color c;
-    c = Wheel( (i * (256 / maxPixels) + j) & 0xFF );
-    ledSetRGB(fb, i, c.r, c.g, c.b);
-  }
-  j += 2;
-}
-
-static void testPatternFB(uint8_t *fb)
-{
-  int i = 0;
-
-  ledSetRGB(fb, i++, 0, 0, 0);
-  ledSetRGB(fb, i++, 255, 0, 0);
-  ledSetRGB(fb, i++, 0, 255, 0);
-  ledSetRGB(fb, i++, 0, 0, 255);
-  ledSetRGB(fb, i++, 255, 0, 255);
-  ledSetRGB(fb, i++, 255, 255, 0);
-  ledSetRGB(fb, i++, 0, 255, 255);
-
-  for (; i < maxPixels; i++)
-    ledSetRGB(fb, i, 255, 255, 255);
-}
-
-static void shootPatternFB(uint8_t *fb, int count)
-{
-  count %= maxPixels;
-  int i;
-
-  for (i = 0; i < maxPixels; i++) {
-    if (count == i)
-      ledSetRGB(fb, i, 255, 255, 255);
-    else
-      ledSetRGB(fb, i, 0, 0, 0);
-  }
-}
-
-void runPatternFB(uint8_t *fb, enum pattern p, int count, uint32_t param)
-{
-  (void)param;
-  if (p == patternShoot)
-    shootPatternFB(fb, count);
-  else if (p == patternCalm)
-    calmPatternFB(fb, count);
-  else if (p == patternTest)
-    testPatternFB(fb);
-}

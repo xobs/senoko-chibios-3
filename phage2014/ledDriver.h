@@ -19,16 +19,9 @@ struct Color {
   uint8_t b;
 };
 
-void ledDriverInit(int leds, GPIO_TypeDef *port, uint32_t mask, uint8_t **o_fb);
-void ledDriverStart(uint8_t *fb);
+void *ledDriverInit(int leds, GPIO_TypeDef *port, uint32_t mask);
+void ledDriverStart(void *fb);
 void ledDriverStop(void);
-
-enum pattern {
-  patternCalm,
-  patternTest,
-  patternShoot,
-};
-
-void runPatternFB(uint8_t *fb, enum pattern, int count, uint32_t param1);
+void ledSetRGB(void *ptr, int x, uint8_t r, uint8_t g, uint8_t b);
 
 #endif /* LEDDRIVER_H_ */

@@ -5,8 +5,8 @@
 #include <stdlib.h>
 #include "chprintf.h"
 
-#include "radio.h"
-#include "phage2014.h"
+#include "cmd-radio.h"
+#include "phage.h"
 
 /* PA0 */
 void radioAddressMatch(EXTDriver *extp, expchannel_t channel)
@@ -83,12 +83,13 @@ void radioStart(void)
 }
 
 static uint32_t addr = 0;
-void cmdRadio(BaseSequentialStream *chp, int argc, char *argv[])
+void cmd_radio(BaseSequentialStream *chp, int argc, char *argv[])
 {
   uint8_t byte;
   uint8_t dat[11];
   uint32_t currAddr;
 
+  (void)argv;
 
   chprintf(chp, "argc: %d\r\n", argc);
   if (argc == 1) {
@@ -118,4 +119,3 @@ void cmdRadio(BaseSequentialStream *chp, int argc, char *argv[])
 
   return;
 }
-

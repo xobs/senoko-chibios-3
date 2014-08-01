@@ -20,96 +20,47 @@
 #include "ext.h"
 #include "shell.h"
 #include "chprintf.h"
+
 #include "ledDriver.h"
-#include "keypress.h"
-#include "radio.h"
+#include "effects.h"
+#include "phage.h"
+#include "phage-shell.h"
+#include "phage-events.h"
+#include "phage-wdt.h"
 
-#include "phage2014.h"
-#include "phage2014-shell.h"
+#define LED_COUNT 22
 
-static uint32_t currentPattern = patternCalm;
+static void shell_termination_handler(eventid_t id) {
+  static int i = 1;
+  (void)id;
 
-static const SerialConfig serialConfig = {
-  115200,
-  0,
-  0,
-  0,
+  chprintf(stream, "\r\nRespawning shell (shell #%d)\r\n", ++i);
+  phageShellRestart();
+}
+
+static void power_button_pressed_handler(eventid_t id) {
+    (void)id;
+      chprintf(stream, " [Button pressed] ");
+}
+
+static void power_button_released_handler(eventid_t id) {
+    (void)id;
+      chprintf(stream, " [Button released] ");
+}
+
+static evhandler_t event_handlers[] = {
+  shell_termination_handler,
+  power_button_pressed_handler,
+  power_button_released_handler,
 };
 
-static const EXTConfig extConfig = {
-  {
-    {EXT_CH_MODE_FALLING_EDGE     /* PA0 */
-      | EXT_CH_MODE_AUTOSTART
-      | EXT_MODE_GPIOA, radioAddressMatch},
-    {EXT_CH_MODE_DISABLED, NULL}, /* PA1 */
-    {EXT_CH_MODE_DISABLED, NULL}, /* PA2 */
-    {EXT_CH_MODE_DISABLED, NULL}, /* PA3 */
-    {EXT_CH_MODE_BOTH_EDGES     /* PB4 */
-      | EXT_CH_MODE_AUTOSTART
-      | EXT_MODE_GPIOB, keyISR},
-    {EXT_CH_MODE_BOTH_EDGES     /* PB5 */
-      | EXT_CH_MODE_AUTOSTART
-      | EXT_MODE_GPIOB, keyISR},
-    {EXT_CH_MODE_DISABLED, NULL}, /* PA6 */
-    {EXT_CH_MODE_DISABLED, NULL}, /* PA7 */
-    {EXT_CH_MODE_DISABLED, NULL}, /* PA8 */
-    {EXT_CH_MODE_DISABLED, NULL}, /* PA9 */
-    {EXT_CH_MODE_DISABLED, NULL}, /* PA10 */
-    {EXT_CH_MODE_FALLING_EDGE     /* PA11 */
-      | EXT_CH_MODE_AUTOSTART
-      | EXT_MODE_GPIOA, radioDataReceived},
-    {EXT_CH_MODE_FALLING_EDGE     /* PA12 */
-      | EXT_CH_MODE_AUTOSTART
-      | EXT_MODE_GPIOA, radioCarrier},
-    {EXT_CH_MODE_BOTH_EDGES     /* PA13 */
-      | EXT_CH_MODE_AUTOSTART
-      | EXT_MODE_GPIOA, keyISR},
-    {EXT_CH_MODE_DISABLED, NULL}, /* PA14 */
-    {EXT_CH_MODE_BOTH_EDGES     /* PA15 */
-      | EXT_CH_MODE_AUTOSTART
-      | EXT_MODE_GPIOA, keyISR},
-  }
-};
+static event_listener_t event_listeners[ARRAY_SIZE(event_handlers)];
 
-#if ANNOYING_BLINK
-static THD_WORKING_AREA(waThread1, 128);
-static msg_t Thread1(void *arg)
-{
-
-  int i = 0;
-
-  (void)arg;
-
-  chRegSetThreadName("text");
-  while (TRUE) {
-    i++;
-
-    /* Blink the LED */
-    palWritePad(GPIOA, PA2, (i & 1) ? PAL_LOW : PAL_HIGH);
-
-    chThdSleepMilliseconds(250);
-  }
-  return 0;
-}
-#endif
-
-
-void keyPressHook(enum keychar key, int state)
-{
-  if (state && (key == KEY_0))
-    currentPattern = patternCalm;
-  if (state && (key == KEY_1))
-    currentPattern = patternTest;
-  if (state && (key == KEY_2))
-    currentPattern = patternShoot;
-}
 /*
  * Application entry point.
  */
 int main(void) {
-  int i = 0;
   uint8_t *framebuffer;
-  //event_listener_t keyListener;
 
   /*
    * System initializations.
@@ -121,47 +72,34 @@ int main(void) {
   halInit();
   chSysInit();
 
-  /* Start serial, so we can get status output */
-  sdStart(serialDriver, &serialConfig);
+  /* Start up serial console.*/
+  phageShellInit();
+  chEvtRegister(&shell_terminated, &event_listeners[0], 0);
 
-  shellInit();
+  /* Listen to GPIO events (e.g. button presses, status changes).*/
+  phageEventsInit();
+  chEvtRegister(&power_button_pressed, &event_listeners[1], 1);
+  chEvtRegister(&power_button_released, &event_listeners[2], 2);
 
-  chprintf(stream, "\r\nResetting Phage2014 (Ver %d.%d, git version %s)\r\n", 
-      PHAGE2014_OS_VERSION_MAJOR,
-      PHAGE2014_OS_VERSION_MINOR,
+  chprintf(stream, "\r\nStarting Phage (Ver %d.%d, git version %s)\r\n", 
+      PHAGE_OS_VERSION_MAJOR,
+      PHAGE_OS_VERSION_MINOR,
       gitversion);
 
-  /* Begin listening to GPIOs (e.g. the button) */
-  extStart(&EXTD1, &extConfig);
-
-  keyInit();
-
-//  radioStart();
-
-  ledDriverInit((60 * 4), GPIOB, 0b11, &framebuffer);
-  chprintf(stream, "Framebuffer address: 0x%08x\r\n", framebuffer);
+  framebuffer = ledDriverInit(LED_COUNT, GPIOB, 0b11);
+  chprintf(stream, "\tFramebuffer address: 0x%08x\r\n", framebuffer);
   ledDriverStart(framebuffer);
 
-#if ANNOYING_BLINK
-  chprintf(stream, "Launching Thread1...\r\n");
-  chThdCreateStatic(waThread1, sizeof(waThread1),
-                    NORMALPRIO + 10, Thread1, stream);
-#endif
+  /* Start the Phage watchdog timer thread.*/
+  phageWatchdogInit();
 
-  int loop = 0;
-  while (TRUE) {
+  /* Start LED effects.*/
+  effectsStart(framebuffer, LED_COUNT);
 
-    runPatternFB(framebuffer, currentPattern, loop, 0);
-
-    if (shellTerminated()) {
-      chprintf(stream, "Spawning new shell (shell #%d)\r\n", i++);
-      shellRestart();
-    }
-
-    /* Wait 500ms for an event */
-    chThdSleepMilliseconds(20);
-    loop++;
-  }
+  /* Enter main event loop.*/
+  phageShellRestart();
+  while (TRUE)
+    chEvtDispatch(event_handlers, chEvtWaitOne(ALL_EVENTS));
 
   return 0;
 }
