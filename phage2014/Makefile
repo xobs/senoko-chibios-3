@@ -103,12 +103,15 @@ CSRC = $(PORTSRC) \
        $(CHIBIOS)/os/various/chprintf.c \
        ledDriver.c \
        bionic.c \
+       cmd-accel.c \
        cmd-mem.c \
        cmd-radio.c \
        cmd-reboot.c \
        cmd-threads.c \
        effects.c \
        gitversion.c \
+       phage-accel.c \
+       phage-i2c.c \
        phage-shell.c \
        phage-events.c \
        phage-wdt.c \
