@@ -32,24 +32,45 @@ void phageAccelInit(void) {
 
   uint8_t reg[2];
 
+  /* Reset the accelerometer by writing a 1 to bit 6 of 0x2b.*/
+  reg[0] = 0x2b;
+  reg[1] = (1 << 6);
+  phageI2cMasterTransmitTimeout(ACCEL_ADDR,
+                                reg, sizeof(reg),
+                                NULL, 0);
+
   /* Enable accelerometer by setting CTRL_REG1.  We only need to enable
      the ACTIVE bit (bit 0).*/
   reg[0] = 0x2a;
   reg[1] = 0x01;
   phageI2cMasterTransmitTimeout(ACCEL_ADDR,
-                                      reg, sizeof(reg),
-                                      NULL, 0);
+                                reg, sizeof(reg),
+                                NULL, 0);
 
   /* Enable portrait/landscape detection.*/
   reg[0] = 0x11;
   reg[1] = 0xc0;
   phageI2cMasterTransmitTimeout(ACCEL_ADDR,
+                                reg, sizeof(reg),
+                                NULL, 0);
+
+  /* Enable motion detect on all axes.*/
+  reg[0] = 0x15;
+  reg[1] = 0x78;
+  phageI2cMasterTransmitTimeout(ACCEL_ADDR,
+                                reg, sizeof(reg),
+                                NULL, 0);
+
+  /* Set motion to be really really sensitive */
+  reg[0] = 0x17;
+  reg[1] = 0xa8;
+  phageI2cMasterTransmitTimeout(ACCEL_ADDR,
                                       reg, sizeof(reg),
                                       NULL, 0);
 
-  /* Enable freefall detect on all axes.*/
-  reg[0] = 0x15;
-  reg[1] = 0xf8;
+  /* Enable wake-from-sleep for IRQs.*/
+  reg[0] = 0x2c;
+  reg[1] = (1 << 5) | (1 << 3) | (1 << 1);
   phageI2cMasterTransmitTimeout(ACCEL_ADDR,
                                       reg, sizeof(reg),
                                       NULL, 0);
@@ -57,14 +78,14 @@ void phageAccelInit(void) {
   /* Enable accelerometer IRQs.  Enable interupts for both Freefall (bit 2)
      and Orientation (bit 4).*/
   reg[0] = 0x2d;
-  reg[1] = 0x14;
+  reg[1] = (1 << 4) | (1 << 2) | (1 << 0);
   phageI2cMasterTransmitTimeout(ACCEL_ADDR,
                                       reg, sizeof(reg),
                                       NULL, 0);
 
   /* Map Freefall to IRQ 2.  Leave Orientation on IRQ 1.*/
   reg[0] = 0x2e;
-  reg[1] = 0x10;
+  reg[1] = (1 << 2);
   phageI2cMasterTransmitTimeout(ACCEL_ADDR,
                                       reg, sizeof(reg),
                                       NULL, 0);
