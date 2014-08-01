@@ -25,6 +25,7 @@
 #include "effects.h"
 #include "phage.h"
 #include "phage-accel.h"
+#include "phage-adc.h"
 #include "phage-events.h"
 #include "phage-i2c.h"
 #include "phage-shell.h"
@@ -142,6 +143,8 @@ int main(void) {
 
   /* Start the Phage watchdog timer thread.*/
   phageWatchdogInit();
+
+  phageAdcInit();
 
   /* Start LED effects.*/
   effectsStart(framebuffer, LED_COUNT);

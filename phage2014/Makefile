@@ -111,6 +111,7 @@ CSRC = $(PORTSRC) \
        effects.c \
        gitversion.c \
        phage-accel.c \
+       phage-adc.c \
        phage-i2c.c \
        phage-shell.c \
        phage-events.c \
