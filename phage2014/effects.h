@@ -8,6 +8,7 @@ enum pattern {
 };
 
 void effectsStart(void *_fb, int _count);
+void effectsSetPattern(enum pattern pattern);
 
 #define EFFECTS_REDRAW_MS 500
 

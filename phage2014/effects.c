@@ -145,6 +145,11 @@ static int cycle_pattern(struct effects_config *config) {
     return 0;
 }
 
+static struct effects_config g_config;
+void effectsSetPattern(enum pattern pattern) {
+  g_config.pattern = pattern;
+}
+
 static THD_WORKING_AREA(waEffectsThread, 32);
 static msg_t effects_thread(void *arg) {
 
@@ -159,15 +164,14 @@ static msg_t effects_thread(void *arg) {
 
 
 void effectsStart(void *_fb, int _count) {
-  static struct effects_config config;
 
-  config.fb = _fb;
-  config.count = _count;
-  config.loop = 0;
-  config.pattern = patternCalm;
-  config.pattern = patternTest;
+  g_config.fb = _fb;
+  g_config.count = _count;
+  g_config.loop = 0;
+  g_config.pattern = patternCalm;
+  g_config.pattern = patternTest;
 
-  cycle_pattern(&config);
+  cycle_pattern(&g_config);
   chThdCreateStatic(waEffectsThread, sizeof(waEffectsThread),
-      NORMALPRIO, effects_thread, &config);
+      NORMALPRIO, effects_thread, &g_config);
 }
