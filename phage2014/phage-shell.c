@@ -19,41 +19,51 @@
 #include "shell.h"
 #include "chprintf.h"
 
-#include "radio.h"
-#include "phage2014.h"
+#include "phage.h"
 
+/* Forward declarations of available shell commands.*/
 void cmd_threads(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_mem(BaseSequentialStream *chp, int argc, char *argv[]);
+void cmd_radio(BaseSequentialStream *chp, int argc, char *argv[]);
+void cmd_reboot(BaseSequentialStream *chp, int argc, char *argv[]);
 
-static const ShellCommand shellCommands[] = {
+/* Global stream variable, lets modules use chprintf().*/
+void *stream;
+
+static const ShellCommand shell_commands[] = {
   {"mem", cmd_mem},
   {"threads", cmd_threads},
-  {"radio", cmdRadio},
+  {"radio", cmd_radio},
+  {"reboot", cmd_reboot},
   {NULL, NULL}
 };
 
 static const ShellConfig shellConfig = {
-  stream,
-  shellCommands
+  stream_driver,
+  shell_commands
 };
 
-static thread_t *shellTp = NULL;
+static const SerialConfig serialConfig = {
+  115200,
+  0,
+  0,
+  0,
+};
+
+static thread_t *shell_tp = NULL;
 static THD_WORKING_AREA(waShellThread, 2048);
 
-int shellTerminated(void)
-{
-  if (!shellTp)
-    return TRUE;
-  if (chThdTerminatedX(shellTp)) {
-    /* Recovers memory of the previous shell. */
-    chThdRelease(shellTp);
-    return TRUE;
-  }
-  return FALSE;
+void phageShellInit(void) {
+  sdStart(serialDriver, &serialConfig);
+  stream = stream_driver;
+
+  shellInit();
 }
 
-void shellRestart(void)
-{
-  shellTp = shellCreateStatic(&shellConfig, waShellThread,
-                              sizeof(waShellThread), NORMALPRIO);
+void phageShellRestart(void) {
+  /* Recovers memory of the previous shell. */
+  if (shell_tp && chThdTerminatedX(shell_tp))
+    chThdRelease(shell_tp);
+  shell_tp = shellCreateStatic(&shellConfig, waShellThread,
+                              sizeof(waShellThread), LOWPRIO);
 }

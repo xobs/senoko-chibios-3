@@ -104,11 +104,14 @@ CSRC = $(PORTSRC) \
        ledDriver.c \
        bionic.c \
        cmd-mem.c \
+       cmd-radio.c \
+       cmd-reboot.c \
        cmd-threads.c \
+       effects.c \
        gitversion.c \
-       keypress.c \
-       phage2014-shell.c \
-       radio.c \
+       phage-shell.c \
+       phage-events.c \
+       phage-wdt.c \
        main.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
