@@ -8,10 +8,25 @@
 
 event_source_t power_button_pressed;
 event_source_t power_button_released;
+event_source_t accel_int1;
+event_source_t accel_int2;
+event_source_t key_left_pressed;
+event_source_t key_right_pressed;
+event_source_t key_up_pressed;
+event_source_t key_down_pressed;
+event_source_t key_left_released;
+event_source_t key_right_released;
+event_source_t key_up_released;
+event_source_t key_down_released;
 
 enum gpio_pin_names {
   pin_power,
-  pin_acok,
+  pin_accel_int1,
+  pin_accel_int2,
+  pin_key_up,
+  pin_key_down,
+  pin_key_left,
+  pin_key_right,
   __pin_last,
 };
 
@@ -19,7 +34,12 @@ static uint32_t gpio_states[__pin_last];
 
 static void refresh_gpios(uint32_t *states) {
   states[pin_power] = palReadPad(GPIOB, PB14);
-//  states[pin_acok] = palReadPad(GPIOA, PA8);
+  states[pin_accel_int1] = palReadPad(GPIOA, PA8);
+  states[pin_accel_int2] = palReadPad(GPIOB, PB15);
+  states[pin_key_up] = palReadPad(GPIOB, PB4);
+  states[pin_key_down] = palReadPad(GPIOB, PB5);
+  states[pin_key_left] = palReadPad(GPIOA, PA13);
+  states[pin_key_right] = palReadPad(GPIOA, PA15);
 }
 
 static void debounce_button(void *arg) {
@@ -40,14 +60,56 @@ static void debounce_button(void *arg) {
     gpio_states[pin_power] = new_states[pin_power];
   }
 
-  /* AC_OK */
-//  if (new_states[pin_acok] != gpio_states[pin_acok]) {
-//    if (new_states[pin_acok])
-//      chEvtBroadcastI(&ac_plugged);
-//    else
-//      chEvtBroadcastI(&ac_unplugged);
-//    gpio_states[pin_acok] = new_states[pin_acok];
-//  }
+  /* Accelerometer Interrupt 1 */
+  if (new_states[pin_accel_int1] != gpio_states[pin_accel_int1]) {
+    if (new_states[pin_accel_int1])
+      chEvtBroadcastI(&accel_int1);
+    gpio_states[pin_accel_int1] = new_states[pin_accel_int1];
+  }
+
+  /* Accelerometer Interrupt 2 */
+  if (new_states[pin_accel_int2] != gpio_states[pin_accel_int2]) {
+    if (new_states[pin_accel_int2])
+      chEvtBroadcastI(&accel_int2);
+    gpio_states[pin_accel_int2] = new_states[pin_accel_int2];
+  }
+
+  /* Up button */
+  if (new_states[pin_key_up] != gpio_states[pin_key_up]) {
+    if (new_states[pin_key_up])
+      chEvtBroadcastI(&key_up_released);
+    else
+      chEvtBroadcastI(&key_up_pressed);
+    gpio_states[pin_key_up] = new_states[pin_key_up];
+  }
+
+  /* Down button */
+  if (new_states[pin_key_down] != gpio_states[pin_key_down]) {
+    /* Note inverted logic here (pin is wired inverted).*/
+    if (new_states[pin_key_down])
+      chEvtBroadcastI(&key_down_pressed);
+    else
+      chEvtBroadcastI(&key_down_released);
+    gpio_states[pin_key_down] = new_states[pin_key_down];
+  }
+
+  /* Left button */
+  if (new_states[pin_key_left] != gpio_states[pin_key_left]) {
+    if (new_states[pin_key_left])
+      chEvtBroadcastI(&key_left_released);
+    else
+      chEvtBroadcastI(&key_left_pressed);
+    gpio_states[pin_key_left] = new_states[pin_key_left];
+  }
+
+  /* Right button */
+  if (new_states[pin_key_right] != gpio_states[pin_key_right]) {
+    if (new_states[pin_key_right])
+      chEvtBroadcastI(&key_right_released);
+    else
+      chEvtBroadcastI(&key_right_pressed);
+    gpio_states[pin_key_right] = new_states[pin_key_right];
+  }
 
   chSysUnlockFromISR();
 }
@@ -70,8 +132,12 @@ static const EXTConfig ext_config ={
     {EXT_CH_MODE_DISABLED, NULL},         /* Px1  */
     {EXT_CH_MODE_DISABLED, NULL},         /* Px2  */
     {EXT_CH_MODE_DISABLED, NULL},         /* Px3  */
-    {EXT_CH_MODE_DISABLED, NULL},         /* Px4  */
-    {EXT_CH_MODE_DISABLED, NULL},         /* Px5  */
+    {EXT_CH_MODE_BOTH_EDGES               /* Px4  */
+        | EXT_CH_MODE_AUTOSTART
+        | EXT_MODE_GPIOB, gpio_callback},
+    {EXT_CH_MODE_BOTH_EDGES               /* Px5  */
+        | EXT_CH_MODE_AUTOSTART
+        | EXT_MODE_GPIOB, gpio_callback},
     {EXT_CH_MODE_DISABLED, NULL},         /* Px6  */
     {EXT_CH_MODE_DISABLED, NULL},         /* Px7  */
     {EXT_CH_MODE_BOTH_EDGES               /* Px8  */
@@ -81,11 +147,16 @@ static const EXTConfig ext_config ={
     {EXT_CH_MODE_DISABLED, NULL},         /* Px10 */
     {EXT_CH_MODE_DISABLED, NULL},         /* Px11 */
     {EXT_CH_MODE_DISABLED, NULL},         /* Px12 */
-    {EXT_CH_MODE_DISABLED, NULL},         /* Px13 */
+    {EXT_CH_MODE_BOTH_EDGES               /* Px13 */
+        | EXT_CH_MODE_AUTOSTART
+        | EXT_MODE_GPIOA, gpio_callback},
     {EXT_CH_MODE_BOTH_EDGES               /* Px14 */
         | EXT_CH_MODE_AUTOSTART
         | EXT_MODE_GPIOB, gpio_callback},
-    {EXT_CH_MODE_DISABLED, NULL}          /* Px15 */
+    {EXT_CH_MODE_BOTH_EDGES               /* Px15 */
+        | EXT_CH_MODE_AUTOSTART
+        | EXT_MODE_GPIOA
+        | EXT_MODE_GPIOB, gpio_callback},
   }
 };
 
@@ -93,8 +164,16 @@ void phageEventsInit(void) {
 
   chEvtObjectInit(&power_button_pressed);
   chEvtObjectInit(&power_button_released);
-//  chEvtObjectInit(&ac_plugged);
-//  chEvtObjectInit(&ac_unplugged);
+  chEvtObjectInit(&accel_int1);
+  chEvtObjectInit(&accel_int2);
+  chEvtObjectInit(&key_up_pressed);
+  chEvtObjectInit(&key_down_pressed);
+  chEvtObjectInit(&key_left_pressed);
+  chEvtObjectInit(&key_right_pressed);
+  chEvtObjectInit(&key_up_released);
+  chEvtObjectInit(&key_down_released);
+  chEvtObjectInit(&key_left_released);
+  chEvtObjectInit(&key_right_released);
 
   refresh_gpios(gpio_states);
 
