@@ -64,21 +64,25 @@ static void accel_int2_handler(eventid_t id) {
 static void key_up_handler(eventid_t id) {
   (void)id;
   chprintf(stream, " [Key Up] ");
+  effectsSetPattern(patternShoot);
 }
 
 static void key_down_handler(eventid_t id) {
   (void)id;
   chprintf(stream, " [Key Down] ");
+  effectsSetPattern(patternCalm);
 }
 
 static void key_left_handler(eventid_t id) {
   (void)id;
   chprintf(stream, " [Key Left] ");
+  effectsSetPattern(patternTest);
 }
 
 static void key_right_handler(eventid_t id) {
   (void)id;
   chprintf(stream, " [Key Right] ");
+  effectsSetPattern(patternCalm);
 }
 
 static evhandler_t event_handlers[] = {
