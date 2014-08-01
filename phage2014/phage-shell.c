@@ -22,19 +22,21 @@
 #include "phage.h"
 
 /* Forward declarations of available shell commands.*/
-void cmd_threads(BaseSequentialStream *chp, int argc, char *argv[]);
+void cmd_accel(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_mem(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_radio(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_reboot(BaseSequentialStream *chp, int argc, char *argv[]);
+void cmd_threads(BaseSequentialStream *chp, int argc, char *argv[]);
 
 /* Global stream variable, lets modules use chprintf().*/
 void *stream;
 
 static const ShellCommand shell_commands[] = {
+  {"accel", cmd_accel},
   {"mem", cmd_mem},
-  {"threads", cmd_threads},
   {"radio", cmd_radio},
   {"reboot", cmd_reboot},
+  {"threads", cmd_threads},
   {NULL, NULL}
 };
 

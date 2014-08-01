@@ -13,7 +13,7 @@
 static int maxPixels;
 static GPIO_TypeDef *sPort;
 static uint32_t sMask;
-static uint32_t dma_source[1];
+static uint32_t dma_source[2];
 static uint32_t dmaBuffer[24 * 2]; // Two-pixel DMA buffer
 static int currentPixel; // Current pixel being DMAed
 
@@ -78,10 +78,9 @@ void ledSetRGB(void *ptr, int x, uint8_t r, uint8_t g, uint8_t b)
  * @param[in] flags     DMA engine IRQ flags
  *
  */
-static void unpackFramebuffer(void *ptr, uint32_t flags)
+static void unpackFramebuffer(void *fb, uint32_t flags)
 {
   int color, bit;
-  uint8_t *fb = ptr;
   uint8_t *srcBuffer = ((uint8_t *)fb) + (currentPixel * 3);
   uint32_t *destBuffer;
 
@@ -123,18 +122,17 @@ static void unpackFramebuffer(void *ptr, uint32_t flags)
  * @param[in] leds      length of the LED chain controlled by each pin
  * @param[in] port      which port would be used for output
  * @param[in] mask      Which pins would be used for output, each pin is a full chain
- * @param[out] fb       initialized frame buffer
+ * @param[in] fb        static framebuffer ptr
  *
  */
 
-void *ledDriverInit(int leds, GPIO_TypeDef *port, uint32_t mask) {
+void ledDriverInit(int leds, GPIO_TypeDef *port, uint32_t mask, void *_fb) {
   int j;
-  uint8_t *fb;
+  uint8_t *fb = _fb;
   maxPixels = leds;
   sPort = port;
   sMask = (mask << 16) & 0xffff0000;
 
-  fb = chHeapAlloc(NULL, maxPixels * 3);
   for (j = 0; j < maxPixels * 3; j++)
     fb[j] = 0;
 
@@ -142,7 +140,7 @@ void *ledDriverInit(int leds, GPIO_TypeDef *port, uint32_t mask) {
   dma_source[pin_set] = mask & 0xffff;
   dma_source[pin_clear] = (mask << 16) & 0xffff0000;
 
-  return fb;
+  return;
 }
 
 void ledDriverStart(void *_fb)

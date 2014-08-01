@@ -24,8 +24,10 @@
 #include "ledDriver.h"
 #include "effects.h"
 #include "phage.h"
-#include "phage-shell.h"
+#include "phage-accel.h"
 #include "phage-events.h"
+#include "phage-i2c.h"
+#include "phage-shell.h"
 #include "phage-wdt.h"
 
 #define LED_COUNT 22
@@ -39,19 +41,55 @@ static void shell_termination_handler(eventid_t id) {
 }
 
 static void power_button_pressed_handler(eventid_t id) {
-    (void)id;
-      chprintf(stream, " [Button pressed] ");
+  (void)id;
+  chprintf(stream, " [Button pressed] ");
 }
 
 static void power_button_released_handler(eventid_t id) {
-    (void)id;
-      chprintf(stream, " [Button released] ");
+  (void)id;
+  chprintf(stream, " [Button released] ");
+}
+
+static void accel_int1_handler(eventid_t id) {
+  (void)id;
+  chprintf(stream, " [Accel IRQ 1] ");
+}
+
+static void accel_int2_handler(eventid_t id) {
+  (void)id;
+  chprintf(stream, " [Accel IRQ 2] ");
+}
+
+static void key_up_handler(eventid_t id) {
+  (void)id;
+  chprintf(stream, " [Key Up] ");
+}
+
+static void key_down_handler(eventid_t id) {
+  (void)id;
+  chprintf(stream, " [Key Down] ");
+}
+
+static void key_left_handler(eventid_t id) {
+  (void)id;
+  chprintf(stream, " [Key Left] ");
+}
+
+static void key_right_handler(eventid_t id) {
+  (void)id;
+  chprintf(stream, " [Key Right] ");
 }
 
 static evhandler_t event_handlers[] = {
   shell_termination_handler,
   power_button_pressed_handler,
   power_button_released_handler,
+  accel_int1_handler,
+  accel_int2_handler,
+  key_up_handler,
+  key_down_handler,
+  key_left_handler,
+  key_right_handler,
 };
 
 static event_listener_t event_listeners[ARRAY_SIZE(event_handlers)];
@@ -59,8 +97,8 @@ static event_listener_t event_listeners[ARRAY_SIZE(event_handlers)];
 /*
  * Application entry point.
  */
+static uint8_t framebuffer[LED_COUNT * 3];
 int main(void) {
-  uint8_t *framebuffer;
 
   /*
    * System initializations.
@@ -80,13 +118,25 @@ int main(void) {
   phageEventsInit();
   chEvtRegister(&power_button_pressed, &event_listeners[1], 1);
   chEvtRegister(&power_button_released, &event_listeners[2], 2);
+  chEvtRegister(&accel_int1, &event_listeners[3], 3);
+  chEvtRegister(&accel_int2, &event_listeners[4], 4);
+  chEvtRegister(&key_up_pressed, &event_listeners[5], 5);
+  chEvtRegister(&key_down_pressed, &event_listeners[6], 6);
+  chEvtRegister(&key_left_pressed, &event_listeners[7], 7);
+  chEvtRegister(&key_right_pressed, &event_listeners[8], 8);
 
   chprintf(stream, "\r\nStarting Phage (Ver %d.%d, git version %s)\r\n", 
       PHAGE_OS_VERSION_MAJOR,
       PHAGE_OS_VERSION_MINOR,
       gitversion);
 
-  framebuffer = ledDriverInit(LED_COUNT, GPIOB, 0b11);
+  /* Start I2C, which is necessary for accelerometer.*/
+  phageI2cInit();
+
+  /* Now that I2C is running, start the accelerometer.*/
+  phageAccelInit();
+
+  ledDriverInit(LED_COUNT, GPIOB, 0b11, framebuffer);
   chprintf(stream, "\tFramebuffer address: 0x%08x\r\n", framebuffer);
   ledDriverStart(framebuffer);
 
