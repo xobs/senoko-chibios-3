@@ -76,13 +76,13 @@ static void key_down_handler(eventid_t id) {
 static void key_left_handler(eventid_t id) {
   (void)id;
   chprintf(stream, " [Key Left] ");
-  effectsSetPattern(patternTest);
+  effectsSetPattern(patternLarson);
 }
 
 static void key_right_handler(eventid_t id) {
   (void)id;
   chprintf(stream, " [Key Right] ");
-  effectsSetPattern(patternCalm);
+  effectsSetPattern(patternTest);
 }
 
 static evhandler_t event_handlers[] = {
@@ -148,7 +148,7 @@ int main(void) {
   /* Start the Phage watchdog timer thread.*/
   phageWatchdogInit();
 
-  phageAdcInit();
+  //phageAdcInit();
 
   /* Start LED effects.*/
   effectsStart(framebuffer, LED_COUNT);
