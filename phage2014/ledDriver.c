@@ -77,15 +77,15 @@ static const PWMConfig pwmc3 = {
  */
 static void unpack_framebuffer(void *fb, uint32_t flags) {
   int color, bit;
-  uint8_t *srcBuffer = ((uint8_t *)fb) + (led_config.current_pixel * 3);
-  uint32_t *destBuffer;
+  uint8_t *src_buffer = ((uint8_t *)fb) + (led_config.current_pixel * 3);
+  uint32_t *dest_buffer;
 
   if ( (flags & STM32_DMA_ISR_TCIF) != 0) {
     /* Finished the second pixel, so update the second pixel */
-    destBuffer = dma_buffer + 24;
+    dest_buffer = dma_buffer + 24;
   }
   else if ( (flags & STM32_DMA_ISR_HTIF) != 0) {
-    destBuffer = dma_buffer;
+    dest_buffer = dma_buffer;
     /* Finished first pixel, moving on to the second.
        Unpack the next pixel into the first half of the buffer. */
   }
@@ -95,9 +95,9 @@ static void unpack_framebuffer(void *fb, uint32_t flags) {
   /* Copy the three color components, bit-by-bit */
   for (color = 0; color < 3; color++) {
     for (bit = 0; bit < 8; bit++) {
-       *destBuffer++ = ((*srcBuffer << bit) & 0b10000000 ? 0x0 : led_config.mask);
+       *dest_buffer++ = ((*src_buffer << bit) & 0b10000000 ? 0x0 : led_config.mask);
     }
-    srcBuffer++;
+    src_buffer++;
   }
 
   led_config.current_pixel++;
@@ -144,6 +144,7 @@ void ledDriverInit(int leds, GPIO_TypeDef *port, uint32_t mask, void *_fb) {
   led_config.pixel_count = leds;
   led_config.port = port;
   led_config.mask = (mask << 16) & 0xffff0000;
+  led_config.current_pixel = 2; /* DMA engine starts on pixel number 2.*/
 
   for (i = 0; i < led_config.pixel_count * 3; i++)
     fb[i] = 0;
