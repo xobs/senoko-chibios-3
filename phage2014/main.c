@@ -33,6 +33,8 @@
 
 #define LED_COUNT 22
 
+static uint8_t framebuffer[LED_COUNT * 3];
+
 static void shell_termination_handler(eventid_t id) {
   static int i = 1;
   (void)id;
@@ -102,7 +104,6 @@ static event_listener_t event_listeners[ARRAY_SIZE(event_handlers)];
 /*
  * Application entry point.
  */
-static uint8_t framebuffer[LED_COUNT * 3];
 int main(void) {
 
   /*
