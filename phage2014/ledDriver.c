@@ -105,6 +105,13 @@ static void unpack_framebuffer(void *fb, uint32_t flags) {
     led_config.current_pixel = 0;
 }
 
+void ledSetRGBClipped(void *fb, uint32_t i,
+                      uint8_t r, uint8_t g, uint8_t b) {
+  if (i >= led_config.pixel_count)
+    return;
+  ledSetRGB(fb, i, r, g, b);
+}
+
 void ledSetRGB(void *ptr, int x, uint8_t r, uint8_t g, uint8_t b)
 {
   uint8_t *buf = ((uint8_t *)ptr) + (3 * x);
