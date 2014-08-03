@@ -9,6 +9,7 @@
 #include "hal.h"
 #include "pwm.h"
 #include "ledDriver.h"
+#include "phage.h"
 
 /* GPIO pin values (1 or 0).*/
 enum pin_state {
@@ -159,6 +160,11 @@ void ledDriverInit(int leds, GPIO_TypeDef *port, uint32_t mask, void *_fb) {
 void ledDriverStart(void *_fb)
 {
   uint8_t *fb = _fb;
+  uint32_t i;
+
+  for (i = 0; i < ARRAY_SIZE(dma_buffer); i++)
+    dma_buffer[i] = led_config.mask;
+
   /* DMA stream 2, triggered by channel3 pwm signal.  If FB indicates,
      reset output value early to indicate "0" bit to ws2812. */
   dmaStreamAllocate(STM32_DMA1_STREAM2, 10, unpack_framebuffer, fb);
