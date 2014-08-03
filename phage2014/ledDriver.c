@@ -10,24 +10,29 @@
 #include "pwm.h"
 #include "ledDriver.h"
 
-static int maxPixels;
-static GPIO_TypeDef *sPort;
-static uint32_t sMask;
-static uint32_t dma_source[2];
-static uint32_t dmaBuffer[24 * 2]; // Two-pixel DMA buffer
-static int currentPixel; // Current pixel being DMAed
-
+/* GPIO pin values (1 or 0).*/
 enum pin_state {
   pin_clear = 0,
   pin_set = 1,
+  __pin_max,
 };
+
+static struct {
+  uint32_t      pixel_count;
+  uint32_t      current_pixel;  /* Current pixel being DMAed.*/
+  GPIO_TypeDef *port;           /* GPIO block LEDs are attached to.*/
+  uint32_t      mask;           /* Bitmask of pins LEDs are connected to.*/
+} led_config;
+
+static uint32_t dma_source[__pin_max];  /* Values to be written to DMA.*/
+static uint32_t dma_buffer[24 * 2];     /* Two-pixel DMA buffer.*/
 
 /* Timer 2 as master, active for data transmission and inactive to disable
    transmission during reset period (50uS). */
 static const PWMConfig pwmc2 = {
   36000000 / 45, /* 800Khz PWM clock frequency. 1/45 of PWMC3. */
 
-  /* Total period is 50ms (20FPS), including maxPixels cycles + reset length
+  /* Total period is 50ms (20FPS), including max_pixels cycles + reset length
      for ws2812b and FB writes. */
   (36000000 / 45) * 0.05,
   NULL,
@@ -58,14 +63,6 @@ static const PWMConfig pwmc3 = {
   0,
 };
 
-void ledSetRGB(void *ptr, int x, uint8_t r, uint8_t g, uint8_t b)
-{
-  uint8_t *buf = ((uint8_t *)ptr) + (3 * x);
-  buf[0] = g;
-  buf[1] = r;
-  buf[2] = b;
-}
-
 /**
  * @brief   Unpack a framebuffer pixel for GPIO output.
  * @details Take the next 24 bits of pixel data and stripe it across 96
@@ -78,18 +75,17 @@ void ledSetRGB(void *ptr, int x, uint8_t r, uint8_t g, uint8_t b)
  * @param[in] flags     DMA engine IRQ flags
  *
  */
-static void unpackFramebuffer(void *fb, uint32_t flags)
-{
+static void unpack_framebuffer(void *fb, uint32_t flags) {
   int color, bit;
-  uint8_t *srcBuffer = ((uint8_t *)fb) + (currentPixel * 3);
+  uint8_t *srcBuffer = ((uint8_t *)fb) + (led_config.current_pixel * 3);
   uint32_t *destBuffer;
 
   if ( (flags & STM32_DMA_ISR_TCIF) != 0) {
     /* Finished the second pixel, so update the second pixel */
-    destBuffer = dmaBuffer + 24;
+    destBuffer = dma_buffer + 24;
   }
   else if ( (flags & STM32_DMA_ISR_HTIF) != 0) {
-    destBuffer = dmaBuffer;
+    destBuffer = dma_buffer;
     /* Finished first pixel, moving on to the second.
        Unpack the next pixel into the first half of the buffer. */
   }
@@ -99,14 +95,22 @@ static void unpackFramebuffer(void *fb, uint32_t flags)
   /* Copy the three color components, bit-by-bit */
   for (color = 0; color < 3; color++) {
     for (bit = 0; bit < 8; bit++) {
-       *destBuffer++ = ((*srcBuffer << bit) & 0b10000000 ? 0x0 : sMask);
+       *destBuffer++ = ((*srcBuffer << bit) & 0b10000000 ? 0x0 : led_config.mask);
     }
     srcBuffer++;
   }
 
-  currentPixel++;
-  if (currentPixel >= maxPixels)
-    currentPixel = 0;
+  led_config.current_pixel++;
+  if (led_config.current_pixel >= led_config.pixel_count)
+    led_config.current_pixel = 0;
+}
+
+void ledSetRGB(void *ptr, int x, uint8_t r, uint8_t g, uint8_t b)
+{
+  uint8_t *buf = ((uint8_t *)ptr) + (3 * x);
+  buf[0] = g;
+  buf[1] = r;
+  buf[2] = b;
 }
 
 /**
@@ -127,14 +131,15 @@ static void unpackFramebuffer(void *fb, uint32_t flags)
  */
 
 void ledDriverInit(int leds, GPIO_TypeDef *port, uint32_t mask, void *_fb) {
-  int j;
+  uint32_t i;
   uint8_t *fb = _fb;
-  maxPixels = leds;
-  sPort = port;
-  sMask = (mask << 16) & 0xffff0000;
 
-  for (j = 0; j < maxPixels * 3; j++)
-    fb[j] = 0;
+  led_config.pixel_count = leds;
+  led_config.port = port;
+  led_config.mask = (mask << 16) & 0xffff0000;
+
+  for (i = 0; i < led_config.pixel_count * 3; i++)
+    fb[i] = 0;
 
   /* "SET" bits */
   dma_source[pin_set] = mask & 0xffff;
@@ -148,9 +153,9 @@ void ledDriverStart(void *_fb)
   uint8_t *fb = _fb;
   /* DMA stream 2, triggered by channel3 pwm signal.  If FB indicates,
      reset output value early to indicate "0" bit to ws2812. */
-  dmaStreamAllocate(STM32_DMA1_STREAM2, 10, unpackFramebuffer, fb);
-  dmaStreamSetPeripheral(STM32_DMA1_STREAM2, &(sPort->BSRR));
-  dmaStreamSetMemory0(STM32_DMA1_STREAM2, dmaBuffer);
+  dmaStreamAllocate(STM32_DMA1_STREAM2, 10, unpack_framebuffer, fb);
+  dmaStreamSetPeripheral(STM32_DMA1_STREAM2, &(led_config.port->BSRR));
+  dmaStreamSetMemory0(STM32_DMA1_STREAM2, dma_buffer);
   dmaStreamSetTransactionSize(STM32_DMA1_STREAM2, 2 * 24);
   dmaStreamSetMode(
       STM32_DMA1_STREAM2,
@@ -161,7 +166,7 @@ void ledDriverStart(void *_fb)
   /* DMA stream 3, triggered by pwm update event. output high at the
      beginning of signal. */
   dmaStreamAllocate(STM32_DMA1_STREAM3, 10, NULL, NULL);
-  dmaStreamSetPeripheral(STM32_DMA1_STREAM3, &(sPort->BSRR));
+  dmaStreamSetPeripheral(STM32_DMA1_STREAM3, &(led_config.port->BSRR));
   dmaStreamSetMemory0(STM32_DMA1_STREAM3, &dma_source[pin_set]);
   dmaStreamSetTransactionSize(STM32_DMA1_STREAM3, 1);
   dmaStreamSetMode(
@@ -173,7 +178,7 @@ void ledDriverStart(void *_fb)
      late to indicate "1" bit to ws2812.  Always triggers but no affect if
      dma stream 2 already change output value to 0. */
   dmaStreamAllocate(STM32_DMA1_STREAM6, 10, NULL, NULL);
-  dmaStreamSetPeripheral(STM32_DMA1_STREAM6, &(sPort->BSRR));
+  dmaStreamSetPeripheral(STM32_DMA1_STREAM6, &(led_config.port->BSRR));
   dmaStreamSetMemory0(STM32_DMA1_STREAM6, &dma_source[pin_clear]);
   dmaStreamSetTransactionSize(STM32_DMA1_STREAM6, 1);
   dmaStreamSetMode(
@@ -192,8 +197,8 @@ void ledDriverStart(void *_fb)
   pwmEnableChannel(&PWMD3, 2, 14);
   // 58 (duty in ticks) / 90 (period in ticks) * 1.25uS (period in S) = 0.806 uS
   pwmEnableChannel(&PWMD3, 0, 29);
-  // active during transfer of 90 cycles * maxPixels * 24 bytes * 1/90 multiplier
-  pwmEnableChannel(&PWMD2, 0, 45 * maxPixels * 24 / 45);
+  // active during transfer of 90 cycles * led_config.pixel_count * 24 bytes * 1/90 multiplier
+  pwmEnableChannel(&PWMD2, 0, 45 * led_config.pixel_count * 24 / 45);
   // stop and reset counters for synchronization
   PWMD2.tim->CNT = 0;
 
