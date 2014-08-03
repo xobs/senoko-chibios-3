@@ -48,7 +48,7 @@ static void calmPatternFB(void *fb, int count, int loop) {
   int i;
 
   count &= 0xff;
-  
+  loop = loop % (256 * 5);
   for (i = 0; i < count; i++) {
     Color c;
     c = Wheel( (i * (256 / count) + loop) & 0xFF );
@@ -94,6 +94,7 @@ static void testPatternFB(void *fb, int count, int loop) {
     if (++i >= count) break;
   }
 #endif
+  loop >>= 6;
   while (i < count) {
     if (loop & 1) {
       /* Black */
@@ -118,29 +119,66 @@ static void testPatternFB(void *fb, int count, int loop) {
   }
 }
 
-static void shootPatternFB(void *fb, int count) {
+static void shootPatternFB(void *fb, int count, int loop) {
   int i;
 
-  count %= count;
+  loop = (loop >> 3) % count;
   for (i = 0; i < count; i++) {
-    if (count == i)
+    if (loop == i)
       ledSetRGB(fb, i, 255, 255, 255);
     else
       ledSetRGB(fb, i, 0, 0, 0);
   }
 }
 
-static int cycle_pattern(struct effects_config *config) {
+static uint32_t abs(int i) {
+  if (i > 0)
+      return i;
+  return -i;
+}
+
+static void larsonScannerFB(void *fb, int count, int loop) {
+  int i;
+  int dir;
+
+  loop = (loop >> 2) % (count * 2);
+
+  if (loop >= count)
+    dir = 1;
+  else
+    dir = 0;
+
+  loop %= count;
+
+  for (i = 0; i < count; i++) {
+    uint32_t x = i;
+
+    if (dir)
+      x = count - i - 1;
+
+    /* LED going out */
+    if (abs(i - loop) == 2)
+      ledSetRGBClipped(fb, x, 1, 0, 0);
+    else if (abs(i - loop) == 1)
+      ledSetRGBClipped(fb, x, 20, 0, 0);
+    else if (abs(i - loop) == 0)
+      ledSetRGBClipped(fb, x, 255, 0, 0);
+    else
+      ledSetRGBClipped(fb, x, 0, 0, 0);
+  }
+}
+
+static int draw_pattern(struct effects_config *config) {
     config->loop++;
 
     if (config->pattern == patternShoot)
-      shootPatternFB(config->fb, config->count);
+      shootPatternFB(config->fb, config->count, config->loop);
     else if (config->pattern == patternCalm)
       calmPatternFB(config->fb, config->count, config->loop);
     else if (config->pattern == patternTest)
       testPatternFB(config->fb, config->count, config->loop);
     else
-      calmPatternFB(config->fb, config->count, config->loop);
+      larsonScannerFB(config->fb, config->count, config->loop);
 
     return 0;
 }
@@ -150,18 +188,17 @@ void effectsSetPattern(enum pattern pattern) {
   g_config.pattern = pattern;
 }
 
-static THD_WORKING_AREA(waEffectsThread, 32);
+static THD_WORKING_AREA(waEffectsThread, 256);
 static msg_t effects_thread(void *arg) {
 
   chRegSetThreadName("effects");
 
   while (1) {
-    cycle_pattern(arg);
+    draw_pattern(arg);
     chThdSleepMilliseconds(EFFECTS_REDRAW_MS);
   }
   return MSG_OK;
 }
-
 
 void effectsStart(void *_fb, int _count) {
 
@@ -171,7 +208,7 @@ void effectsStart(void *_fb, int _count) {
   g_config.pattern = patternCalm;
   g_config.pattern = patternTest;
 
-  cycle_pattern(&g_config);
+  draw_pattern(&g_config);
   chThdCreateStatic(waEffectsThread, sizeof(waEffectsThread),
       NORMALPRIO, effects_thread, &g_config);
 }
