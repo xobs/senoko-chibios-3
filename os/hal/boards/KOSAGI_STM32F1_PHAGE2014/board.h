@@ -230,16 +230,17 @@
         | PIN_MODE_FLOATING(PA14) \
         \
         /* Key 1 */ \
-        | PIN_OSPEED_INPUT(PA15) \
+        | PIN_MODE_INPUT(PA15) \
         | PIN_MODE_FLOATING(PA15) \
         \
         | 0)
 
 /*
  * Pull GG_SYSPRES low to enable gas gauge,
- * and CHG_CE high to enable charging
+ * and CHG_CE high to enable charging.
+ * Make KEY_RIGHT a pullup, to prevent hardware bug.
  */
-#define VAL_GPIOA_ODR (( 0U << 11 ) | ( 1U << 12 ))
+#define VAL_GPIOA_ODR (( 0U << 11 ) | ( 1U << 12 ) | (1U << 15))
 
 #define VAL_GPIOB_CRL   ( 0 \
         \
