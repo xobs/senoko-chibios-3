@@ -18,6 +18,10 @@ event_source_t key_left_released;
 event_source_t key_right_released;
 event_source_t key_up_released;
 event_source_t key_down_released;
+event_source_t radio_address_matched;
+event_source_t radio_data_received;
+event_source_t radio_carrier_detect;
+
 
 enum gpio_pin_names {
   pin_power,
@@ -27,6 +31,9 @@ enum gpio_pin_names {
   pin_key_down,
   pin_key_left,
   pin_key_right,
+  pin_radio_address_matched,
+  pin_radio_data_received,
+  pin_radio_carrier_detect,
   __pin_last,
 };
 
@@ -40,6 +47,9 @@ static void refresh_gpios(uint32_t *states) {
   states[pin_key_down] = palReadPad(GPIOB, PB5);
   states[pin_key_left] = palReadPad(GPIOA, PA13);
   states[pin_key_right] = palReadPad(GPIOA, PA15);
+  states[pin_radio_address_matched] = palReadPad(GPIOA, PA0);
+  states[pin_radio_data_received] = palReadPad(GPIOA, PA11);
+  states[pin_radio_carrier_detect] = palReadPad(GPIOA, PA12);
 }
 
 static void debounce_button(void *arg) {
@@ -111,6 +121,27 @@ static void debounce_button(void *arg) {
     gpio_states[pin_key_right] = new_states[pin_key_right];
   }
 
+  /* Radio Address Matched */
+  if (new_states[pin_radio_address_matched] != gpio_states[pin_radio_address_matched]) {
+    if (new_states[pin_radio_address_matched])
+      chEvtBroadcastI(&radio_address_matched);
+    gpio_states[pin_radio_address_matched] = new_states[pin_radio_address_matched];
+  }
+
+  /* Radio Data Received */
+  if (new_states[pin_radio_data_received] != gpio_states[pin_radio_data_received]) {
+    if (new_states[pin_radio_data_received])
+      chEvtBroadcastI(&radio_data_received);
+    gpio_states[pin_radio_data_received] = new_states[pin_radio_data_received];
+  }
+
+  /* Radio Carrier Detect */
+  if (new_states[pin_radio_carrier_detect] != gpio_states[pin_radio_carrier_detect]) {
+    if (new_states[pin_radio_carrier_detect])
+      chEvtBroadcastI(&radio_carrier_detect);
+    gpio_states[pin_radio_carrier_detect] = new_states[pin_radio_carrier_detect];
+  }
+
   chSysUnlockFromISR();
 }
 
@@ -128,7 +159,9 @@ static void gpio_callback(EXTDriver *extp, expchannel_t channel) {
 
 static const EXTConfig ext_config ={
   {
-    {EXT_CH_MODE_DISABLED, NULL},         /* Px0  */
+    {EXT_CH_MODE_BOTH_EDGES               /* Px0  */
+        | EXT_CH_MODE_AUTOSTART
+        | EXT_MODE_GPIOA, gpio_callback},
     {EXT_CH_MODE_DISABLED, NULL},         /* Px1  */
     {EXT_CH_MODE_DISABLED, NULL},         /* Px2  */
     {EXT_CH_MODE_DISABLED, NULL},         /* Px3  */
@@ -145,8 +178,12 @@ static const EXTConfig ext_config ={
         | EXT_MODE_GPIOA, gpio_callback},
     {EXT_CH_MODE_DISABLED, NULL},         /* Px9  */
     {EXT_CH_MODE_DISABLED, NULL},         /* Px10 */
-    {EXT_CH_MODE_DISABLED, NULL},         /* Px11 */
-    {EXT_CH_MODE_DISABLED, NULL},         /* Px12 */
+    {EXT_CH_MODE_BOTH_EDGES               /* Px11 */
+        | EXT_CH_MODE_AUTOSTART
+        | EXT_MODE_GPIOA, gpio_callback},
+    {EXT_CH_MODE_BOTH_EDGES               /* Px12 */
+        | EXT_CH_MODE_AUTOSTART
+        | EXT_MODE_GPIOA, gpio_callback},
     {EXT_CH_MODE_BOTH_EDGES               /* Px13 */
         | EXT_CH_MODE_AUTOSTART
         | EXT_MODE_GPIOA, gpio_callback},
