@@ -23,6 +23,7 @@ static struct {
   uint32_t      current_pixel;  /* Current pixel being DMAed.*/
   GPIO_TypeDef *port;           /* GPIO block LEDs are attached to.*/
   uint32_t      mask;           /* Bitmask of pins LEDs are connected to.*/
+  binary_semaphore_t active_sem;/* Raised when PWM is running.*/
 } led_config;
 
 static uint32_t dma_source[__pin_max];  /* Values to be written to DMA.*/
@@ -81,17 +82,20 @@ static void unpack_framebuffer(void *fb, uint32_t flags) {
   uint8_t *src_buffer = ((uint8_t *)fb) + (led_config.current_pixel * 3);
   uint32_t *dest_buffer;
 
+  chSysLockFromISR();
+
   if ( (flags & STM32_DMA_ISR_TCIF) != 0) {
-    /* Finished the second pixel, so update the second pixel */
+    /* Finished the second pixel, so update it for the next loop.*/
     dest_buffer = dma_buffer + 24;
+
   }
   else if ( (flags & STM32_DMA_ISR_HTIF) != 0) {
-    dest_buffer = dma_buffer;
     /* Finished first pixel, moving on to the second.
        Unpack the next pixel into the first half of the buffer. */
+    dest_buffer = dma_buffer;
   }
   else
-    return;
+    goto out;
 
   /* Copy the three color components, bit-by-bit */
   for (color = 0; color < 3; color++) {
@@ -101,9 +105,23 @@ static void unpack_framebuffer(void *fb, uint32_t flags) {
     src_buffer++;
   }
 
+out:
+
   led_config.current_pixel++;
-  if (led_config.current_pixel >= led_config.pixel_count)
+  if (led_config.current_pixel >= led_config.pixel_count) {
     led_config.current_pixel = 0;
+    //PWMD2.tim->CR1 &= ~TIM_CR1_CEN;
+    chBSemSignalI(&led_config.active_sem); 
+  }
+
+  chSysUnlockFromISR();
+}
+
+void ledUpdate(void) {
+  /* Wait for LED to finish drawing.*/
+  chBSemWait(&led_config.active_sem);
+
+  //PWMD2.tim->CR1 |= TIM_CR1_CEN;
 }
 
 void ledSetRGBClipped(void *fb, uint32_t i,
@@ -142,6 +160,7 @@ void ledDriverInit(int leds, GPIO_TypeDef *port, uint32_t mask, void *_fb) {
   uint32_t i;
   uint8_t *fb = _fb;
 
+  chBSemObjectInit(&led_config.active_sem, 0);
   led_config.pixel_count = leds;
   led_config.port = port;
   led_config.mask = (mask << 16) & 0xffff0000;
@@ -218,11 +237,15 @@ void ledDriverStart(void *_fb)
 
   // Slave (TIM3) needs to "update" immediately after master (TIM2) start in order to start in sync.
   // this initial sync is crucial for the stability of the run
-  PWMD3.tim->CNT = 44;
+  /* 44 and 41 have some twinkling, split the difference.*/
+  PWMD3.tim->CNT = 43;
   PWMD3.tim->DIER |= TIM_DIER_CC3DE | TIM_DIER_CC1DE | TIM_DIER_UDE;
   dmaStreamEnable(STM32_DMA1_STREAM3);
   dmaStreamEnable(STM32_DMA1_STREAM6);
   dmaStreamEnable(STM32_DMA1_STREAM2);
+
+  chBSemWait(&led_config.active_sem); /* Lock out updates to PWM.*/
+
   // all systems go! both timers and all channels are configured to resonate
   // in complete sync without any need for CPU cycles (only DMA and timers)
   // start pwm2 for system to start resonating

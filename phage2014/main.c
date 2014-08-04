@@ -31,7 +31,7 @@
 #include "phage-shell.h"
 #include "phage-wdt.h"
 
-#define LED_COUNT 22
+#define LED_COUNT 240
 
 static uint8_t framebuffer[LED_COUNT * 3];
 

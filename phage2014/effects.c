@@ -46,12 +46,13 @@ static Color Wheel(uint8_t wheelPos) {
 
 static void calmPatternFB(void *fb, int count, int loop) {
   int i;
+  int count_mask;
+  Color c;
 
-  count &= 0xff;
+  count_mask = count & 0xff;
   loop = loop % (256 * 5);
   for (i = 0; i < count; i++) {
-    Color c;
-    c = Wheel( (i * (256 / count) + loop) & 0xFF );
+    c = Wheel( (i * (256 / count_mask) + loop) & 0xFF );
     ledSetRGB(fb, i, c.r, c.g, c.b);
   }
 }
@@ -94,7 +95,6 @@ static void testPatternFB(void *fb, int count, int loop) {
     if (++i >= count) break;
   }
 #endif
-  loop >>= 6;
   while (i < count) {
     if (loop & 1) {
       /* Black */
@@ -122,7 +122,8 @@ static void testPatternFB(void *fb, int count, int loop) {
 static void shootPatternFB(void *fb, int count, int loop) {
   int i;
 
-  loop = (loop >> 3) % count;
+  //loop = (loop >> 3) % count;
+  loop = loop % count;
   for (i = 0; i < count; i++) {
     if (loop == i)
       ledSetRGB(fb, i, 255, 255, 255);
@@ -141,7 +142,7 @@ static void larsonScannerFB(void *fb, int count, int loop) {
   int i;
   int dir;
 
-  loop = (loop >> 2) % (count * 2);
+  loop %= (count * 2);
 
   if (loop >= count)
     dir = 1;
@@ -195,7 +196,8 @@ static msg_t effects_thread(void *arg) {
 
   while (1) {
     draw_pattern(arg);
-    chThdSleepMilliseconds(EFFECTS_REDRAW_MS);
+    ledUpdate();
+    //chThdSleepMilliseconds(EFFECTS_REDRAW_MS);
   }
   return MSG_OK;
 }
@@ -210,5 +212,5 @@ void effectsStart(void *_fb, int _count) {
 
   draw_pattern(&g_config);
   chThdCreateStatic(waEffectsThread, sizeof(waEffectsThread),
-      NORMALPRIO, effects_thread, &g_config);
+      NORMALPRIO + 6, effects_thread, &g_config);
 }
