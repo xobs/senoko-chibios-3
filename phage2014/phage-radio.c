@@ -63,6 +63,8 @@ void radio_lld_send(size_t n, const void *txbuf) {
     while ( (radio->spi->SR & SPI_SR_TXE) == 0);
     radio->spi->DR = buf[i];
   }
+  /* Wait for buffer to empty.*/
+  while ( (radio->spi->SR & SPI_SR_TXE) == 0);
 }
 
 void radio_lld_receive(size_t n, void *rxbuf) {
