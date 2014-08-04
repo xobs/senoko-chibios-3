@@ -113,6 +113,7 @@ CSRC = $(PORTSRC) \
        phage-accel.c \
        phage-adc.c \
        phage-i2c.c \
+       phage-radio.c \
        phage-shell.c \
        phage-events.c \
        phage-wdt.c \

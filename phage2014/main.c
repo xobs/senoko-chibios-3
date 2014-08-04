@@ -28,10 +28,11 @@
 #include "phage-adc.h"
 #include "phage-events.h"
 #include "phage-i2c.h"
+#include "phage-radio.h"
 #include "phage-shell.h"
 #include "phage-wdt.h"
 
-#define LED_COUNT 240
+#define LED_COUNT 60
 
 static uint8_t framebuffer[LED_COUNT * 3];
 
@@ -79,12 +80,31 @@ static void key_left_handler(eventid_t id) {
   (void)id;
   chprintf(stream, " [Key Left] ");
   effectsSetPattern(patternLarson);
+  radioSend('x');
 }
 
 static void key_right_handler(eventid_t id) {
   (void)id;
   chprintf(stream, " [Key Right] ");
   effectsSetPattern(patternTest);
+}
+
+static void radio_carrier_detect_handler(eventid_t id) {
+  (void)id;
+  chprintf(stream, " [Radio Carrier Detect!!] ");
+  effectsSetPattern(patternCalm);
+}
+
+static void radio_data_received_handler(eventid_t id) {
+  (void)id;
+  chprintf(stream, " [Radio Data Received!!] ");
+  effectsSetPattern(patternCalm);
+}
+
+static void radio_address_matched_handler(eventid_t id) {
+  (void)id;
+  chprintf(stream, " [Radio Address Matched!!] ");
+  effectsSetPattern(patternCalm);
 }
 
 static evhandler_t event_handlers[] = {
@@ -97,6 +117,9 @@ static evhandler_t event_handlers[] = {
   key_down_handler,
   key_left_handler,
   key_right_handler,
+  radio_carrier_detect_handler,
+  radio_data_received_handler,
+  radio_address_matched_handler,
 };
 
 static event_listener_t event_listeners[ARRAY_SIZE(event_handlers)];
@@ -130,6 +153,9 @@ int main(void) {
   chEvtRegister(&key_down_pressed, &event_listeners[6], 6);
   chEvtRegister(&key_left_pressed, &event_listeners[7], 7);
   chEvtRegister(&key_right_pressed, &event_listeners[8], 8);
+  chEvtRegister(&radio_carrier_detect, &event_listeners[9], 9);
+  chEvtRegister(&radio_data_received, &event_listeners[10], 10);
+  chEvtRegister(&radio_address_matched, &event_listeners[11], 11);
 
   chprintf(stream, "\r\nStarting Phage (Ver %d.%d, git version %s)\r\n", 
       PHAGE_OS_VERSION_MAJOR,
@@ -141,6 +167,8 @@ int main(void) {
 
   /* Now that I2C is running, start the accelerometer.*/
   phageAccelInit();
+
+  radioStart();
 
   ledDriverInit(LED_COUNT, GPIOB, 0b11, framebuffer);
   chprintf(stream, "\tFramebuffer address: 0x%08x\r\n", framebuffer);
