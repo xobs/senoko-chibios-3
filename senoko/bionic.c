@@ -38,7 +38,11 @@
 #include "bionic.h"
 typedef unsigned char u_char;
 typedef unsigned int size_t;
+<<<<<<< HEAD
 int bionic_errno;
+=======
+extern int errno;
+>>>>>>> 4177a65a07b748bb28ca7f5533e1ca3dadba5e2c
 
 #if !defined(NULL)
 #define NULL ((void *)0)
@@ -172,12 +176,24 @@ typedef	long word;		/* "word" used for optimal copy speed */
  * (the portable versions of) bcopy, memcpy, and memmove.
  */
 #ifdef MEMCOPY
+<<<<<<< HEAD
 void *memcpy(void *dst0, const void *src0, size_t length)
 #else
 #ifdef MEMMOVE
 void *memmove(void *dst0, const void *src0, size_t length)
 #else
 void bcopy(const void *src0, void *dst0, size_t length)
+=======
+void *
+memcpy(void *dst0, const void *src0, size_t length)
+#else
+#ifdef MEMMOVE
+void *
+memmove(void *dst0, const void *src0, size_t length)
+#else
+void
+bcopy(const void *src0, void *dst0, size_t length)
+>>>>>>> 4177a65a07b748bb28ca7f5533e1ca3dadba5e2c
 #endif
 #endif
 {
@@ -325,7 +341,11 @@ unsigned long strtoul(const char *nptr, char **endptr, int base)
 		if (acc > cutoff || (acc == cutoff && c > cutlim)) {
 			any = -1;
 			acc = ULONG_MAX;
+<<<<<<< HEAD
 			bionic_errno = ERANGE;
+=======
+			errno = ERANGE;
+>>>>>>> 4177a65a07b748bb28ca7f5533e1ca3dadba5e2c
 		} else {
 			any = 1;
 			acc *= (unsigned long)base;

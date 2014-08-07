@@ -28,6 +28,7 @@ void cmd_threads(BaseSequentialStream *chp, int argc, char *argv[])
     chprintf(chp, "Usage: threads\r\n");
     return;
   }
+<<<<<<< HEAD
   chprintf(chp, "    addr    stack prio refs   state time  name\r\n");
   tp = chRegFirstThread();
   do {
@@ -36,6 +37,15 @@ void cmd_threads(BaseSequentialStream *chp, int argc, char *argv[])
       (uint32_t)tp->p_prio, (uint32_t)(tp->p_refs - 1),
       states[tp->p_state],
       tp->p_name);
+=======
+  chprintf(chp, "    addr    stack prio refs     state time\r\n");
+  tp = chRegFirstThread();
+  do {
+    chprintf(chp, "%.8lx %.8lx %4lu %4lu %9s\r\n",
+      (uint32_t)tp, (uint32_t)tp->p_ctx.r13,
+      (uint32_t)tp->p_prio, (uint32_t)(tp->p_refs - 1),
+      states[tp->p_state]);
+>>>>>>> 4177a65a07b748bb28ca7f5533e1ca3dadba5e2c
     tp = chRegNextThread(tp);
   } while (tp != NULL);
 }

@@ -87,6 +87,7 @@
 #endif
 
 /**
+<<<<<<< HEAD
  * @brief   Enables the watchdog subsystem.
  */
 #if !defined(HAL_USE_IWDG) || defined(__DOXYGEN__)
@@ -94,6 +95,8 @@
 #endif
 
 /**
+=======
+>>>>>>> 4177a65a07b748bb28ca7f5533e1ca3dadba5e2c
  * @brief   Enables the MAC subsystem.
  */
 #if !defined(HAL_USE_MAC) || defined(__DOXYGEN__)
@@ -205,6 +208,7 @@
 #define I2C_USE_MUTUAL_EXCLUSION    TRUE
 #endif
 
+<<<<<<< HEAD
 /**
  * @brief   Allow this device to act as an I2C slave device.
  */
@@ -212,6 +216,8 @@
 #define I2C_USE_SLAVE_MODE          TRUE
 #endif
 
+=======
+>>>>>>> 4177a65a07b748bb28ca7f5533e1ca3dadba5e2c
 /*===========================================================================*/
 /* MAC driver related settings.                                              */
 /*===========================================================================*/

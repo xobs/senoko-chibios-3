@@ -102,6 +102,7 @@ CSRC = $(PORTSRC) \
        $(CHIBIOS)/os/various/shell.c \
        $(CHIBIOS)/os/various/chprintf.c \
        bionic.c \
+<<<<<<< HEAD
        chg.c \
        cmd-chg.c \
        cmd-gg.c \
@@ -117,6 +118,13 @@ CSRC = $(PORTSRC) \
        senoko-i2c.c \
        senoko-shell.c \
        senoko-wdt.c \
+=======
+       cmd-mem.c \
+       cmd-threads.c \
+       gitversion.c \
+       senoko-i2c.c \
+       senoko-shell.c \
+>>>>>>> 4177a65a07b748bb28ca7f5533e1ca3dadba5e2c
        main.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global

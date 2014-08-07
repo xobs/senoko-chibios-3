@@ -44,6 +44,7 @@ I2C slave
 Senoko acts as an I2C slave device, to allow for things such as setting
 time and date, and powering off the board.  You can also do initial battery
 configuration over I2C.
+<<<<<<< HEAD
 
 The following registers are defined
 
@@ -127,3 +128,5 @@ The following registers are defined
     | 0x23 | RTC Seconds       | Bits 24-31                                  |
     +------+-------------------+---------------------------------------------+
 
+=======
+>>>>>>> 4177a65a07b748bb28ca7f5533e1ca3dadba5e2c

@@ -1,6 +1,7 @@
 #ifndef __SENOKO_I2C_H__
 #define __SENOKO_I2C_H__
 
+<<<<<<< HEAD
 #include "ch.h"
 #include "hal.h"
 #include "i2c.h"
@@ -12,5 +13,8 @@ msg_t senokoI2cMasterTransmitTimeout(i2caddr_t addr,
 void senokoI2cAcquireBus(void);
 void senokoI2cReleaseBus(void);
 int senokoI2cErrors(void);
+=======
+void senokoI2cInit(void);
+>>>>>>> 4177a65a07b748bb28ca7f5533e1ca3dadba5e2c
 
 #endif /* __SENOKO_I2C_H__ */

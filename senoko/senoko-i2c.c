@@ -2,15 +2,20 @@
 #include "hal.h"
 #include "i2c.h"
 
+<<<<<<< HEAD
 #include "senoko.h"
 #include "power.h"
 
 #if !HAL_USE_I2C
+=======
+#if !defined(HAL_USE_I2C)
+>>>>>>> 4177a65a07b748bb28ca7f5533e1ca3dadba5e2c
 #error "I2C is not enabled"
 #endif
 
 #define i2cBus (&I2CD2)
 
+<<<<<<< HEAD
 static const systime_t timeout = MS2ST(25);
 
 static uint8_t i2c_registers[0x23];
@@ -24,17 +29,25 @@ static enum client_mode {
 } client_mode;
 
 static const I2CConfig senokoI2cHost = {
+=======
+static const I2CConfig senokoI2CHost = {
+>>>>>>> 4177a65a07b748bb28ca7f5533e1ca3dadba5e2c
   OPMODE_SMBUS_HOST,
   100000,
   STD_DUTY_CYCLE,
 };
 
+<<<<<<< HEAD
 static const I2CConfig senokoI2cDevice = {
+=======
+static const I2CConfig senokoI2CDevice = {
+>>>>>>> 4177a65a07b748bb28ca7f5533e1ca3dadba5e2c
   OPMODE_SMBUS_DEVICE,
   100000,
   STD_DUTY_CYCLE,
 };
 
+<<<<<<< HEAD
 static const I2CConfig senokoI2cMode = {
   OPMODE_I2C,
   100000,
@@ -211,3 +224,10 @@ void senokoI2cReleaseBus(void) {
 int senokoI2cErrors(void) {
   return i2cGetErrors(i2cBus);
 }
+=======
+void senokoI2cInit(void)
+{
+  i2cStart(i2cBus, &senokoI2CHost);
+  return;
+}
+>>>>>>> 4177a65a07b748bb28ca7f5533e1ca3dadba5e2c
