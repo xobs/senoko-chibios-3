@@ -117,12 +117,54 @@ static evhandler_t event_handlers[] = {
   key_down_handler,
   key_left_handler,
   key_right_handler,
-  radio_carrier_detect_handler,
-  radio_data_received_handler,
-  radio_address_matched_handler,
+  //  radio_carrier_detect_handler,
+  //  radio_data_received_handler,
+  //  radio_address_matched_handler,
 };
 
 static event_listener_t event_listeners[ARRAY_SIZE(event_handlers)];
+
+#define REG_AFIO  (0x40010000)
+#define REG_PORTA (0x40010800)
+#define AFIO_MAPR  (REG_AFIO + 0x4)
+#define PORTA_CRH  (REG_PORTA + 0x4)
+
+void debugme(void) {
+  int i;
+#if 0
+  for( i = 0; i < 7; i++ ) {
+    chprintf(stream, "GPIOA%d: %08x\r\n", i, *((unsigned int *)(REG_PORTA + i*4)) );
+  }
+
+  chprintf(stream, "\r\n" );
+  for( i = 0; i < 6; i++ ) {
+    chprintf(stream, "AFIO%d: %08x\r\n", i, *((unsigned int *)(REG_AFIO + i*4)) );
+  }
+
+  chprintf(stream, "\r\n" );
+#endif
+  *((unsigned int *) AFIO_MAPR) =  (*((unsigned int *) AFIO_MAPR) & 0xF8FFFFFF) | 0x04000000;
+  *((unsigned int *) PORTA_CRH) =  (*((unsigned int *) PORTA_CRH) & 0x0FFFFFFF) | 0x40000000;
+
+#if 0
+  for( i = 0; i < 7; i++ ) {
+    chprintf(stream, "GPIOA%d: %08x\r\n", i, *((unsigned int *)(REG_PORTA + i*4)) );
+  }
+
+  chprintf(stream, "\r\n" );
+  for( i = 0; i < 6; i++ ) {
+    chprintf(stream, "AFIO%d: %08x\r\n", i, *((unsigned int *)(REG_AFIO + i*4)) );
+  }
+#endif
+}
+
+void debugme2(void) {
+
+  while(TRUE) {
+    chprintf(stream, "%d\r\n", palReadPad(GPIOA, PA15) );
+    chprintf(stream, "GPIOA%d: %08x\r\n", 8, *((unsigned int *)(REG_PORTA + 8)) );
+  }
+}
 
 /*
  * Application entry point.
@@ -153,9 +195,9 @@ int main(void) {
   chEvtRegister(&key_down_pressed, &event_listeners[6], 6);
   chEvtRegister(&key_left_pressed, &event_listeners[7], 7);
   chEvtRegister(&key_right_pressed, &event_listeners[8], 8);
-  chEvtRegister(&radio_carrier_detect, &event_listeners[9], 9);
-  chEvtRegister(&radio_data_received, &event_listeners[10], 10);
-  chEvtRegister(&radio_address_matched, &event_listeners[11], 11);
+  //  chEvtRegister(&radio_carrier_detect, &event_listeners[9], 9);
+  //  chEvtRegister(&radio_data_received, &event_listeners[10], 10);
+  //  chEvtRegister(&radio_address_matched, &event_listeners[11], 11);
 
   chprintf(stream, "\r\nStarting Phage (Ver %d.%d, git version %s)\r\n", 
       PHAGE_OS_VERSION_MAJOR,
@@ -184,6 +226,8 @@ int main(void) {
 
   /* Enter main event loop.*/
   phageShellRestart();
+
+  debugme();
   while (TRUE)
     chEvtDispatch(event_handlers, chEvtWaitOne(ALL_EVENTS));
 

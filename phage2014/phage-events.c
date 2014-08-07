@@ -192,8 +192,7 @@ static const EXTConfig ext_config ={
         | EXT_MODE_GPIOB, gpio_callback},
     {EXT_CH_MODE_BOTH_EDGES               /* Px15 */
         | EXT_CH_MODE_AUTOSTART
-        | EXT_MODE_GPIOA
-        | EXT_MODE_GPIOB, gpio_callback},
+        | EXT_MODE_GPIOA, gpio_callback},
   }
 };
 
@@ -211,6 +210,8 @@ void phageEventsInit(void) {
   chEvtObjectInit(&key_down_released);
   chEvtObjectInit(&key_left_released);
   chEvtObjectInit(&key_right_released);
+
+  //  chEvtObjectInit(&radio_data_received);
 
   refresh_gpios(gpio_states);
 

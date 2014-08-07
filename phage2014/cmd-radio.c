@@ -27,7 +27,7 @@ void cmd_radio(BaseSequentialStream *chp, int argc, char *argv[])
       dat[0], dat[1], dat[2], dat[3], dat[4], dat[5], dat[6], dat[7], dat[8], dat[9], dat[10]);
   chprintf(chp, "\r\n");
 
-  chprintf(chp, "ID value: 0x%08x\r\n", radioGetAddress());
+  chprintf(chp, "TX address: 0x%08x\r\n", radioGetAddress());
 
   return;
 }

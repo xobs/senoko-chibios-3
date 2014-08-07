@@ -213,13 +213,13 @@
         | PIN_OSPEED_INPUT(PA10) \
         | PIN_MODE_FLOATING(PA10) \
         \
-        /* GG_SYSPRES */ \
-        | PIN_OSPEED_2M(PA11) \
-        | PIN_OTYPE_PUSHPULL(PA11) \
+        /* RF_DR */ \
+        | PIN_OSPEED_INPUT(PA11) \
+        | PIN_MODE_FLOATING(PA11) \
         \
-        /* CHG_CE */ \
-        | PIN_OSPEED_2M(PA12) \
-        | PIN_OTYPE_PUSHPULL(PA12) \
+        /* RF_CD */ \
+        | PIN_OSPEED_INPUT(PA12) \
+        | PIN_MODE_FLOATING(PA12) \
         \
         /* Key 2 */ \
         | PIN_OSPEED_INPUT(PA13) \
@@ -230,7 +230,7 @@
         | PIN_MODE_FLOATING(PA14) \
         \
         /* Key 1 */ \
-        | PIN_MODE_INPUT(PA15) \
+        | PIN_OSPEED_INPUT(PA15) \
         | PIN_MODE_FLOATING(PA15) \
         \
         | 0)
@@ -297,8 +297,8 @@
         | PIN_OTYPE_PUSHPULL(PB13) \
         \
         /* Radio Tx/Rx selection */ \
-        | PIN_OSPEED_INPUT(PB14) \
-        | PIN_MODE_FLOATING(PB14) \
+        | PIN_OSPEED_2M(PB14) \
+        | PIN_OTYPE_PUSHPULL(PB14) \
         \
         /* Accelerometer IRQ2 */ \
         | PIN_OSPEED_INPUT(PB15) \
