@@ -161,6 +161,15 @@ void radioGetStatus(uint8_t buf[11]) {
   radio_unselect();
 }
 
+void radioGetRxPayload(uint8_t buf[3]) {
+  uint8_t tbuf[3];
+  tbuf[0] = 0x24;;
+
+  radio_select();
+  radio_lld_txrx(3, tbuf, buf);
+  radio_unselect();
+}
+
 void radioStart(void)
 {
   uint8_t dat[11];
@@ -305,7 +314,7 @@ void radioSend(uint8_t data) {
   /* Set to tx mode (TX_EN high).*/
   palWritePad(GPIOB, PB14, PAL_HIGH);
 
-  setupChannels();
+  //  setupChannels();
 
   /* Write TX payload.*/
   dat[0] = 0x20;

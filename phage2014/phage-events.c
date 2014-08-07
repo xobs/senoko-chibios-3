@@ -159,9 +159,10 @@ static void gpio_callback(EXTDriver *extp, expchannel_t channel) {
 
 static const EXTConfig ext_config ={
   {
-    {EXT_CH_MODE_BOTH_EDGES               /* Px0  */
-        | EXT_CH_MODE_AUTOSTART
-        | EXT_MODE_GPIOA, gpio_callback},
+    //    {EXT_CH_MODE_BOTH_EDGES               /* Px0  */
+    //        | EXT_CH_MODE_AUTOSTART
+    //        | EXT_MODE_GPIOA, gpio_callback},
+    {EXT_CH_MODE_DISABLED, NULL},         /* Px0  */
     {EXT_CH_MODE_DISABLED, NULL},         /* Px1  */
     {EXT_CH_MODE_DISABLED, NULL},         /* Px2  */
     {EXT_CH_MODE_DISABLED, NULL},         /* Px3  */
@@ -178,12 +179,14 @@ static const EXTConfig ext_config ={
         | EXT_MODE_GPIOA, gpio_callback},
     {EXT_CH_MODE_DISABLED, NULL},         /* Px9  */
     {EXT_CH_MODE_DISABLED, NULL},         /* Px10 */
-    {EXT_CH_MODE_BOTH_EDGES               /* Px11 */
-        | EXT_CH_MODE_AUTOSTART
-        | EXT_MODE_GPIOA, gpio_callback},
-    {EXT_CH_MODE_BOTH_EDGES               /* Px12 */
-        | EXT_CH_MODE_AUTOSTART
-        | EXT_MODE_GPIOA, gpio_callback},
+    //    {EXT_CH_MODE_BOTH_EDGES               /* Px11 */
+    //        | EXT_CH_MODE_AUTOSTART
+    //        | EXT_MODE_GPIOA, gpio_callback},
+    {EXT_CH_MODE_DISABLED, NULL},         /* Px11 */
+    //    {EXT_CH_MODE_BOTH_EDGES               /* Px12 */
+    //        | EXT_CH_MODE_AUTOSTART
+    //        | EXT_MODE_GPIOA, gpio_callback},
+    {EXT_CH_MODE_DISABLED, NULL},         /* Px12 */
     {EXT_CH_MODE_BOTH_EDGES               /* Px13 */
         | EXT_CH_MODE_AUTOSTART
         | EXT_MODE_GPIOA, gpio_callback},

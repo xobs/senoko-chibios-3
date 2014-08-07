@@ -171,11 +171,7 @@
 
 #define VAL_GPIOA_CRL   ( 0 \
         \
-<<<<<<< HEAD
         /* CHG_CRIT */ \
-=======
-        /* RF_AM */ \
->>>>>>> 4177a65a07b748bb28ca7f5533e1ca3dadba5e2c
         | PIN_OSPEED_INPUT(PA0) \
         | PIN_MODE_FLOATING(PA0) \
         \
@@ -184,7 +180,8 @@
         | PIN_OSPEED_2M(PA2) \
         | PIN_OTYPE_PUSHPULL(PA2) \
         \
-        | PIN_UNUSED(PA3) \
+        | PIN_OSPEED_2M(PA3) \
+        | PIN_OTYPE_PUSHPULL(PA3) \
         \
         /* Radio CSEL (NSS) */ \
         | PIN_OSPEED_10M(PA4) \
@@ -205,11 +202,7 @@
         | 0)
 
 #define VAL_GPIOA_CRH   ( 0 \
-<<<<<<< HEAD
         /* Accelerometer IRQ1 */ \
-=======
-        /* CHG_ACOK */ \
->>>>>>> 4177a65a07b748bb28ca7f5533e1ca3dadba5e2c
         | PIN_OSPEED_INPUT(PA8) \
         | PIN_MODE_FLOATING(PA8) \
         \
@@ -223,11 +216,7 @@
         \
         /* RF_DR */ \
         | PIN_OSPEED_INPUT(PA11) \
-<<<<<<< HEAD
         | PIN_MODE_FLOATING(PA11) \
-=======
-	| PIN_MODE_FLOATING(PA11) \
->>>>>>> 4177a65a07b748bb28ca7f5533e1ca3dadba5e2c
         \
         /* RF_CD */ \
         | PIN_OSPEED_INPUT(PA12) \
@@ -249,7 +238,6 @@
 
 /*
  * Pull GG_SYSPRES low to enable gas gauge,
-<<<<<<< HEAD
  * and CHG_CE high to enable charging.
  * Make KEY_RIGHT a pullup, to prevent hardware bug.
  */
@@ -264,21 +252,6 @@
         /* LED strip 2 */ \
         | PIN_OSPEED_50M(PB1) \
         | PIN_OTYPE_PUSHPULL(PB1) \
-=======
- * and CHG_CE high to enable charging
- */
-#define VAL_GPIOA_ODR (( 0U << 11 ) | ( 1U << 12 ))
-
-#define VAL_GPIOB_CRL   ( 0 \
-        \
-        /* Bitbang WS2812B  */ \
-        \
-        | PIN_OSPEED_50M(PB0) \
-        | PIN_OTYPE_PUSHPULL(PB0) \
-        \
-        /* NC */ \
-        | PIN_UNUSED(PB1) \
->>>>>>> 4177a65a07b748bb28ca7f5533e1ca3dadba5e2c
         \
         /* Programming mode */ \
         | PIN_UNUSED(PB2) \
@@ -326,7 +299,6 @@
         \
         /* Radio Tx/Rx selection */ \
         | PIN_OSPEED_2M(PB14) \
-<<<<<<< HEAD
         | PIN_OTYPE_PUSHPULL(PB14) \
         \
         /* Accelerometer IRQ2 */ \
@@ -337,18 +309,6 @@
 
 /* Turn on radio RF, and enable TX */
 #define VAL_GPIOB_ODR ((1U << 13) | (1U << 12))
-=======
-        | PIN_OTYPE_PUSHPULL(PB14)	\
-        \
-        /* NC */ \
-        | PIN_UNUSED(PB15) \
-        \
-        | 0 )
-
-/* master power (PB15) on */
-/* Pull alert (PB15) high */
-#define VAL_GPIOB_ODR ((1U << 15) | (1U << 12))
->>>>>>> 4177a65a07b748bb28ca7f5533e1ca3dadba5e2c
 
 #define VAL_GPIOC_CRL   ( 0 \
         | PIN_NOTPRESENT(PC0) \

@@ -38,11 +38,7 @@
 #define STM32_LSI_ENABLED                   FALSE
 #define STM32_HSE_ENABLED                   FALSE
 #define STM32_LSE_ENABLED                   TRUE
-<<<<<<< HEAD
 #define STM32_SW                            STM32_SW_PLL
-=======
-#define STM32_SW                            STM32_SW_HSI
->>>>>>> 4177a65a07b748bb28ca7f5533e1ca3dadba5e2c
 #define STM32_PLLSRC                        STM32_PLLSRC_HSI
 #define STM32_PLLXTPRE                      STM32_PLLXTPRE_DIV1
 #define STM32_PLLMUL_VALUE                  9
@@ -58,13 +54,8 @@
 /*
  * ADC driver system settings.
  */
-<<<<<<< HEAD
 #define STM32_ADC_USE_ADC1                  TRUE
 #define STM32_ADC_ADC1_DMA_PRIORITY         0
-=======
-#define STM32_ADC_USE_ADC1                  FALSE
-#define STM32_ADC_ADC1_DMA_PRIORITY         2
->>>>>>> 4177a65a07b748bb28ca7f5533e1ca3dadba5e2c
 #define STM32_ADC_ADC1_IRQ_PRIORITY         6
 
 /*

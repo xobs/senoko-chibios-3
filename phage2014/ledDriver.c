@@ -252,10 +252,16 @@ void ledDriverStart(void *_fb)
   PWMD2.tim->CR1 |= TIM_CR1_CEN;
 }
 
-void ledDriverStop(void)
+void ledDriverPause(void)
 {
-  dmaStreamDisable(STM32_DMA1_STREAM2);
-  dmaStreamDisable(STM32_DMA1_STREAM6);
-  dmaStreamDisable(STM32_DMA1_STREAM3);
+  PWMD2.tim->CR1 |= TIM_CR1_OPM;
+}
+
+void ledDriverResume(void)
+{
+  while( PWMD2.tim->CR1 & TIM_CR1_CEN ) // wait until the cycle is done
+    ;
+  PWMD2.tim->CR1 &= ~TIM_CR1_OPM;
+  PWMD2.tim->CR1 |= TIM_CR1_CEN;
 }
 

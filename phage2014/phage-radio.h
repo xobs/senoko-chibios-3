@@ -8,5 +8,6 @@ void radioSend(uint8_t byte);
 uint32_t radioGetAddress(void);
 void radioGetStatus(uint8_t buf[11]);
 void radioSetChannel(uint32_t channel);
+void radioGetRxPayload(uint8_t buf[3]);
 
 #endif /* __PHAGE_RADIO_H__ */

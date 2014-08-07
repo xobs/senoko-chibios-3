@@ -41,11 +41,7 @@
  * @brief   Enables the ADC subsystem.
  */
 #if !defined(HAL_USE_ADC) || defined(__DOXYGEN__)
-<<<<<<< HEAD
 #define HAL_USE_ADC                 TRUE
-=======
-#define HAL_USE_ADC                 FALSE
->>>>>>> 4177a65a07b748bb28ca7f5533e1ca3dadba5e2c
 #endif
 
 /**
@@ -91,7 +87,6 @@
 #endif
 
 /**
-<<<<<<< HEAD
  * @brief   Enables the watchdog subsystem.
  */
 #if !defined(HAL_USE_IWDG) || defined(__DOXYGEN__)
@@ -99,8 +94,6 @@
 #endif
 
 /**
-=======
->>>>>>> 4177a65a07b748bb28ca7f5533e1ca3dadba5e2c
  * @brief   Enables the MAC subsystem.
  */
 #if !defined(HAL_USE_MAC) || defined(__DOXYGEN__)

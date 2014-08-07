@@ -27,6 +27,7 @@ void cmd_mem(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_radio(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_reboot(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_threads(BaseSequentialStream *chp, int argc, char *argv[]);
+void cmd_led(BaseSequentialStream *chp, int argc, char *argv[]);
 
 /* Global stream variable, lets modules use chprintf().*/
 void *stream;
@@ -37,6 +38,7 @@ static const ShellCommand shell_commands[] = {
   {"radio", cmd_radio},
   {"reboot", cmd_reboot},
   {"threads", cmd_threads},
+  {"led", cmd_led},
   {NULL, NULL}
 };
 

@@ -21,7 +21,8 @@ struct Color {
 
 void ledDriverInit(int leds, GPIO_TypeDef *port, uint32_t mask, void *fb);
 void ledDriverStart(void *fb);
-void ledDriverStop(void);
+void ledDriverPause(void);
+void ledDriverResume(void);
 void ledUpdate(void);
 void ledSetRGB(void *ptr, int x, uint8_t r, uint8_t g, uint8_t b);
 void ledSetRGBClipped(void *fb, uint32_t i,

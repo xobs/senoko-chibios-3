@@ -174,9 +174,10 @@ static int draw_pattern(struct effects_config *config) {
 
     if (config->pattern == patternShoot)
       shootPatternFB(config->fb, config->count, config->loop);
-    else if (config->pattern == patternCalm)
+    else if (config->pattern == patternCalm) {
       calmPatternFB(config->fb, config->count, config->loop);
-    else if (config->pattern == patternTest)
+      config->loop += 2; // make this one go faster
+    } else if (config->pattern == patternTest)
       testPatternFB(config->fb, config->count, config->loop);
     else
       larsonScannerFB(config->fb, config->count, config->loop);
@@ -212,5 +213,5 @@ void effectsStart(void *_fb, int _count) {
 
   draw_pattern(&g_config);
   chThdCreateStatic(waEffectsThread, sizeof(waEffectsThread),
-      NORMALPRIO + 6, effects_thread, &g_config);
+      NORMALPRIO - 6, effects_thread, &g_config);
 }
