@@ -6,10 +6,12 @@ enum pattern {
   patternTest,
   patternShoot,
   patternLarson,
+  patternStrobe
 };
 
 void effectsStart(void *_fb, int _count);
 void effectsSetPattern(enum pattern pattern);
+enum pattern effectsGetPattern(void);
 
 #define EFFECTS_REDRAW_MS 20
 
