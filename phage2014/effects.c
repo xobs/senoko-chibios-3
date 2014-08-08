@@ -22,6 +22,9 @@ struct effects_config {
 };
 
 uint8_t brightness = 255;
+
+uint32_t bump_amount = 0;
+
 unsigned int rstate = 0xfade1337;
 unsigned int rand(void);
 unsigned int shift_lfsr(unsigned int v);
@@ -247,10 +250,20 @@ static void larsonScannerFB(void *fb, int count, int loop) {
     else
       ledSetRGBClipped(fb, x, 0, 0, 0);
   }
+
+}
+
+void bump(uint32_t amount) {
+  bump_amount = amount;
 }
 
 static int draw_pattern(struct effects_config *config) {
     config->loop++;
+
+    if( bump_amount != 0 ) {
+      config->loop += bump_amount;
+      bump_amount = 0;
+    }
 
     if (config->pattern == patternShoot)
       shootPatternFB(config->fb, config->count, config->loop);

@@ -39,10 +39,16 @@ void phageAccelInit(void) {
                                 reg, sizeof(reg),
                                 NULL, 0);
 
-  /* Enable accelerometer by setting CTRL_REG1.  We only need to enable
-     the ACTIVE bit (bit 0).*/
-  reg[0] = 0x2a;
-  reg[1] = 0x01;
+  /* Enable motion detect on all axes, freefall with no event latch.*/
+  reg[0] = 0x15;
+  reg[1] = 0x38;
+  phageI2cMasterTransmitTimeout(ACCEL_ADDR,
+                                reg, sizeof(reg),
+                                NULL, 0);
+
+  /* disable autosleep, etc. */
+  reg[0] = 0x2b;
+  reg[1] = 0;
   phageI2cMasterTransmitTimeout(ACCEL_ADDR,
                                 reg, sizeof(reg),
                                 NULL, 0);
@@ -54,23 +60,38 @@ void phageAccelInit(void) {
                                 reg, sizeof(reg),
                                 NULL, 0);
 
-  /* Enable motion detect on all axes.*/
+  /* set dynamic range to +/-2g */
+  reg[0] = 0x0e;
+  reg[1] = 0x00;
+  phageI2cMasterTransmitTimeout(ACCEL_ADDR,
+                                reg, sizeof(reg),
+                                NULL, 0);
+
+  /* Enable motion detect on all axes, freefall with no event latch.*/
   reg[0] = 0x15;
-  reg[1] = 0x78;
+  reg[1] = 0x58;
   phageI2cMasterTransmitTimeout(ACCEL_ADDR,
                                 reg, sizeof(reg),
                                 NULL, 0);
 
   /* Set motion to be really really sensitive */
   reg[0] = 0x17;
-  reg[1] = 0xa8;
+  reg[1] = 0x08;
+  phageI2cMasterTransmitTimeout(ACCEL_ADDR,
+                                      reg, sizeof(reg),
+                                      NULL, 0);
+
+  /* Set a debounce count for freefall */
+  reg[0] = 0x18;
+  reg[1] = 0x15; // 10 * 1.25ms at 800 Hz
   phageI2cMasterTransmitTimeout(ACCEL_ADDR,
                                       reg, sizeof(reg),
                                       NULL, 0);
 
   /* Enable wake-from-sleep for IRQs.*/
   reg[0] = 0x2c;
-  reg[1] = (1 << 5) | (1 << 3) | (1 << 1);
+  //  reg[1] = (1 << 5) | (1 << 3) | (1 << 1);
+  reg[1] = 0x02; // active high, push/pull
   phageI2cMasterTransmitTimeout(ACCEL_ADDR,
                                       reg, sizeof(reg),
                                       NULL, 0);
@@ -78,14 +99,16 @@ void phageAccelInit(void) {
   /* Enable accelerometer IRQs.  Enable interupts for both Freefall (bit 2)
      and Orientation (bit 4).*/
   reg[0] = 0x2d;
-  reg[1] = (1 << 4) | (1 << 2) | (1 << 0);
+  //  reg[1] = (1 << 4) | (1 << 2) | (1 << 0);
+  reg[1] = 0x4; // just enable freefall/motion interrupt
   phageI2cMasterTransmitTimeout(ACCEL_ADDR,
                                       reg, sizeof(reg),
                                       NULL, 0);
 
   /* Map Freefall to IRQ 2.  Leave Orientation on IRQ 1.*/
   reg[0] = 0x2e;
-  reg[1] = (1 << 2);
+  //  reg[1] = (1 << 2);
+  reg[1] = 0x4; //map freefall to INT1 (PA8)
   phageI2cMasterTransmitTimeout(ACCEL_ADDR,
                                       reg, sizeof(reg),
                                       NULL, 0);
@@ -95,4 +118,14 @@ void phageAccelInit(void) {
   phageI2cMasterTransmitTimeout(ACCEL_ADDR,
                                       reg, 1,
                                       NULL, 0);
+
+  /* Enable accelerometer by setting CTRL_REG1.  We only need to enable
+     the ACTIVE bit (bit 0), set 800Hz update rate.*/
+  reg[0] = 0x2a;
+  reg[1] = 0x01;
+  phageI2cMasterTransmitTimeout(ACCEL_ADDR,
+                                reg, sizeof(reg),
+                                NULL, 0);
+  
+
 }

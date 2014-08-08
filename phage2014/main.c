@@ -57,7 +57,8 @@ static void power_button_released_handler(eventid_t id) {
 
 static void accel_int1_handler(eventid_t id) {
   (void)id;
-  chprintf(stream, " [Accel IRQ 1] ");
+  chprintf(stream, "A"); // reduce chatter, improve performance and stability but allow for debug
+  bump(100);
 }
 
 static void accel_int2_handler(eventid_t id) {

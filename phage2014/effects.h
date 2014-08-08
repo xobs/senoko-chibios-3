@@ -12,6 +12,7 @@ enum pattern {
 void effectsStart(void *_fb, int _count);
 void effectsSetPattern(enum pattern pattern);
 enum pattern effectsGetPattern(void);
+void bump(uint32_t amount);
 
 #define EFFECTS_REDRAW_MS 20
 
