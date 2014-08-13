@@ -125,18 +125,18 @@ void ledUpdate(void) {
 }
 
 void ledSetRGBClipped(void *fb, uint32_t i,
-                      uint8_t r, uint8_t g, uint8_t b) {
+                      uint8_t r, uint8_t g, uint8_t b, uint8_t shift) {
   if (i >= led_config.pixel_count)
     return;
-  ledSetRGB(fb, i, r, g, b);
+  ledSetRGB(fb, i, r, g, b, shift);
 }
 
-void ledSetRGB(void *ptr, int x, uint8_t r, uint8_t g, uint8_t b)
+void ledSetRGB(void *ptr, int x, uint8_t r, uint8_t g, uint8_t b, uint8_t shift)
 {
   uint8_t *buf = ((uint8_t *)ptr) + (3 * x);
-  buf[0] = g;
-  buf[1] = r;
-  buf[2] = b;
+  buf[0] = g >> shift;
+  buf[1] = r >> shift;
+  buf[2] = b >> shift;
 }
 
 /**

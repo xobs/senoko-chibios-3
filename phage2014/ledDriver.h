@@ -24,8 +24,8 @@ void ledDriverStart(void *fb);
 void ledDriverPause(void);
 void ledDriverResume(void);
 void ledUpdate(void);
-void ledSetRGB(void *ptr, int x, uint8_t r, uint8_t g, uint8_t b);
+void ledSetRGB(void *ptr, int x, uint8_t r, uint8_t g, uint8_t b, uint8_t shift);
 void ledSetRGBClipped(void *fb, uint32_t i,
-                      uint8_t r, uint8_t g, uint8_t b);
+                      uint8_t r, uint8_t g, uint8_t b, uint8_t shift);
 
 #endif /* LEDDRIVER_H_ */

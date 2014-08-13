@@ -21,13 +21,21 @@ struct effects_config {
   enum pattern pattern;
 };
 
-uint8_t brightness = 255;
+uint8_t shift = 0;
 
 uint32_t bump_amount = 0;
 
 unsigned int rstate = 0xfade1337;
 unsigned int rand(void);
 unsigned int shift_lfsr(unsigned int v);
+
+void setShift(uint8_t s) {
+  shift = s;
+}
+
+uint8_t getShift(void) {
+  return shift;
+}
 
 unsigned int shift_lfsr(unsigned int v)
 {
@@ -108,23 +116,26 @@ static Color Wheel(uint8_t wheelPos) {
 
 static void strobePatternFB(void *fb, int count, int loop) {
   uint16_t i;
+  uint8_t oldshift = shift;
   
-  brightness = 255;
+  shift = 0;
 
   for( i = 0; i < count; i++ ) {
     if( (rand() % (unsigned int) count) < ((unsigned int) count / 3) )
-      ledSetRGB(fb, i, 255, 255, 255);
+      ledSetRGB(fb, i, 255, 255, 255, shift);
     else
-      ledSetRGB(fb, i, 0, 0, 0);
+      ledSetRGB(fb, i, 0, 0, 0, shift);
   }
 
   chThdSleepMilliseconds(30 + (rand() % 25));
 
   for( i = 0; i < count; i++ ) {
-    ledSetRGB(fb, i, 0, 0, 0);
+    ledSetRGB(fb, i, 0, 0, 0, shift);
   }
 
   chThdSleepMilliseconds(30 + (rand() % 25));
+  
+  shift = oldshift;
 }
 
 static void calmPatternFB(void *fb, int count, int loop) {
@@ -136,7 +147,7 @@ static void calmPatternFB(void *fb, int count, int loop) {
   loop = loop % (256 * 5);
   for (i = 0; i < count; i++) {
     c = Wheel( (i * (256 / count_mask) + loop) & 0xFF );
-    ledSetRGB(fb, i, c.r, c.g, c.b);
+    ledSetRGB(fb, i, c.r, c.g, c.b, shift);
   }
 }
 
@@ -146,58 +157,58 @@ static void testPatternFB(void *fb, int count, int loop) {
 #if 0
   while (i < count) {
     /* Black */
-    ledSetRGB(fb, (i + loop) % count, 0, 0, 0);
+    ledSetRGB(fb, (i + loop) % count, 0, 0, 0, shift);
     if (++i >= count) break;
 
     /* Red */
-    ledSetRGB(fb, (i + loop) % count, 255, 0, 0);
+    ledSetRGB(fb, (i + loop) % count, 255, 0, 0, shift);
     if (++i >= count) break;
 
     /* Yellow */
-    ledSetRGB(fb, (i + loop) % count, 255, 255, 0);
+    ledSetRGB(fb, (i + loop) % count, 255, 255, 0, shift);
     if (++i >= count) break;
 
     /* Green */
-    ledSetRGB(fb, (i + loop) % count, 0, 255, 0);
+    ledSetRGB(fb, (i + loop) % count, 0, 255, 0, shift);
     if (++i >= count) break;
 
     /* Cyan */
-    ledSetRGB(fb, (i + loop) % count, 0, 255, 255);
+    ledSetRGB(fb, (i + loop) % count, 0, 255, 255, shift);
     if (++i >= count) break;
 
     /* Blue */
-    ledSetRGB(fb, (i + loop) % count, 0, 0, 255);
+    ledSetRGB(fb, (i + loop) % count, 0, 0, 255, shift);
     if (++i >= count) break;
 
     /* Purple */
-    ledSetRGB(fb, (i + loop) % count, 255, 0, 255);
+    ledSetRGB(fb, (i + loop) % count, 255, 0, 255, shift);
     if (++i >= count) break;
 
     /* White */
-    ledSetRGB(fb, (i + loop) % count, 255, 255, 255);
+    ledSetRGB(fb, (i + loop) % count, 255, 255, 255, shift);
     if (++i >= count) break;
   }
 #endif
   while (i < count) {
     if (loop & 1) {
       /* Black */
-      ledSetRGB(fb, (i++ + loop) % count, 0, 0, 0);
+      ledSetRGB(fb, (i++ + loop) % count, 0, 0, 0, shift);
 
       /* Black */
-      ledSetRGB(fb, (i++ + loop) % count, 0, 0, 0);
+      ledSetRGB(fb, (i++ + loop) % count, 0, 0, 0, shift);
 
       /* White */
-      ledSetRGB(fb, (i++ + loop) % count, 32, 32, 32);
+      ledSetRGB(fb, (i++ + loop) % count, 32, 32, 32, shift);
     }
     else {
       /* White */
-      ledSetRGB(fb, (i++ + loop) % count, 32, 32, 32);
+      ledSetRGB(fb, (i++ + loop) % count, 32, 32, 32, shift);
 
       /* Black */
-      ledSetRGB(fb, (i++ + loop) % count, 0, 0, 0);
+      ledSetRGB(fb, (i++ + loop) % count, 0, 0, 0, shift);
 
       /* Black */
-      ledSetRGB(fb, (i++ + loop) % count, 0, 0, 0);
+      ledSetRGB(fb, (i++ + loop) % count, 0, 0, 0, shift);
     }
   }
 }
@@ -209,9 +220,9 @@ static void shootPatternFB(void *fb, int count, int loop) {
   loop = loop % count;
   for (i = 0; i < count; i++) {
     if (loop == i)
-      ledSetRGB(fb, i, 255, 255, 255);
+      ledSetRGB(fb, i, 255, 255, 255, shift);
     else
-      ledSetRGB(fb, i, 0, 0, 0);
+      ledSetRGB(fb, i, 0, 0, 0, shift);
   }
 }
 
@@ -242,13 +253,13 @@ static void larsonScannerFB(void *fb, int count, int loop) {
 
     /* LED going out */
     if (asb_l(i - loop) == 2)
-      ledSetRGBClipped(fb, x, 1, 0, 0);
+      ledSetRGBClipped(fb, x, 1, 0, 0, shift);
     else if (asb_l(i - loop) == 1)
-      ledSetRGBClipped(fb, x, 20, 0, 0);
+      ledSetRGBClipped(fb, x, 20, 0, 0, shift);
     else if (asb_l(i - loop) == 0)
-      ledSetRGBClipped(fb, x, 255, 0, 0);
+      ledSetRGBClipped(fb, x, 255, 0, 0, shift);
     else
-      ledSetRGBClipped(fb, x, 0, 0, 0);
+      ledSetRGBClipped(fb, x, 0, 0, 0, shift);
   }
 
 }
@@ -288,6 +299,19 @@ void effectsSetPattern(enum pattern pattern) {
 
 enum pattern effectsGetPattern(void) {
   return g_config.pattern;
+}
+
+void effectsNextPattern(void) {
+  g_config.pattern = g_config.pattern + 1;
+  g_config.pattern = g_config.pattern % patternLast;
+}
+
+void effectsPrevPattern(void) {
+  if( g_config.pattern == 0 ) {
+    g_config.pattern = patternLast - 1;
+  } else {
+    g_config.pattern = g_config.pattern - 1;
+  }
 }
 
 

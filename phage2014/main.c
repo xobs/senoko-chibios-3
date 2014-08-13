@@ -66,28 +66,40 @@ static void accel_int2_handler(eventid_t id) {
   chprintf(stream, " [Accel IRQ 2] ");
 }
 
-static void key_up_handler(eventid_t id) {
+
+// up transmits beacon
+// left/right control pattern
+// down controls intensity
+
+static void key_up_handler(eventid_t id) { // right
   (void)id;
-  chprintf(stream, " [Key Up] ");
-  effectsSetPattern(patternShoot);
+  chprintf(stream, "R");
+  //  effectsSetPattern(patternShoot);
+  effectsNextPattern();
 }
 
-static void key_down_handler(eventid_t id) {
+static void key_down_handler(eventid_t id) { // left
   (void)id;
-  chprintf(stream, " [Key Down] ");
-  effectsSetPattern(patternCalm);
+  chprintf(stream, "L");
+  effectsPrevPattern();
+  //  effectsSetPattern(patternCalm);
 }
 
-static void key_left_handler(eventid_t id) {
+static void key_left_handler(eventid_t id) { // I call this "up"
   (void)id;
-  chprintf(stream, " [Key Left] ");
-  effectsSetPattern(patternLarson);
+  chprintf(stream, "U");
+  //  effectsSetPattern(patternLarson);  // don't change effect, just page
 }
 
-static void key_right_handler(eventid_t id) {
+static void key_right_handler(eventid_t id) {  // I call this "down"
+  uint8_t s;
   (void)id;
-  chprintf(stream, " [Key Right] ");
-  effectsSetPattern(patternTest);
+  chprintf(stream, "D");
+  s = getShift();
+  if( s > 5 )
+    s = 0;
+  s++;
+  setShift(s);
 }
 
 static void radio_carrier_detect_handler(eventid_t id) {
