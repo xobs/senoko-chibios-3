@@ -25,7 +25,7 @@ static int radioUseCount = 0;
 static void radio_select(void) {
   /* XXX USE LOCK HERE XXX */
   if (!radioUseCount) {
-    spiSelect(radio);
+    spiSelectI(radio);
   }
   radioUseCount++;
 }
@@ -34,7 +34,7 @@ static void radio_unselect(void) {
   /* XXX USE LOCK HERE XXX */
   radioUseCount--;
   if (radioUseCount <= 0) {
-    spiUnselect(radio);
+    spiUnselectI(radio);
     radioUseCount = 0;
   }
 }
@@ -84,7 +84,6 @@ void radio_lld_receive(size_t n, void *rxbuf) {
 void radio_lld_txrx(size_t n, const void *txbuf, const void *rxbuf) {
   const uint8_t *buf = (const uint8_t *)txbuf;
   uint8_t *rbuf = (uint8_t *)rxbuf;
-
   unsigned int i, j;
   unsigned char first = 1;
 
@@ -92,32 +91,38 @@ void radio_lld_txrx(size_t n, const void *txbuf, const void *rxbuf) {
   rbuf[n-1] = 0xDD; // fill in with some default value
   
   for (i = 0; i < n; i++) {
+
     /* Wait for buffer to empty.*/
-    while ( (radio->spi->SR & SPI_SR_TXE) == 0);
-    if( first ) {
-      first--; // data before first write completes is garbage
-      rbuf[0] = radio->spi->DR; // clear the DR FIFO of any cruft before going forward
-    } else {
-      if( rxbuf != NULL ) {
-	rbuf[j] = radio->spi->DR;
-	j++;
+    while ((radio->spi->SR & SPI_SR_TXE) == 0)
+      ;
+
+    if (first) {
+      /* Data before first write completes is garbage.*/
+      first--;
+
+      /* Clear the DR FIFO of any cruft before going forward.*/
+      rbuf[0] = radio->spi->DR;
+    }
+    else {
+      if (rxbuf != NULL) {
+        rbuf[j] = radio->spi->DR;
+        j++;
       }
     }
+
     radio->spi->DR = buf[i];
-
   }
+
   /* Wait for buffer to empty.*/
-  while ( (radio->spi->SR & SPI_SR_TXE) == 0);
-  if( rxbuf != NULL ) {
+  while ((radio->spi->SR & SPI_SR_TXE) == 0)
+    ;
+
+  if (rxbuf != NULL)
     rbuf[j++] = radio->spi->DR;
-  }
   
-  // wait for transmission to complete before leaving routine
+  /* Wait for transmission to complete before leaving routine.*/
   chThdSleepMicroseconds(1);
-
 }
-
-
 
 void radioSetChannel(uint32_t channel) {
   uint8_t buffer[5];
@@ -314,8 +319,6 @@ void radioSend(uint8_t data) {
   /* Set to tx mode (TX_EN high).*/
   palWritePad(GPIOB, PB14, PAL_HIGH);
 
-  //  setupChannels();
-
   /* Write TX payload.*/
   dat[0] = 0x20;
   dat[1] = data;
@@ -337,5 +340,4 @@ void radioSend(uint8_t data) {
 
   /* Set TRXCE to high (to allow for receiving).*/
   palWritePad(GPIOB, PB13, PAL_HIGH);
-  
 }
