@@ -3,10 +3,11 @@
 
 enum pattern {
   patternCalm = 0,
-  patternTest,
-  patternRaindrop,
-  patternWaveRainbow,
   patternStrobe,
+  patternRaindrop,
+  patternRainbowdrop,
+  patternWaveRainbow,
+  patternTest,
   patternDirectedRainbow,
   patternLast
 };
@@ -21,6 +22,6 @@ uint8_t getShift(void);
 void effectsNextPattern(void);
 void effectsPrevPattern(void);
 
-#define EFFECTS_REDRAW_MS 100
+#define EFFECTS_REDRAW_MS 35
 
 #endif /* __PHAGE_EFFECTS_H__ */

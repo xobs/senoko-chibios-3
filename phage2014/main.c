@@ -33,7 +33,7 @@
 #include "phage-wdt.h"
 #include "phage-ui.h"
 
-#define LED_COUNT 500
+#define LED_COUNT 150
 
 static uint8_t framebuffer[LED_COUNT * 3];
 
@@ -93,7 +93,7 @@ static void key_right_handler(eventid_t id) {  // I call this "down"
   (void)id;
   chprintf(stream, "D");
   s = getShift();
-  if (s > 5)
+  if (s > 3)
     s = 0;
   s++;
   setShift(s);
@@ -222,10 +222,6 @@ int main(void) {
   /* Now that I2C is running, start the accelerometer.*/
   phageAccelInit();
 
-  ledDriverInit(LED_COUNT, GPIOB, 0b11, framebuffer);
-  chprintf(stream, "\tFramebuffer address: 0x%08x\r\n", framebuffer);
-  ledDriverStart(framebuffer);
-
   /* Start the Phage watchdog timer thread.*/
   phageWatchdogInit();
 
@@ -240,6 +236,10 @@ int main(void) {
   phageShellRestart();
 
   phageUiInit(); // start the UI interaction loop (RF events, buttons)
+
+  ledDriverInit(LED_COUNT, GPIOB, 0b11, framebuffer);
+  chprintf(stream, "\tFramebuffer address: 0x%08x\r\n", framebuffer);
+  ledDriverStart(framebuffer);
 
   debugme();
   while (TRUE) 

@@ -27,6 +27,7 @@ uint8_t shift = 1;  // start a little bit dimmer
 
 uint32_t bump_amount = 0;
 uint8_t bumped = 0;
+unsigned int bumptime = 0;
 unsigned long reftime = 0;
 unsigned long reftime_tau = 0;
 unsigned long offset = 0;
@@ -402,7 +403,7 @@ static void directedRainbowFB(void *fb, int count, int loop) {
   if( (curtime - reftime) > VU_T_PERIOD )
     reftime = curtime;
 
-  waverate = 11;
+  waverate = 80;
   colorrate = 1;
 
   if( bumped ) {
@@ -441,10 +442,12 @@ static uint32_t asb_l(int i) {
   return -i;
 }
 
-#define DROP_INT 1000
+#define DROP_INT 600
+#define BUMP_TIMEOUT 2300
 static void raindropFB(void *fb, int count, int loop) {
   unsigned long curtime;
   uint8_t oldshift = shift;
+  uint8_t myshift;
   Color c;
   int i;
   
@@ -454,20 +457,26 @@ static void raindropFB(void *fb, int count, int loop) {
       c.r = 0; c.g = 0; c.b = 0;
       ledSetColor(fb, i, c, shift);
     }
+    bumptime = bumptime - BUMP_TIMEOUT;
   }
 
+  myshift = shift;
+  if( myshift > 3 )  // limit dimness as this is a sparse pattern
+    myshift = 3;
+
   shift = 0;
-  curtime = chVTGetSystemTime() + offset;
-  if( (curtime - reftime) > DROP_INT ) {
+
+  curtime = chVTGetSystemTime();
+  if( ((curtime - reftime) > DROP_INT) && (curtime - bumptime > BUMP_TIMEOUT) ) {
     reftime = curtime;
-    c.r = 255; c.g = 255; c.b = 255;
+    c.r = 255 >> myshift; c.g = 255 >> myshift; c.b = 255 >> myshift;
   } else {
     c.r = 0; c.g = 0; c.b = 0;
   }
 
   if( bumped ) {
     bumped = 0;
-    c.r = 255; c.g = 255; c.b = 255;
+    c.r = 255 >> myshift; c.g = 255 >> myshift; c.b = 255 >> myshift;
   }
 
   ledSetColor(fb, 0, c, shift);
@@ -475,6 +484,58 @@ static void raindropFB(void *fb, int count, int loop) {
   for( i = count-2; i >= 0; i-- ) {
     c = ledGetColor(fb, i);
     ledSetColor(fb, i+1, c, shift);
+  }
+
+  shift = oldshift;
+}
+
+static void rainbowDropFB(void *fb, int count, int loop) {
+  unsigned long curtime;
+  uint8_t oldshift = shift;
+  uint8_t myshift;
+  Color c;
+  Color c2;
+  int i;
+  
+  if(patternChanged) {
+    patternChanged = 0;
+    for( i = 0; i < count; i++ ) {
+      c.r = 0; c.g = 0; c.b = 0;
+      ledSetColor(fb, i, c, shift);
+    }
+    bumptime = bumptime - BUMP_TIMEOUT;
+  }
+  c2.r = 0; c2.g = 0; c2.b = 0;
+
+  myshift = shift;
+  if( myshift > 3 )  // limit dimness as this is a sparse pattern
+    myshift = 3;
+
+  shift = 0;
+
+  loop = loop % (256 * 5);
+
+  curtime = chVTGetSystemTime();
+  if( ((curtime - reftime) > DROP_INT) && (curtime - bumptime > BUMP_TIMEOUT) ) {
+    c = Wheel(loop);
+    c2 = Wheel(loop + 1);
+    reftime = curtime;
+  } else {
+    c.r = 0; c.g = 0; c.b = 0;
+    c2.r = 0; c2.g = 0; c2.b = 0;
+  }
+
+  if( bumped ) {
+    bumped = 0;
+    c = Wheel(loop);
+    c2 = Wheel(loop + 1);
+  }
+
+  ledSetColor(fb, 0, c, shift);
+
+  for( i = count-2; i >= 0; i-- ) {
+    c2 = ledGetColor(fb, i);
+    ledSetColor(fb, i+1, c2, shift);
   }
 
   shift = oldshift;
@@ -513,9 +574,14 @@ static void larsonScannerFB(void *fb, int count, int loop) {
 
 }
 
+#define BUMP_DEBOUNCE 300 // 300ms debounce to next bump
+
 void bump(uint32_t amount) {
   bump_amount = amount;
-  bumped = 1;
+  if( chVTGetSystemTime() - bumptime > BUMP_DEBOUNCE ) {
+    bumptime = chVTGetSystemTime();
+    bumped = 1;
+  }
 }
 
 static int draw_pattern(struct effects_config *config) {
@@ -541,6 +607,8 @@ static int draw_pattern(struct effects_config *config) {
       directedRainbowFB(config->fb, config->count, config->loop);
     else if( config->pattern == patternRaindrop ) {
       raindropFB(config->fb, config->count, config->loop);
+    } else if( config->pattern == patternRainbowdrop ) {
+      rainbowDropFB(config->fb, config->count, config->loop);
     } else {
       testPatternFB(config->fb, config->count, config->loop);
     }
@@ -594,7 +662,7 @@ void effectsStart(void *_fb, int _count) {
   g_config.fb = _fb;
   g_config.count = _count;
   g_config.loop = 0;
-  g_config.pattern = patternCalm;
+  g_config.pattern = patternWaveRainbow;
 
   draw_pattern(&g_config);
   chThdCreateStatic(waEffectsThread, sizeof(waEffectsThread),
