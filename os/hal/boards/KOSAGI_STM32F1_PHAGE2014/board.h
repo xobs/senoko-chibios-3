@@ -175,7 +175,8 @@
         | PIN_OSPEED_INPUT(PA0) \
         | PIN_MODE_FLOATING(PA0) \
         \
-        | PIN_UNUSED(PA1) \
+        | PIN_OSPEED_INPUT(PA1) \
+        | PIN_MODE_ANALOG(PA1) \
         \
         | PIN_OSPEED_2M(PA2) \
         | PIN_OTYPE_PUSHPULL(PA2) \
