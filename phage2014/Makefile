@@ -104,6 +104,7 @@ CSRC = $(PORTSRC) \
        ledDriver.c \
        bionic.c \
        cmd-accel.c \
+       cmd-adc.c \
        cmd-mem.c \
        cmd-radio.c \
        cmd-reboot.c \

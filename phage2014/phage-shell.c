@@ -23,6 +23,7 @@
 
 /* Forward declarations of available shell commands.*/
 void cmd_accel(BaseSequentialStream *chp, int argc, char *argv[]);
+void cmd_adc(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_mem(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_radio(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_reboot(BaseSequentialStream *chp, int argc, char *argv[]);
@@ -34,11 +35,12 @@ void *stream;
 
 static const ShellCommand shell_commands[] = {
   {"accel", cmd_accel},
+  {"adc", cmd_adc},
+  {"led", cmd_led},
   {"mem", cmd_mem},
   {"radio", cmd_radio},
   {"reboot", cmd_reboot},
   {"threads", cmd_threads},
-  {"led", cmd_led},
   {NULL, NULL}
 };
 
