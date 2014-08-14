@@ -139,6 +139,25 @@ void ledSetRGB(void *ptr, int x, uint8_t r, uint8_t g, uint8_t b, uint8_t shift)
   buf[2] = b >> shift;
 }
 
+void ledSetColor(void *ptr, int x, Color c, uint8_t shift)
+{
+  uint8_t *buf = ((uint8_t *)ptr) + (3 * x);
+  buf[0] = c.g >> shift;
+  buf[1] = c.r >> shift;
+  buf[2] = c.b >> shift;
+}
+
+Color ledGetColor(void *ptr, int x) {
+  Color c;
+  uint8_t *buf = ((uint8_t *)ptr) + (3 * x);
+
+  c.g = buf[0];
+  c.r = buf[1];
+  c.b = buf[2];
+  
+  return c;
+}
+
 /**
  * @brief   Initialize Led Driver
  * @details Initialize the Led Driver based on parameters.

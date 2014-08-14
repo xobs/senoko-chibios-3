@@ -4,9 +4,10 @@
 enum pattern {
   patternCalm = 0,
   patternTest,
-  patternShoot,
-  patternLarson,
+  patternRaindrop,
+  patternWaveRainbow,
   patternStrobe,
+  patternDirectedRainbow,
   patternLast
 };
 
