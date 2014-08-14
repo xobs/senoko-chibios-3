@@ -116,10 +116,6 @@ out:
   chSysUnlockFromISR();
 }
 
-void ledUpdate(void) {
-  /* Wait for LED to finish drawing.*/
-}
-
 void ledSetRGBClipped(void *fb, uint32_t i,
                       uint8_t r, uint8_t g, uint8_t b, uint8_t shift) {
   if (i >= led_config.pixel_count)

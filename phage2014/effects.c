@@ -580,7 +580,6 @@ static msg_t effects_thread(void *arg) {
 
   while (1) {
     draw_pattern(arg);
-    ledUpdate();
     chThdSleepMilliseconds(EFFECTS_REDRAW_MS);
   }
   return MSG_OK;
@@ -588,7 +587,6 @@ static msg_t effects_thread(void *arg) {
 
 void effectsDraw(void) {
   draw_pattern(&g_config);
-  ledUpdate();
 }
 
 void effectsStart(void *_fb, int _count) {
