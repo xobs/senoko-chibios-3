@@ -20,10 +20,10 @@ enum pin_state {
 
 static struct {
   uint32_t      pixel_count;
+  uint32_t      max_pixels;
   uint32_t      current_pixel;  /* Current pixel being DMAed.*/
   GPIO_TypeDef *port;           /* GPIO block LEDs are attached to.*/
   uint32_t      mask;           /* Bitmask of pins LEDs are connected to.*/
-  binary_semaphore_t active_sem;/* Raised when PWM is running.*/
 } led_config;
 
 static uint32_t dma_source[__pin_max];  /* Values to be written to DMA.*/
@@ -110,8 +110,7 @@ out:
   led_config.current_pixel++;
   if (led_config.current_pixel >= led_config.pixel_count) {
     led_config.current_pixel = 0;
-    //PWMD2.tim->CR1 &= ~TIM_CR1_CEN;
-    chBSemSignalI(&led_config.active_sem); 
+    palWritePad(GPIOB, PB0, PAL_LOW);
   }
 
   chSysUnlockFromISR();
@@ -119,9 +118,6 @@ out:
 
 void ledUpdate(void) {
   /* Wait for LED to finish drawing.*/
-  chBSemWait(&led_config.active_sem);
-
-  //PWMD2.tim->CR1 |= TIM_CR1_CEN;
 }
 
 void ledSetRGBClipped(void *fb, uint32_t i,
@@ -179,13 +175,13 @@ void ledDriverInit(int leds, GPIO_TypeDef *port, uint32_t mask, void *_fb) {
   uint32_t i;
   uint8_t *fb = _fb;
 
-  chBSemObjectInit(&led_config.active_sem, 0);
   led_config.pixel_count = leds;
+  led_config.max_pixels = leds;
   led_config.port = port;
   led_config.mask = (mask << 16) & 0xffff0000;
   led_config.current_pixel = 2; /* DMA engine starts on pixel number 2.*/
 
-  for (i = 0; i < led_config.pixel_count * 3; i++)
+  for (i = 0; i < led_config.max_pixels * 3; i++)
     fb[i] = 0;
 
   /* "SET" bits */
@@ -262,8 +258,6 @@ void ledDriverStart(void *_fb)
   dmaStreamEnable(STM32_DMA1_STREAM3);
   dmaStreamEnable(STM32_DMA1_STREAM6);
   dmaStreamEnable(STM32_DMA1_STREAM2);
-
-  chBSemWait(&led_config.active_sem); /* Lock out updates to PWM.*/
 
   // all systems go! both timers and all channels are configured to resonate
   // in complete sync without any need for CPU cycles (only DMA and timers)
