@@ -32,6 +32,7 @@ unsigned long reftime_tau = 0;
 unsigned long offset = 0;
 unsigned int waverate = 10;
 unsigned int waveloop = 0;
+unsigned int patternChanged = 0;
 
 int wavesign = -1;
 
@@ -446,14 +447,30 @@ static void raindropFB(void *fb, int count, int loop) {
   uint8_t oldshift = shift;
   Color c;
   int i;
+  
+  if(patternChanged) {
+    patternChanged = 0;
+    for( i = 0; i < count; i++ ) {
+      c.r = 0; c.g = 0; c.b = 0;
+      ledSetColor(fb, i, c, shift);
+    }
+  }
 
   shift = 0;
   curtime = chVTGetSystemTime() + offset;
   if( (curtime - reftime) > DROP_INT ) {
     reftime = curtime;
     c.r = 255; c.g = 255; c.b = 255;
-    ledSetColor(fb, 0, c, shift);
+  } else {
+    c.r = 0; c.g = 0; c.b = 0;
   }
+
+  if( bumped ) {
+    bumped = 0;
+    c.r = 255; c.g = 255; c.b = 255;
+  }
+
+  ledSetColor(fb, 0, c, shift);
 
   for( i = count-2; i >= 0; i-- ) {
     c = ledGetColor(fb, i);
@@ -522,8 +539,10 @@ static int draw_pattern(struct effects_config *config) {
       waveRainbowFB(config->fb, config->count, config->loop);
     else if( config->pattern == patternDirectedRainbow )
       directedRainbowFB(config->fb, config->count, config->loop);
-    else {
+    else if( config->pattern == patternRaindrop ) {
       raindropFB(config->fb, config->count, config->loop);
+    } else {
+      testPatternFB(config->fb, config->count, config->loop);
     }
 
     return 0;
@@ -541,6 +560,7 @@ enum pattern effectsGetPattern(void) {
 void effectsNextPattern(void) {
   g_config.pattern = g_config.pattern + 1;
   g_config.pattern = g_config.pattern % patternLast;
+  patternChanged = 1;
 }
 
 void effectsPrevPattern(void) {
@@ -549,6 +569,7 @@ void effectsPrevPattern(void) {
   } else {
     g_config.pattern = g_config.pattern - 1;
   }
+  patternChanged = 1;
 }
 
 
@@ -570,7 +591,6 @@ void effectsStart(void *_fb, int _count) {
   g_config.fb = _fb;
   g_config.count = _count;
   g_config.loop = 0;
-  g_config.pattern = patternCalm;
   g_config.pattern = patternTest;
 
   draw_pattern(&g_config);
