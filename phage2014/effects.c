@@ -23,7 +23,7 @@ struct effects_config {
   enum pattern pattern;
 };
 
-uint8_t shift = 1;  // start a little bit dimmer
+uint8_t shift = 5;  // start a little bit dimmer
 
 uint32_t bump_amount = 0;
 uint8_t bumped = 0;
@@ -299,6 +299,7 @@ static void testPatternFB(void *fb, int count, int loop) {
     if (++i >= count) break;
   }
 #endif
+#if 0
   while (i < count) {
     if (loop & 1) {
       /* Black */
@@ -320,6 +321,14 @@ static void testPatternFB(void *fb, int count, int loop) {
       /* Black */
       ledSetRGB(fb, (i++ + loop) % count, 0, 0, 0, shift);
     }
+  }
+#endif
+  int threshold = (phageAdcGet() * count / 4096);
+  for (i = 0; i < count; i++) {
+    if (i > threshold)
+      ledSetRGB(fb, i, 255, 0, 0, shift);
+    else
+      ledSetRGB(fb, i, 0, 0, 0, shift);
   }
 }
 
