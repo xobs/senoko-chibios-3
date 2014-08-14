@@ -6,8 +6,8 @@
 #include "phage.h"
 #include "chprintf.h"
 
-#define ADC_NUM_CHANNELS   2
-#define ADC_BUF_DEPTH      16
+#define ADC_NUM_CHANNELS   1
+#define ADC_BUF_DEPTH      1
 static adcsample_t samples[ADC_NUM_CHANNELS * ADC_BUF_DEPTH];
 
 /*
@@ -46,30 +46,42 @@ static void adcerrorcallback(ADCDriver *adcp, adcerror_t err) {
  * Channels:    IN10, IN11, IN10, IN11, IN10, IN11, Sensor, VRef.
  */
 static const ADCConversionGroup adcgrpcfg = {
-  TRUE,
+  FALSE,                 /* Circular buffer */
   ADC_NUM_CHANNELS,
   adccallback,
   adcerrorcallback,
-  0, ADC_CR2_TSVREFE,           /* CR1, CR2 */
-  ADC_SMPR1_SMP_AN11(ADC_SAMPLE_41P5) | ADC_SMPR1_SMP_AN10(ADC_SAMPLE_41P5) |
-  ADC_SMPR1_SMP_SENSOR(ADC_SAMPLE_239P5) | ADC_SMPR1_SMP_VREF(ADC_SAMPLE_239P5),
-  0,                            /* SMPR2 */
+  0, 0,           /* CR1, CR2 */
+  0,                            /* SMPR1 */
+  ADC_SMPR2_SMP_AN1(ADC_SAMPLE_41P5),
   ADC_SQR1_NUM_CH(ADC_NUM_CHANNELS),
-  ADC_SQR2_SQ8_N(ADC_CHANNEL_SENSOR) | ADC_SQR2_SQ7_N(ADC_CHANNEL_VREFINT),
-  ADC_SQR3_SQ6_N(ADC_CHANNEL_IN11)   | ADC_SQR3_SQ5_N(ADC_CHANNEL_IN10) |
-  ADC_SQR3_SQ4_N(ADC_CHANNEL_IN11)   | ADC_SQR3_SQ3_N(ADC_CHANNEL_IN10) |
-  ADC_SQR3_SQ2_N(ADC_CHANNEL_IN11)   | ADC_SQR3_SQ1_N(ADC_CHANNEL_IN10)
+  0,
+  /*ADC_SQR3_SQ6_N(ADC_CHANNEL_IN1)   | ADC_SQR3_SQ5_N(ADC_CHANNEL_IN1) |
+  ADC_SQR3_SQ4_N(ADC_CHANNEL_IN1)   | ADC_SQR3_SQ3_N(ADC_CHANNEL_IN1) |
+  ADC_SQR3_SQ2_N(ADC_CHANNEL_IN1)   | */ADC_SQR3_SQ1_N(ADC_CHANNEL_IN1)
 };
 
-
 void phageAdcInit(void) {
+  uint32_t cr2;
+
   /*
    * Activates the ADC1 driver and the temperature sensor.
    */
   adcStart(&ADCD1, NULL);
 
-  /*
-   * Starts an ADC continuous conversion.
-   */
-  adcStartConversion(&ADCD1, &adcgrpcfg, samples, ADC_BUF_DEPTH);
+  /* ADC setup.*/
+  ADCD1.adc->CR1   = adcgrpcfg.cr1 | ADC_CR1_SCAN;
+  cr2 = adcgrpcfg.cr2 | ADC_CR2_ADON | ADC_CR2_CONT;
+  ADCD1.adc->CR2   = adcgrpcfg.cr2 | cr2;
+  ADCD1.adc->SMPR1 = adcgrpcfg.smpr1;
+  ADCD1.adc->SMPR2 = adcgrpcfg.smpr2;
+  ADCD1.adc->SQR1  = adcgrpcfg.sqr1;
+  ADCD1.adc->SQR2  = adcgrpcfg.sqr2;
+  ADCD1.adc->SQR3  = adcgrpcfg.sqr3;
+
+  /* ADC start by writing ADC_CR2_ADON a second time.*/
+  ADCD1.adc->CR2   = cr2;
+}
+
+adcsample_t phageAdcGet(void) {
+  return ADCD1.adc->DR;
 }
