@@ -12,6 +12,7 @@ enum pattern {
 };
 
 void effectsStart(void *_fb, int _count);
+void effectsDraw(void);
 void effectsSetPattern(enum pattern pattern);
 enum pattern effectsGetPattern(void);
 void bump(uint32_t amount);
@@ -20,6 +21,6 @@ uint8_t getShift(void);
 void effectsNextPattern(void);
 void effectsPrevPattern(void);
 
-#define EFFECTS_REDRAW_MS 20
+#define EFFECTS_REDRAW_MS 100
 
 #endif /* __PHAGE_EFFECTS_H__ */
