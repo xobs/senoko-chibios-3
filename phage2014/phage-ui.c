@@ -17,30 +17,33 @@ static msg_t ui_thread(void *arg) {
   chRegSetThreadName("ui polling thread");
 
   while (1) {
-    //    ledDriverPause();
     if(palReadPad(GPIOA, PA11)) {
+      //ledDriverPause();
       // data receive gets highest prio
       radioGetRxPayload(rxbuf);
       //      chprintf( stream, "%02x ", rxbuf[2] );
       if( rxbuf[2] == 'x' ) {
-	palWritePad(GPIOA, PA2, PAL_HIGH);
-	palWritePad(GPIOA, PA3, PAL_HIGH);
-	oldpat = effectsGetPattern();
-	effectsSetPattern(patternStrobe);
-	chThdSleepMilliseconds(200);
-	palWritePad(GPIOA, PA2, PAL_LOW);
-	palWritePad(GPIOA, PA3, PAL_LOW);
-	effectsSetPattern(oldpat);
+        palWritePad(GPIOA, PA2, PAL_HIGH);
+        palWritePad(GPIOA, PA3, PAL_HIGH);
+        oldpat = effectsGetPattern();
+        effectsSetPattern(patternStrobe);
+        chThdSleepMilliseconds(200);
+        palWritePad(GPIOA, PA2, PAL_LOW);
+        palWritePad(GPIOA, PA3, PAL_LOW);
+        effectsSetPattern(oldpat);
       }
-    } else {
+      //ledDriverResume();
+    }
+    else {
       // check everything else here
       if(!palReadPad(GPIOA, PA13)) {
-	chprintf( stream, "x" );
-	radioSend('x');
-	chThdSleepMilliseconds(50);  // an extra sleep here to prevent spamming
+        //ledDriverPause();
+        chprintf(stream, "x");
+        radioSend('x');
+        chThdSleepMilliseconds(50);  // an extra sleep here to prevent spamming
+        //ledDriverResume();
       }
     }
-    //    ledDriverResume();
 
     chThdSleepMilliseconds(30);
   }
