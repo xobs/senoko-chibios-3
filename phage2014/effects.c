@@ -23,7 +23,11 @@ struct effects_config {
   enum pattern pattern;
 };
 
+<<<<<<< Updated upstream
 uint8_t shift = 1;  // start a little bit dimmer
+=======
+uint8_t shift = 4;
+>>>>>>> Stashed changes
 
 uint32_t bump_amount = 0;
 uint8_t bumped = 0;
@@ -594,7 +598,7 @@ void effectsStart(void *_fb, int _count) {
   g_config.fb = _fb;
   g_config.count = _count;
   g_config.loop = 0;
-  g_config.pattern = patternTest;
+  g_config.pattern = patternCalm;
 
   draw_pattern(&g_config);
   chThdCreateStatic(waEffectsThread, sizeof(waEffectsThread),

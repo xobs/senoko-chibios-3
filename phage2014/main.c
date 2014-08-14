@@ -33,7 +33,7 @@
 #include "phage-wdt.h"
 #include "phage-ui.h"
 
-#define LED_COUNT 90
+#define LED_COUNT 500
 
 static uint8_t framebuffer[LED_COUNT * 3];
 
@@ -74,7 +74,6 @@ static void accel_int2_handler(eventid_t id) {
 static void key_up_handler(eventid_t id) { // right
   (void)id;
   chprintf(stream, "R");
-  //  effectsSetPattern(patternShoot);
   effectsNextPattern();
 }
 
@@ -82,13 +81,11 @@ static void key_down_handler(eventid_t id) { // left
   (void)id;
   chprintf(stream, "L");
   effectsPrevPattern();
-  //  effectsSetPattern(patternCalm);
 }
 
 static void key_left_handler(eventid_t id) { // I call this "up"
   (void)id;
   chprintf(stream, "U");
-  //  effectsSetPattern(patternLarson);  // don't change effect, just page
 }
 
 static void key_right_handler(eventid_t id) {  // I call this "down"
@@ -96,7 +93,7 @@ static void key_right_handler(eventid_t id) {  // I call this "down"
   (void)id;
   chprintf(stream, "D");
   s = getShift();
-  if( s > 5 )
+  if (s > 5)
     s = 0;
   s++;
   setShift(s);

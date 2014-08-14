@@ -7,7 +7,6 @@
 #include "phage.h"
 #include "phage-radio.h"
 
-static uint32_t addr = 0;
 void cmd_radio(BaseSequentialStream *chp, int argc, char *argv[])
 {
   uint8_t dat[11];
