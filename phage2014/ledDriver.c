@@ -27,7 +27,7 @@ static struct {
 } led_config;
 
 static uint32_t dma_source[__pin_max];  /* Values to be written to DMA.*/
-static uint32_t dma_buffer[24 * 2];     /* Two-pixel DMA buffer.*/
+static uint32_t dma_buffer[24 * 4];     /* Four-pixel DMA buffer.*/
 
 /* Timer 2 as master, active for data transmission and inactive to disable
    transmission during reset period (50uS). */
@@ -79,14 +79,15 @@ static const PWMConfig pwmc3 = {
  */
 static void unpack_framebuffer(void *fb, uint32_t flags) {
   int color, bit;
-  uint8_t *src_buffer = ((uint8_t *)fb) + (led_config.current_pixel * 3);
+  uint8_t *src_buffer;
   uint32_t *dest_buffer;
 
   chSysLockFromISR();
+  src_buffer = ((uint8_t *)fb) + (led_config.current_pixel * 3);
 
   if ( (flags & STM32_DMA_ISR_TCIF) != 0) {
     /* Finished the second pixel, so update it for the next loop.*/
-    dest_buffer = dma_buffer + 24;
+    dest_buffer = dma_buffer + 48;
 
   }
   else if ( (flags & STM32_DMA_ISR_HTIF) != 0) {
@@ -97,22 +98,21 @@ static void unpack_framebuffer(void *fb, uint32_t flags) {
   else
     goto out;
 
-  /* Copy the three color components, bit-by-bit */
-  for (color = 0; color < 3; color++) {
+  /* Copy the three color components from two pixels, bit-by-bit */
+  for (color = 0; color < 6; color++) {
     for (bit = 0; bit < 8; bit++) {
        *dest_buffer++ = ((*src_buffer << bit) & 0b10000000 ? 0x0 : led_config.mask);
     }
     src_buffer++;
   }
 
-out:
-
-  led_config.current_pixel++;
+  led_config.current_pixel += 2;
   if (led_config.current_pixel >= led_config.pixel_count) {
     led_config.current_pixel = 0;
     palWritePad(GPIOB, PB0, PAL_LOW);
   }
 
+out:
   chSysUnlockFromISR();
 }
 
@@ -123,16 +123,14 @@ void ledSetRGBClipped(void *fb, uint32_t i,
   ledSetRGB(fb, i, r, g, b, shift);
 }
 
-void ledSetRGB(void *ptr, int x, uint8_t r, uint8_t g, uint8_t b, uint8_t shift)
-{
+void ledSetRGB(void *ptr, int x, uint8_t r, uint8_t g, uint8_t b, uint8_t shift) {
   uint8_t *buf = ((uint8_t *)ptr) + (3 * x);
   buf[0] = g >> shift;
   buf[1] = r >> shift;
   buf[2] = b >> shift;
 }
 
-void ledSetColor(void *ptr, int x, Color c, uint8_t shift)
-{
+void ledSetColor(void *ptr, int x, Color c, uint8_t shift) {
   uint8_t *buf = ((uint8_t *)ptr) + (3 * x);
   buf[0] = c.g >> shift;
   buf[1] = c.r >> shift;
@@ -181,7 +179,7 @@ void ledDriverInit(int leds, GPIO_TypeDef *port, uint32_t mask, void *_fb) {
   led_config.max_pixels = leds;
   led_config.port = port;
   led_config.mask = (mask << 16) & 0xffff0000;
-  led_config.current_pixel = 2; /* DMA engine starts on pixel number 2.*/
+  led_config.current_pixel = 4; /* DMA engine starts on pixel number 2.*/
 
   for (i = 0; i < led_config.max_pixels * 3; i++)
     fb[i] = 0;
@@ -206,12 +204,12 @@ void ledDriverStart(void *_fb)
   dmaStreamAllocate(STM32_DMA1_STREAM2, 10, unpack_framebuffer, fb);
   dmaStreamSetPeripheral(STM32_DMA1_STREAM2, &(led_config.port->BSRR));
   dmaStreamSetMemory0(STM32_DMA1_STREAM2, dma_buffer);
-  dmaStreamSetTransactionSize(STM32_DMA1_STREAM2, 2 * 24);
+  dmaStreamSetTransactionSize(STM32_DMA1_STREAM2, 4 * 24);
   dmaStreamSetMode(
       STM32_DMA1_STREAM2,
       STM32_DMA_CR_DIR_M2P | STM32_DMA_CR_MINC | STM32_DMA_CR_PSIZE_WORD
       | STM32_DMA_CR_HTIE | STM32_DMA_CR_TCIE
-      | STM32_DMA_CR_MSIZE_WORD | STM32_DMA_CR_CIRC | STM32_DMA_CR_PL(2));
+      | STM32_DMA_CR_MSIZE_WORD | STM32_DMA_CR_CIRC | STM32_DMA_CR_PL(3));
 
   /* DMA stream 3, triggered by pwm update event. output high at the
      beginning of signal. */
@@ -222,7 +220,7 @@ void ledDriverStart(void *_fb)
   dmaStreamSetMode(
       STM32_DMA1_STREAM3, STM32_DMA_CR_TEIE |
       STM32_DMA_CR_DIR_M2P | STM32_DMA_CR_PSIZE_WORD | STM32_DMA_CR_MSIZE_WORD
-      | STM32_DMA_CR_CIRC | STM32_DMA_CR_PL(3));
+      | STM32_DMA_CR_CIRC | STM32_DMA_CR_PL(2));
 
   /* DMA stream 6, triggered by channel1 update event. reset output value
      late to indicate "1" bit to ws2812.  Always triggers but no affect if
@@ -234,7 +232,7 @@ void ledDriverStart(void *_fb)
   dmaStreamSetMode(
       STM32_DMA1_STREAM6,
       STM32_DMA_CR_DIR_M2P | STM32_DMA_CR_PSIZE_WORD | STM32_DMA_CR_MSIZE_WORD
-      | STM32_DMA_CR_CIRC | STM32_DMA_CR_PL(3));
+      | STM32_DMA_CR_CIRC | STM32_DMA_CR_PL(2));
 
   pwmStart(&PWMD2, &pwmc2);
   pwmStart(&PWMD3, &pwmc3);
@@ -267,8 +265,7 @@ void ledDriverStart(void *_fb)
   PWMD2.tim->CR1 |= TIM_CR1_CEN;
 }
 
-void ledDriverPause(void)
-{
+void ledDriverPause(void) {
   dmaStreamDisable(STM32_DMA1_STREAM3);
   dmaStreamDisable(STM32_DMA1_STREAM6);
   dmaStreamDisable(STM32_DMA1_STREAM2);
@@ -279,8 +276,7 @@ void ledDriverPause(void)
   led_config.current_pixel = 0;
 }
 
-void ledDriverResume(void)
-{
+void ledDriverResume(void) {
   pwmEnableChannel(&PWMD3, 2, 14);
   pwmEnableChannel(&PWMD3, 0, 29);
   pwmEnableChannel(&PWMD2, 0, 45 * led_config.pixel_count * 24 / 45);
