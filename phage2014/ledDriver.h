@@ -28,5 +28,6 @@ void ledSetColor(void *ptr, int x, Color c, uint8_t shift);
 void ledSetRGBClipped(void *fb, uint32_t i,
                       uint8_t r, uint8_t g, uint8_t b, uint8_t shift);
 Color ledGetColor(void *ptr, int x);
+void ledSetCount(uint32_t count);
 
 #endif /* LEDDRIVER_H_ */

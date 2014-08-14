@@ -150,6 +150,12 @@ Color ledGetColor(void *ptr, int x) {
   return c;
 }
 
+void ledSetCount(uint32_t count) {
+  if (count > led_config.max_pixels)
+    return;
+  led_config.pixel_count = count;
+}
+
 /**
  * @brief   Initialize Led Driver
  * @details Initialize the Led Driver based on parameters.
@@ -263,14 +269,24 @@ void ledDriverStart(void *_fb)
 
 void ledDriverPause(void)
 {
-  PWMD2.tim->CR1 |= TIM_CR1_OPM;
+  dmaStreamDisable(STM32_DMA1_STREAM3);
+  dmaStreamDisable(STM32_DMA1_STREAM6);
+  dmaStreamDisable(STM32_DMA1_STREAM2);
+  pwmDisableChannel(&PWMD2, 0);
+  pwmDisableChannel(&PWMD3, 0);
+  pwmDisableChannel(&PWMD3, 2);
+  palWritePad(GPIOB, PB0, PAL_LOW);
+  led_config.current_pixel = 0;
 }
 
 void ledDriverResume(void)
 {
-  while( PWMD2.tim->CR1 & TIM_CR1_CEN ) // wait until the cycle is done
-    ;
-  PWMD2.tim->CR1 &= ~TIM_CR1_OPM;
-  PWMD2.tim->CR1 |= TIM_CR1_CEN;
+  pwmEnableChannel(&PWMD3, 2, 14);
+  pwmEnableChannel(&PWMD3, 0, 29);
+  pwmEnableChannel(&PWMD2, 0, 45 * led_config.pixel_count * 24 / 45);
+  PWMD2.tim->CNT = 0;
+  PWMD3.tim->CNT = 43;
+  dmaStreamEnable(STM32_DMA1_STREAM3);
+  dmaStreamEnable(STM32_DMA1_STREAM6);
+  dmaStreamEnable(STM32_DMA1_STREAM2);
 }
-
