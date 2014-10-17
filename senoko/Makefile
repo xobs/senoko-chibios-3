@@ -102,12 +102,14 @@ CSRC = $(PORTSRC) \
        $(CHIBIOS)/os/various/shell.c \
        $(CHIBIOS)/os/various/chprintf.c \
        bionic.c \
+       board-type.c \
        chg.c \
        cmd-chg.c \
        cmd-gg.c \
        cmd-gpio.c \
        cmd-leds.c \
        cmd-mem.c \
+       cmd-power.c \
        cmd-reboot.c \
        cmd-stats.c \
        cmd-threads.c \
