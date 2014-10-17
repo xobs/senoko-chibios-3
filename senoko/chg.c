@@ -237,6 +237,11 @@ static msg_t chg_thread(void *arg) {
   return 0;
 }
 
+int chgPresent(void) {
+  uint16_t word;
+  return !chg_getblock(0xff, &word, 2);
+}
+
 void chgInit(void) {
   chThdCreateStatic(waChgThread, sizeof(waChgThread),
                     HIGHPRIO - 10, chg_thread, NULL);
