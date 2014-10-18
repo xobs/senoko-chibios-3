@@ -26,5 +26,5 @@ void senokoWatchdogInit(void) {
   iwdgStart(&IWDGD, &watchdogConfig);
 
   chThdCreateStatic(waWdtThread, sizeof(waWdtThread),
-                    HIGHPRIO - 5, wdt_thread, NULL);
+                    LOWPRIO, wdt_thread, NULL);
 }
