@@ -12,30 +12,19 @@
 #define CHG_ADDR 0x9
 
 #define THREAD_SLEEP_MS 1100
-#define MAX_ERRORS 10
 
-/* If we're under 95%, charge the battery */
-#define CAPACITY_TO_CHARGE 95
+/* Defaults for this board, for an unconfigured gas gauge.*/
+#define CELL_COUNT 3
+#define CELL_CAPACITY 5000
+#define CHARGE_CURRENT 3000
 
-/* If the current is less than this, enable the charger */
-#define CURRENT_TO_CHARGE 1
-
-/* Rate (in mA) at which the battery can charge.*/
-#define CHARGE_CURRENT 1024
-
-/* Target voltage (in mV) of the battery.*/
-#define CHARGE_VOLTAGE 12600
-
-/* Rate (in mA) at which the wall can supply current.*/
-#define CHARGE_WALL_CURRENT 1024
-
-/* This is the ABSOLUTE MAXIMUM voltage allowed for each cell */
+/* This is the ABSOLUTE MAXIMUM voltage allowed for each cell.*/
 #define MV_MAX 4200
 #define MV_MIN 3000
 
 /* Voltages and currents for waking up gas gauge when it's asleep.*/
 #define CHARGE_GG_WAKEUP_CURRENT 1024
-#define CHARGE_GG_WAKEUP_VOLTAGE CHARGE_VOLTAGE
+#define CHARGE_GG_WAKEUP_VOLTAGE 12600
 #define CHARGE_GG_WALL_CURRENT 1024
 
 static uint16_t g_current;
@@ -135,9 +124,9 @@ int chgGetDevice(uint16_t *word) {
   return chg_getblock(0xff, word, 2);
 }
 
+
 static THD_WORKING_AREA(waChgThread, 256);
 static msg_t chg_thread(void *arg) {
-  int error_count = 0;
   (void)arg;
 
   chRegSetThreadName("charge controller");
@@ -149,94 +138,58 @@ static msg_t chg_thread(void *arg) {
     int cell;
     int ret;
     uint8_t cell_count;
-    uint8_t capacity;
-    int16_t current;
 
     senokoI2cReleaseBus();
     chThdSleepMilliseconds(THREAD_SLEEP_MS);
     senokoI2cAcquireBus();
 
     /*
-     * Determine the battery's capacity and charge current,
-     * so we can decide if we need to charge or not.
-     */
-    ret = ggPercent(&capacity);
-    if (ret != MSG_OK) {
-      error_count++;
-      capacity = CAPACITY_TO_CHARGE;
-    }
-
-    ret = ggAverageCurrent(&current);
-    if (ret != MSG_OK) {
-      error_count++;
-      current = CURRENT_TO_CHARGE;
-    }
-
-    /*
-     * If both gas gauge calls failed, then the gas gauge is probably off.
-     * Turn on the charger to ensure the gas gauge wakes up.  Reset the
-     * error count, because this isn't a charge-related error.*/
-    if (error_count == 2) {
-      error_count = 0;
-      chgSet(CHARGE_GG_WAKEUP_CURRENT,
-             CHARGE_GG_WAKEUP_VOLTAGE,
-             CHARGE_GG_WALL_CURRENT);
-      continue;
-    }
-
-    /* Charge the battery if necessary.*/
-#if 0
-    if (capacity < CAPACITY_TO_CHARGE
-     && current < CURRENT_TO_CHARGE
-     && (g_current == 0 || g_voltage == 0)) {
-      chgSet(CHARGE_CURRENT, CHARGE_VOLTAGE, CHARGE_WALL_CURRENT);
-      continue;
-    }
-#endif
-
-    if (error_count > MAX_ERRORS)
-      chgSet(0, 0, g_input << 1);
-
-    continue;
-    /* Feed the charger watchdog timer */
-    chgSet(g_current, g_voltage, g_input << 1);
-
-#if 0
-    /*
      * Examine each cell to determine if it's undervoltage or
      * overvoltage.  If it's undervoltage, cut power to the
-     * mainboard.  For overvoltage, stop charging.*/
+     * mainboard.  For overvoltage, stop charging.
      */
     ret = ggCellCount(&cell_count);
-    if (ret) {
-      error_count++;
+    if (ret != MSG_OK) {
+
+      /* Try again.  The bus might just be busy, or the GG is off. */
+      ret = ggCellCount(&cell_count);
+      if (ret != MSG_OK) {
+        /*
+         * If we failed twice in a row to get the cell count, then the
+         * gas gauge might be asleep.  It does that sometimes, particularly
+         * on first powerup.
+         * Turn on the charger to ensure the gas gauge wakes up.  Reset the
+         * error count, because this isn't a charge-related error.
+         */
+        chgSet(CHARGE_GG_WAKEUP_CURRENT,
+               CHARGE_GG_WAKEUP_VOLTAGE,
+               CHARGE_GG_WALL_CURRENT);
+        continue;
+      }
+    }
+
+    if (cell_count != CELL_COUNT) {
+      ggSetDefaults(CELL_COUNT, CELL_CAPACITY, CHARGE_CURRENT);
       continue;
     }
 
     for (cell = 1; cell <= cell_count; cell++) {
       ret = ggCellVoltage(cell, &cell_mv);
-      if (ret) {
-        error_count++;
+      if (ret)
         continue;
-      }
 
       /*
        * If any one cell goes below the minimum, shut down
        * everything.  These cells are very prone to expanding,
        * and we don't want to stress them.
        */
-      if (cell_mv > 0 && cell_mv < MV_MIN
-          && (!g_current || !g_voltage))
+      if (cell_mv > 0 && cell_mv < MV_MIN && (!g_current || !g_voltage))
         powerOff();
 
       /* If we exceed the max voltage, shut down charging.*/
       if (cell_mv > MV_MAX && (g_current || g_voltage))
         chgSet(0, 0, g_input << 1);
     }
-
-    /* Reset the error count if no further errors were encountered.*/
-    error_count = 0;
-#endif
   }
   return 0;
 }
