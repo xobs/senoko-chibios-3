@@ -264,14 +264,14 @@ static int gg_setflash(uint8_t subclass, uint8_t offset, void *data, int size) {
   int ptr;
   int start = (offset/32);
   int end = (32*((offset+size)/32) + 32*(!!(offset+size)))/32;
-  uint8_t eeprom_cache[256];
+  static uint8_t eeprom_cache[256];
 
   if ((offset + size > subclass_size[subclass]) || size <= 0)
     return -1;
 
   chThdSleepMilliseconds(50);
   ret = gg_getflash(subclass, 0, eeprom_cache, subclass_size[subclass]);
-  if (ret < 0)
+  if (ret != MSG_OK)
     return -2;
 
   memcpy(eeprom_cache + offset, data, size);
@@ -290,7 +290,7 @@ static int gg_setflash(uint8_t subclass, uint8_t offset, void *data, int size) {
   }
 
   for (ptr = start; ptr < end; ptr++) {
-    uint8_t temp_buffer[34];
+    static uint8_t temp_buffer[34];
     int write_size;
 
     write_size = 32;
@@ -334,7 +334,7 @@ static int gg_setflash_word(uint8_t subclass, uint8_t offset, uint16_t data) {
 static int gg_getflash_word(uint8_t subclass, uint8_t offset, uint16_t *data) {
   int ret;
   ret = gg_getflash(subclass, offset, data, 2);
-  if (ret < 0)
+  if (ret != MSG_OK)
     return ret;
   *data = ((*data >> 8) & 0xff) | ((*data << 8) & 0xff00);
   return 0;
@@ -374,7 +374,7 @@ static int gg_getstring(uint8_t addr, uint8_t *data, int size) {
   int i;
 
   ret = gg_getblock(addr, data, size);
-  if (ret < 0)
+  if (ret != MSG_OK)
     return ret;
 
   size--;
@@ -404,7 +404,7 @@ int ggSetCellCount(int cells) {
   /* Set the number of cells */
 
   ret = gg_getflash(64, 0, cfg_a, sizeof(cfg_a));
-  if (ret < 0)
+  if (ret != MSG_OK)
     return ret;
 
   cfg_a[0] &= ~3;
@@ -419,57 +419,57 @@ int ggSetCellCount(int cells) {
     return -1;
 
   ret = gg_setflash(64, 0, cfg_a, sizeof(cfg_a));
-  if (ret < 0)
+  if (ret != MSG_OK)
     return ret;
 
   /* Set various over/undervoltage flags */
   
   ret = gg_setflash_word(0, 7, cell_cfgs[cells].pov_threshold);
-  if (ret < 0)
+  if (ret != MSG_OK)
     return ret;
 
   ret = gg_setflash_word(0, 10, cell_cfgs[cells].pov_recovery);
-  if (ret < 0)
+  if (ret != MSG_OK)
     return ret;
 
   ret = gg_setflash_word(0, 17, cell_cfgs[cells].puv_threshold);
-  if (ret < 0)
+  if (ret != MSG_OK)
     return ret;
 
   ret = gg_setflash_word(0, 20, cell_cfgs[cells].puv_recovery);
-  if (ret < 0)
+  if (ret != MSG_OK)
     return ret;
 
   ret = gg_setflash_word(16, 0, cell_cfgs[cells].sov_threshold);
-  if (ret < 0)
+  if (ret != MSG_OK)
     return ret;
   
   ret = gg_setflash_word(34, 2, cell_cfgs[cells].charging_voltage);
-  if (ret < 0)
+  if (ret != MSG_OK)
     return ret;
   
   ret = gg_setflash_word(38, 8, cell_cfgs[cells].depleted_voltage);
-  if (ret < 0)
+  if (ret != MSG_OK)
     return ret;
   
   ret = gg_setflash_word(38, 11, cell_cfgs[cells].depleted_recovery);
-  if (ret < 0)
+  if (ret != MSG_OK)
     return ret;
   
   ret = gg_setflash_word(48, 8, cell_cfgs[cells].design_voltage);
-  if (ret < 0)
+  if (ret != MSG_OK)
     return ret;
   
   ret = gg_setflash_word(68, 0, cell_cfgs[cells].flash_update_ok_voltage);
-  if (ret < 0)
+  if (ret != MSG_OK)
     return ret;
   
   ret = gg_setflash_word(68, 2, cell_cfgs[cells].shutdown_voltage);
-  if (ret < 0)
+  if (ret != MSG_OK)
     return ret;
   
   ret = gg_setflash_word(80, 45, cell_cfgs[cells].term_voltage);
-  if (ret < 0)
+  if (ret != MSG_OK)
     return ret;
 
   return 0;
@@ -480,7 +480,7 @@ int ggCellCount(uint8_t *cells) {
   uint8_t cfg_a[2];
 
   ret = gg_getflash(64, 0, cfg_a, sizeof(cfg_a));
-  if (ret < 0)
+  if (ret != MSG_OK)
     return ret;
 
   /* Cell count, in the current chip, happens to be cfg_a[1:0] + 1 */
@@ -531,28 +531,52 @@ int ggSetCapacity(int cells, uint16_t capacity) {
     else
       /* Set other capacities to 0 */
       ret = gg_setflash_word(82, cell*2, 0);
-    if (ret < 0)
+    if (ret != MSG_OK)
       return ret;
   }
 
   /* Set Qmax Pack */
   ret = gg_setflash_word(82, 8, capacity);
-  if (ret < 0)
+  if (ret != MSG_OK)
     return ret;
 
   /* Set the SBS value */
   ret = gg_setflash_word(48, 22, capacity);
-  if (ret < 0)
+  if (ret != MSG_OK)
     return ret;
 
   /* Set tracking support */
   uint8_t reg;
   reg = 0x03;
   ret = gg_setflash(82, 12, &reg, 1);
-  if (ret < 0)
+  if (ret != MSG_OK)
     return ret;
 
   return 0;
+}
+
+int ggSetFastChargeCurrent(int current) {
+  return gg_setflash_word(34, 0, current);
+}
+
+int ggSetBroadcast(int broadcast) {
+  int ret;
+  uint8_t cfg_b[2];
+
+  ret = gg_getflash(64, 2, cfg_b, sizeof(cfg_b));
+  if (ret != MSG_OK)
+    return ret;
+
+  /* Byteswapped.  Low-byte is offset 1. */
+
+  if (broadcast)
+    cfg_b[1] |=  (1 << 0);
+  else
+    cfg_b[1] &= ~(1 << 0);
+
+  ret = gg_setflash(64, 2, cfg_b, sizeof(cfg_b));
+
+  return ret;
 }
 
 int ggMode(uint16_t *word) {
@@ -563,7 +587,7 @@ int ggSetPrimary(void) {
   uint16_t reg;
   int ret;
   ret = ggMode(&reg);
-  if (ret < 0)
+  if (ret != MSG_OK)
     return ret;
   reg |= (1 << 1);
   return gg_setblock(0x03, &reg, 2);
@@ -573,7 +597,7 @@ int ggSetSecondary(void) {
   uint16_t reg;
   int ret;
   ret = ggMode(&reg);
-  if (ret < 0)
+  if (ret != MSG_OK)
     return ret;
   reg &= ~(1 << 1);
   return gg_setblock(0x03, &reg, 2);
@@ -583,7 +607,7 @@ int ggTemperature(int16_t *word) {
   int16_t *temp = word;
   int ret;
   ret = gg_getword(0x08, temp);
-  if (ret < 0)
+  if (ret != MSG_OK)
     return ret;
   *temp = *temp - 2730;
   return 0;
@@ -624,7 +648,7 @@ int ggDesignCapacity(uint16_t *word) {
 int ggAverageCurrent(int16_t *word) {
   int ret;
   ret = gg_getword(0xb, word);
-  if (ret < 0)
+  if (ret != MSG_OK)
     return ret;
   return 0;
 }
@@ -640,7 +664,7 @@ int ggFirmwareVersion(uint16_t *word) {
 int ggState(uint16_t *word) {
   int ret;
   ret = gg_getmfgr(0x0006, word, 2);
-  if (ret < 0)
+  if (ret != MSG_OK)
     return ret;
   return 0;
 }
@@ -660,20 +684,36 @@ int ggSetITEnable(void) {
   return gg_getmfgr(0x0021, NULL, 0);
 }
 
+#include "chprintf.h"
+int ggSetDefaults(int cells, int capacity, int current) {
+  int ret;
+
+  chprintf(stream, "Setting cells: %d\r\n", cells);
+  ret = ggSetCellCount(cells);
+
+  chprintf(stream, "Setting capacity: %d / %d mAh\r\n", cells, capacity);
+  ret = ggSetCapacity(cells, capacity);
+
+  chprintf(stream, "Setting fast charge current: %d mA\r\n", current);
+  ret = ggSetFastChargeCurrent(current);
+
+  return ret;
+}
+
 int ggSetChargeControl(int state) {
   uint8_t reg[2];
   int ret;
 
   /* Turn on charge control */
   ret = gg_getblock(0x03, reg, 2);
-  if (ret < 0)
+  if (ret != MSG_OK)
     return ret;
   if (state == 0) /* Inverse logic */
     reg[0] |= 1 << 6;
   else
     reg[0] &= ~(1 << 6);
   ret = gg_setblock(0x03, reg, 2);
-  if (ret < 0)
+  if (ret != MSG_OK)
     return ret;
 
   return ret;
