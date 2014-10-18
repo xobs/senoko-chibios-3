@@ -92,6 +92,23 @@ void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]) {
       }
     }
   }
+  else if (is_command(argc, argv, "auto")) {
+    int handled = 0;
+    if (argc == 2) {
+      if (argv[1][0] == '1') {
+        ggSetBroadcast(1);
+        handled = 1;
+      }
+      else if (argv[1][0] == '0') {
+        ggSetBroadcast(0);
+        handled = 1;
+      }
+    }
+
+    if (!handled) {
+      chprintf(chp, "Usage: gg auto [0|1]\r\n");
+    }
+  }
   else if (is_command(argc, argv, "pfreset")) {
     chprintf(chp, "Resetting permanent failure flags...");
     ret = ggPermanentFailureReset();
@@ -113,10 +130,11 @@ void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]) {
     chprintf(chp,
       "Usage:\r\n"
       "gg dsg +/-       Force dsg fet on or off\r\n"
-      "gg cells [3/4]   Set cell count\r\n"
+      "gg cells [3|4]   Set cell count\r\n"
       "gg cal           Calibrate battery pack\r\n"
       "gg pfreset       Reset permanent failure fuse\r\n"
       "gg reset         Reset gas gauge completely\r\n"
+      "gg auto [0|1]    Whether the gas gauge can run the charger\r\n"
       );
     return;
   }
