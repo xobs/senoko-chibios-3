@@ -130,7 +130,7 @@ msg_t senokoI2cMasterTransmitTimeout(i2caddr_t addr,
                                      size_t txbytes,
                                      uint8_t *rxbuf,
                                      size_t rxbytes) {
-  msg_t ret;
+  msg_t ret = MSG_OK;
   uint8_t rxbuf_hack[2];
   uint8_t *rxbuf_orig;
   int rxbuf_do_hack;
