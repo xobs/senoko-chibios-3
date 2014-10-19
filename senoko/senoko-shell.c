@@ -26,6 +26,7 @@ void *stream;
 void cmd_threads(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_mem(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]);
+void cmd_gpio(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_stats(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_chg(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_leds(BaseSequentialStream *chp, int argc, char *argv[]);
@@ -34,6 +35,7 @@ void cmd_reboot(BaseSequentialStream *chp, int argc, char *argv[]);
 static const ShellCommand shellCommands[] = {
   {"chg", cmd_chg},
   {"gg", cmd_gg},
+  {"gpio", cmd_gpio},
   {"leds", cmd_leds},
   {"mem", cmd_mem},
   {"stats", cmd_stats},
