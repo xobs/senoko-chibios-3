@@ -630,7 +630,7 @@ int ggCurrent(int16_t *word) {
   return gg_getword(0x0a, word);
 }
 
-int ggChargingCurrent(int16_t *word) {
+int ggChargingCurrent(uint16_t *word) {
   return gg_getword(0x14, word);
 }
 

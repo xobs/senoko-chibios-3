@@ -16,7 +16,7 @@ int ggTemperature(int16_t *word);
 int ggVoltage(uint16_t *word);
 int ggCurrent(int16_t *word);
 int ggChargingVoltage(uint16_t *word);
-int ggChargingCurrent(int16_t *word);
+int ggChargingCurrent(uint16_t *word);
 int ggFullCapacity(uint16_t *word);
 int ggDesignCapacity(uint16_t *word);
 int ggCurrent(int16_t *word);
