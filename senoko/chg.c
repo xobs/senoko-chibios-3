@@ -47,7 +47,40 @@ static int chg_setblock(void *data, int size) {
   return 0;
 }
 
-int chgSet(uint16_t current, uint16_t voltage, uint16_t input) {
+int chgSet(uint16_t current, uint16_t voltage) {
+  int ret;
+  uint8_t bfr[3];
+
+  if (current > 8064)
+    return -1;
+
+  if (voltage > 19200)
+    return -1;
+
+  current &= 0x1f80;
+
+  voltage &= 0x7ff0;
+
+  g_current = current;
+  bfr[0] = 0x14;
+  bfr[1] = g_current;
+  bfr[2] = g_current >> 8;
+  ret = chg_setblock(bfr, sizeof(bfr));
+  if (ret)
+    return ret;
+
+  g_voltage = voltage;
+  bfr[0] = 0x15;
+  bfr[1] = g_voltage;
+  bfr[2] = g_voltage >> 8;
+  ret = chg_setblock(bfr, sizeof(bfr));
+  if (ret)
+    return ret;
+
+  return 0;
+}
+
+int chgSetAll(uint16_t current, uint16_t voltage, uint16_t input) {
   int ret;
   uint8_t bfr[3];
 
@@ -124,7 +157,6 @@ int chgGetDevice(uint16_t *word) {
   return chg_getblock(0xff, word, 2);
 }
 
-
 static THD_WORKING_AREA(waChgThread, 256);
 static msg_t chg_thread(void *arg) {
   (void)arg;
@@ -138,6 +170,7 @@ static msg_t chg_thread(void *arg) {
     int cell;
     int ret;
     uint8_t cell_count;
+    uint16_t voltage, current;
 
     senokoI2cReleaseBus();
     chThdSleepMilliseconds(THREAD_SLEEP_MS);
@@ -162,8 +195,7 @@ static msg_t chg_thread(void *arg) {
          * error count, because this isn't a charge-related error.
          */
         chgSet(CHARGE_GG_WAKEUP_CURRENT,
-               CHARGE_GG_WAKEUP_VOLTAGE,
-               CHARGE_GG_WALL_CURRENT);
+               CHARGE_GG_WAKEUP_VOLTAGE);
         continue;
       }
     }
@@ -188,8 +220,19 @@ static msg_t chg_thread(void *arg) {
 
       /* If we exceed the max voltage, shut down charging.*/
       if (cell_mv > MV_MAX && (g_current || g_voltage))
-        chgSet(0, 0, g_input << 1);
+        chgSet(0, 0);
     }
+
+    /* Figure out what the gas gauge wants us to charge at.*/
+    ret = ggChargingVoltage(&voltage);
+    if (ret)
+      continue;
+
+    ret = ggChargingCurrent(&current);
+    if (ret)
+      continue;
+
+    chgSet(current, voltage);
   }
   return 0;
 }
