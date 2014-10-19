@@ -34,15 +34,15 @@ void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]) {
   if (is_command(argc, argv, "dsg")) {
 
     if (argc == 2 && (argv[1][0] == '+' || argv[1][0] == '-')) {
-      if (argv[1][0] == '+')
-        ret = ggSetDsgFET(1);
-      else
-        ret = ggSetDsgFET(0);
+      if (argv[1][0] == '+') {
+        if ( !(ret = ggSetDsgFET(1)))
+          chprintf(chp, "Discharge FET forced on\r\n");
+      } else {
+        if ( ! (ret = ggSetDsgFET(0)))
+          chprintf(chp, "Discharge FET allowed to turn off\r\n");
+      }
       if (ret < 0)
-        chprintf(chp, "Unable to force DSG fet: %d\r\n", ret);
-      else
-        chprintf(chp, "Discharge FET forced %s\r\n",
-            (argv[1][0] == '+') ? "on" : "off");
+        chprintf(chp, "Unable to modify  DSG fet: %d\r\n", ret);
     }
     else {
       chprintf(chp, "Usage: gg dsg +/-\r\n");
@@ -52,15 +52,15 @@ void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]) {
   else if (is_command(argc, argv, "chg")) {
 
     if (argc == 2 && (argv[1][0] == '+' || argv[1][0] == '-')) {
-      if (argv[1][0] == '+')
-        ret = ggSetChgFET(1);
-      else
-        ret = ggSetChgFET(0);
+      if (argv[1][0] == '+') {
+        if ( !(ret = ggSetChgFET(1)))
+          chprintf(chp, "Charge FET forced on\r\n");
+      } else {
+        if ( ! (ret = ggSetChgFET(0)))
+          chprintf(chp, "Charge FET allowed to turn off\r\n");
+      }
       if (ret < 0)
-        chprintf(chp, "Unable to force CHG fet: %d\r\n", ret);
-      else
-        chprintf(chp, "Charge FET forced %s\r\n",
-            (argv[1][0] == '+') ? "on" : "off");
+        chprintf(chp, "Unable to modify  DSG fet: %d\r\n", ret);
     }
     else {
       chprintf(chp, "Usage: gg chg +/-\r\n");
@@ -165,7 +165,8 @@ void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]) {
   else {
     chprintf(chp,
       "Usage:\r\n"
-      "gg dsg +/-       Force dsg fet on or off\r\n"
+      "gg dsg +/-       Force dsg fet on or let it turn off\r\n"
+      "gg chg +/-       Force chg fet on or let it turn off\r\n"
       "gg cells [3|4]   Set cell count\r\n"
       "gg cal           Calibrate battery pack\r\n"
       "gg templow [t]   Set charge-inhibit low temperature\r\n"
