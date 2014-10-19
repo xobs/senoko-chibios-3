@@ -49,7 +49,7 @@ void cmd_chg(BaseSequentialStream *chp, int argc, char *argv[]) {
 
   else if (argc == 1) {
     chprintf(chp, "Disabling charging\r\n");
-    ret = chgSet(0, 0, 0);
+    ret = chgSet(0, 0);
     if (ret < 0)
       chprintf(chp, "Error setting charge: %d\n", ret);
     return;
@@ -58,7 +58,7 @@ void cmd_chg(BaseSequentialStream *chp, int argc, char *argv[]) {
   else {
     uint32_t current, voltage, input;
 
-    input = 1024; /* mA */
+    input = 65536; /* invalid value */
     current = strtoul(argv[0], NULL, 0);
     voltage = strtoul(argv[1], NULL, 0);
     if (argc > 2)
@@ -69,36 +69,34 @@ void cmd_chg(BaseSequentialStream *chp, int argc, char *argv[]) {
       chprintf(chp, "Error: That's too much current\r\n");
       return;
     }
-    if (current < 0) {
-      chprintf(chp, "Error: 0 mA is the minimum charge current\r\n");
-      return;
-    }
-
     /* Figure/check voltage */
     if (voltage > 19200) {
       chprintf(chp, "Error: 19.2V is the max voltage\r\n");
       return;
     }
 
-    if (voltage < 0) {
-      chprintf(chp, "Error: Too little voltage (0 mV min)\r\n");
-      return;
+    if (input != 65536) {
+
+      /* Figure/check input current */
+      if (input > 11004) {
+        chprintf(chp,
+        "Error: 11004 mA is the max supported input current\r\n");
+        return;
+      }
+      if (input < 256) {
+        chprintf(chp, "Error: Input current must be at least 256 mA\r\n");
+        return;
+      }
+
+      chprintf(chp, "Setting charger: %dmA @ %dmV (input: %dmA)... ",
+          current, voltage, input);
+      ret = chgSetAll(current, voltage, input);
+    }
+    else {
+      chprintf(chp, "Setting charger: %dmA @ %dmV... ", current, voltage);
+      ret = chgSet(current, voltage);
     }
 
-    /* Figure/check input current */
-    if (input > 11004) {
-      chprintf(chp,
-      "Error: 11004 mA is the max supported input current\r\n");
-      return;
-    }
-    if (input < 256) {
-      chprintf(chp, "Error: Input current must be at least 256 mA\r\n");
-      return;
-    }
-
-    chprintf(chp, "Setting charger: %dmA @ %dmV (input: %dmA)... ",
-        current, voltage, input);
-    ret = chgSet(current, voltage, input);
     if (ret < 0)
       chprintf(chp, "Error: 0x%x\r\n", ret);
     else
