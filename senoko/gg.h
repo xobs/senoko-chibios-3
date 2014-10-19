@@ -26,7 +26,9 @@ int ggFirmwareVersion(uint16_t *word);
 int ggState(uint16_t *word);
 int ggSetLeds(int state);
 int ggSetChargeControl(int state);
-int ggForceDischarge(int state);
+int ggSetDsgFET(int state);
+int ggSetChgFET(int state);
+int ggChargingStatus(uint16_t *status);
 int ggSetManufacturer(uint8_t name[11]);
 int ggSetChemistry(uint8_t chem[4]);
 int ggSetCellCount(int cells);
@@ -37,6 +39,10 @@ int ggTimeToEmpty(uint16_t *minutes);
 int ggTimeToFull(uint16_t *minutes);
 int ggCalibrate(int16_t voltage, int16_t current,
                 uint16_t temperature, int cells);
+int ggSetInhibitLow(int16_t temp);
+int ggSetInhibitHigh(int16_t temp);
+int ggInhibitLow(int16_t *temp);
+int ggInhibitHigh(int16_t *temp);
 
 int ggPermanentFailureFlags(uint16_t *flags);
 int ggFuseFlag(uint16_t *flags);

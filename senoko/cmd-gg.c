@@ -35,9 +35,9 @@ void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]) {
 
     if (argc == 2 && (argv[1][0] == '+' || argv[1][0] == '-')) {
       if (argv[1][0] == '+')
-        ret = ggForceDischarge(1);
+        ret = ggSetDsgFET(1);
       else
-        ret = ggForceDischarge(0);
+        ret = ggSetDsgFET(0);
       if (ret < 0)
         chprintf(chp, "Unable to force DSG fet: %d\r\n", ret);
       else
@@ -48,6 +48,42 @@ void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]) {
       chprintf(chp, "Usage: gg dsg +/-\r\n");
       return;
     }
+  }
+  else if (is_command(argc, argv, "chg")) {
+
+    if (argc == 2 && (argv[1][0] == '+' || argv[1][0] == '-')) {
+      if (argv[1][0] == '+')
+        ret = ggSetChgFET(1);
+      else
+        ret = ggSetChgFET(0);
+      if (ret < 0)
+        chprintf(chp, "Unable to force CHG fet: %d\r\n", ret);
+      else
+        chprintf(chp, "Charge FET forced %s\r\n",
+            (argv[1][0] == '+') ? "on" : "off");
+    }
+    else {
+      chprintf(chp, "Usage: gg chg +/-\r\n");
+      return;
+    }
+  }
+  else if (is_command(argc, argv, "templow")) {
+    if (argc != 2) {
+      int16_t temp;
+      ggInhibitLow(&temp);
+      chprintf(chp, "Lower-bound temperature inhibit: %d\r\n", temp);
+      return;
+    }
+    ggSetInhibitLow(strtoul(argv[1], NULL, 0));
+  }
+  else if (is_command(argc, argv, "temphigh")) {
+    if (argc != 2) {
+      int16_t temp;
+      ggInhibitHigh(&temp);
+      chprintf(chp, "Upper-bound temperature inhibit: %d\r\n", temp);
+      return;
+    }
+    ggSetInhibitHigh(strtoul(argv[1], NULL, 0));
   }
   else if (is_command(argc, argv, "capacity")) {
     uint16_t capacity;
@@ -132,6 +168,8 @@ void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]) {
       "gg dsg +/-       Force dsg fet on or off\r\n"
       "gg cells [3|4]   Set cell count\r\n"
       "gg cal           Calibrate battery pack\r\n"
+      "gg templow [t]   Set charge-inhibit low temperature\r\n"
+      "gg temphigh [t]  Set charge-inhibit high temperature\r\n"
       "gg pfreset       Reset permanent failure fuse\r\n"
       "gg reset         Reset gas gauge completely\r\n"
       "gg auto [0|1]    Whether the gas gauge can run the charger\r\n"

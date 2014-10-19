@@ -331,8 +331,9 @@ static int gg_setflash_word(uint8_t subclass, uint8_t offset, uint16_t data) {
   return gg_setflash(subclass, offset, &val, 2);
 }
 
-static int gg_getflash_word(uint8_t subclass, uint8_t offset, uint16_t *data) {
+static int gg_getflash_word(uint8_t subclass, uint8_t offset, void *d) {
   int ret;
+  uint16_t *data = d;
   ret = gg_getflash(subclass, offset, data, 2);
   if (ret != MSG_OK)
     return ret;
@@ -687,6 +688,7 @@ int ggSetITEnable(void) {
 #include "chprintf.h"
 int ggSetDefaults(int cells, int capacity, int current) {
   int ret;
+  uint8_t cfg_b[2];
 
   chprintf(stream, "Setting cells: %d\r\n", cells);
   ret = ggSetCellCount(cells);
@@ -696,6 +698,12 @@ int ggSetDefaults(int cells, int capacity, int current) {
 
   chprintf(stream, "Setting fast charge current: %d mA\r\n", current);
   ret = ggSetFastChargeCurrent(current);
+
+  chprintf(stream, "Setting non-removable (NR) mode\r\n");
+  ret = gg_getflash(64, 2, cfg_b, sizeof(cfg_b));
+  /* Byteswapped.  Low-byte is offset 1. */
+  cfg_b[1] |=  (1 << 3);
+  ret = gg_setflash(64, 2, cfg_b, sizeof(cfg_b));
 
   return ret;
 }
@@ -719,17 +727,54 @@ int ggSetChargeControl(int state) {
   return ret;
 }
 
-int ggForceDischarge(int state) {
+int ggSetDsgFET(int state) {
   uint16_t val;
   int ret;
   ret = gg_getword(0x46, &val);
   if (ret)
     return ret;
   if (state)
-    val |= (1<<1);
+    val |= (1 << 1);
   else
-    val &= ~(1<<1);
+    val &= ~(1 << 1);
   return gg_setword(0x46, val);
+}
+
+int ggSetChgFET(int state) {
+  uint16_t val;
+  int ret;
+  ret = gg_getword(0x46, &val);
+  if (ret)
+    return ret;
+  if (state)
+    val |= (1 << 2);
+  else
+    val &= ~(1 << 2);
+  return gg_setword(0x46, val);
+}
+
+int ggSetInhibitLow(int16_t temp)
+{
+  return gg_setflash_word(32, 0, temp);
+}
+
+int ggInhibitLow(int16_t *temp)
+{
+  return gg_getflash_word(32, 0, temp);
+}
+
+int ggSetInhibitHigh(int16_t temp)
+{
+  return gg_setflash_word(32, 2, temp);
+}
+
+int ggInhibitHigh(int16_t *temp)
+{
+  return gg_getflash_word(32, 2, temp);
+}
+
+int ggChargingStatus(uint16_t *status) {
+  return gg_getword(0x55, status);
 }
 
 int ggPermanentFailureFlags(uint16_t *flags) {

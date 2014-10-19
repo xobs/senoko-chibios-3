@@ -204,8 +204,8 @@ void cmd_stats(BaseSequentialStream *chp, int argc, char *argv[]) {
   print_word(chp, "Voltage:", ggVoltage, "%d mV");
   print_signed_word(chp, "Current:", ggCurrent, "%d mA");
   print_signed_word(chp, "Average current:", ggAverageCurrent, "%d mA");
-  print_word(chp, "Charging voltage:", ggChargingVoltage, "%d mA");
-  print_signed_word(chp, "Target current:", ggChargingCurrent, "%d mV");
+  print_word(chp, "Charging voltage:", ggChargingVoltage, "%d mV");
+  print_signed_word(chp, "Target current:", ggChargingCurrent, "%d mA");
 
   print_byte(chp, "Number of cells:", ggCellCount, "%d cells");
   for (cell = 1; cell <= 4; cell++) {
@@ -216,6 +216,43 @@ void cmd_stats(BaseSequentialStream *chp, int argc, char *argv[]) {
     else
       chprintf(chp, "Cell %d voltage:     %d mV\r\n",
           cell, word);
+  }
+  {
+    uint16_t status;
+    ggChargingStatus(&status);
+    chprintf(chp, "Charge status:      0x%x\r\n", status);
+    chprintf(chp, "    Charging allowed?   %s\r\n", (status & (1 << 15)) ?
+                                                "no" : "yes");
+    chprintf(chp, "    Can suspend?        %s\r\n", (status & (1 << 14)) ?
+                                                "suspended" : "no");
+    chprintf(chp, "    Can precharge?      %s\r\n", (status & (1 << 13)) ?
+                                                "yes" : "no");
+    chprintf(chp, "    Can maintenance?    %s\r\n", (status & (1 << 12)) ?
+                                                "yes" : "no");
+    chprintf(chp, "    Temperature limit?  %s\r\n", (status & (1 << 11)) ?
+                                                "yes" : "no");
+    chprintf(chp, "    Temperature limit?  %s\r\n", (status & (1 << 10)) ?
+                                                "yes" : "no");
+    chprintf(chp, "    Can fastcharge?     %s\r\n", (status & (1 << 9)) ?
+                                                "yes" : "no");
+    chprintf(chp, "    Pulse charging?     %s\r\n", (status & (1 << 8)) ?
+                                                "yes" : "no");
+    chprintf(chp, "    Pulse disable CHG?  %s\r\n", (status & (1 << 7)) ?
+                                                "yes" : "no");
+    chprintf(chp, "    Cell balancing?     %s\r\n", (status & (1 << 6)) ?
+                                                "in-progress" : "no");
+    chprintf(chp, "    Precharge timeout?  %s\r\n", (status & (1 << 5)) ?
+                                                "yes" : "no");
+    chprintf(chp, "    Fastcharge timeout? %s\r\n", (status & (1 << 4)) ?
+                                                "yes" : "no");
+    chprintf(chp, "    Overcharge OV?      %s\r\n", (status & (1 << 3)) ?
+                                                "yes" : "no");
+    chprintf(chp, "    Overcharge OC?      %s\r\n", (status & (1 << 2)) ?
+                                                "yes" : "no");
+    chprintf(chp, "    Overcharge?         %s\r\n", (status & (1 << 1)) ?
+                                                "yes" : "no");
+    chprintf(chp, "    Battery empty?      %s\r\n", (status & (1 << 0)) ?
+                                                "yes" : "no");
   }
 
   chprintf(chp, "Alarms:\r\n");
