@@ -19,6 +19,10 @@
 #define CHARGE_CURRENT 3000
 #define WALL_CURRENT 3750
 
+/* Minimum amount of current to move from 'normal discharge' to 'charging'.*/
+#define KICKSTART_VOLTAGE 12600
+#define KICKSTART_CURRENT 128
+
 /* This is the ABSOLUTE MAXIMUM voltage allowed for each cell.*/
 #define MV_MAX 4200
 #define MV_MIN 3000
@@ -147,6 +151,7 @@ static THD_WORKING_AREA(waChgThread, 256);
 static msg_t chg_thread(void *arg) {
   (void)arg;
 
+  uint16_t status;
   chRegSetThreadName("charge controller");
   chThdSleepMilliseconds(200);
 
@@ -206,6 +211,27 @@ static msg_t chg_thread(void *arg) {
       /* If we exceed the max voltage, shut down charging.*/
       if (cell_mv > MV_MAX && (g_current || g_voltage))
         chgSet(0, 0);
+    }
+
+    /*
+     * The gas gauge will only attempt to charge if the current is positive.
+     * In Senoko, a "neutral" system is one in which the current is around
+     * -8 mA.
+     * If the board is in discharge mode, AC is connected, and if charging
+     * is allowed, then turn the charger on at low voltage.
+     */
+    if (!ggState(&status)) {
+
+      /* State is "normal discharge" */
+      if ((status & 0xf) == 1) {
+
+        if (ggChargingStatus(&status) == 0) {
+          if ( !(status & (1 << 15)) ) {
+            chgSet(KICKSTART_CURRENT, KICKSTART_VOLTAGE);
+            continue;
+          }
+        }
+      }
     }
 
     /* Figure out what the gas gauge wants us to charge at.*/
