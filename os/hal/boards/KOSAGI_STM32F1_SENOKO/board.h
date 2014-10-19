@@ -174,9 +174,9 @@
 
 #define VAL_GPIOA_CRL   ( 0 \
         \
-        /* CHG_CRIT */ \
-        | PIN_OSPEED_INPUT(PA0) \
-        | PIN_MODE_FLOATING(PA0) \
+        /* CHG_IRQ */ \
+        | PIN_OSPEED_2M(PA0) \
+        | PIN_OTYPE_PUSHPULL(PA0) \
         \
         | PIN_UNUSED(PA1) \
         | PIN_UNUSED(PA2) \

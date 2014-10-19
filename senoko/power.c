@@ -12,6 +12,8 @@ enum power_state {
 };
 static enum power_state power_state = power_off;
 
+#include "senoko.h"
+#include "chprintf.h"
 static void power_set_state(enum power_state state) {
 #ifdef TESTING_POWER
 #warning "Testing power: Won't turn off"
@@ -49,26 +51,6 @@ void powerToggle(void) {
   return;
 }
 
-static THD_WORKING_AREA(waPower, 128);
-static msg_t power_thread(void *arg) {
-  (void)arg;
-
-  chRegSetThreadName("on-fire check");
-
-  while (1) {
-    chThdSleepMilliseconds(200);
-
-    /* Monitor "We're On Fire" GPIO.*/
-    if (palReadPad(GPIOA, PA0)) {
-      powerOff();
-      chgSet(0, 0, 0);
-    }
-    chThdSleepMilliseconds(THREAD_SLEEP_MS);
-  }
-  return 0;
-}
-
 void powerInit(void) {
   powerOn();
-  chThdCreateStatic(waPower, sizeof(waPower), HIGHPRIO, power_thread, NULL);
 }
