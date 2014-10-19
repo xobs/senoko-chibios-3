@@ -773,6 +773,16 @@ int ggInhibitHigh(int16_t *temp)
   return gg_getflash_word(32, 2, temp);
 }
 
+int ggPrechgTemp(int16_t *temp)
+{
+  return gg_getflash_word(33, 2, temp);
+}
+
+int ggSetPrechgTemp(int16_t temp)
+{
+  return gg_setflash_word(33, 2, temp);
+}
+
 int ggChargingStatus(uint16_t *status) {
   return gg_getword(0x55, status);
 }

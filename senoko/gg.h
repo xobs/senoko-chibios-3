@@ -43,6 +43,8 @@ int ggSetInhibitLow(int16_t temp);
 int ggSetInhibitHigh(int16_t temp);
 int ggInhibitLow(int16_t *temp);
 int ggInhibitHigh(int16_t *temp);
+int ggPrechgTemp(int16_t *temp);
+int ggSetPrechgTemp(int16_t temp);
 
 int ggPermanentFailureFlags(uint16_t *flags);
 int ggFuseFlag(uint16_t *flags);
