@@ -179,6 +179,8 @@
         | PIN_OTYPE_PUSHPULL(PA0) \
         \
         | PIN_UNUSED(PA1) \
+        \
+        /* USART2_TX */ \
         | PIN_UNUSED(PA2) \
         | PIN_UNUSED(PA3) \
         \
@@ -218,8 +220,8 @@
         | PIN_OTYPE_PUSHPULL(PA11) \
         \
         /* CHG_CE */ \
-        | PIN_OSPEED_2M(PA12) \
-        | PIN_OTYPE_PUSHPULL(PA12) \
+        | PIN_OSPEED_INPUT(PA12) \
+        | PIN_MODE_FLOATING(PA12) \
         \
         /* JTMS-SWDIO */ \
         | PIN_OTYPE_PUSHPULL(PA13) \
