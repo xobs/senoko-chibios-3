@@ -204,8 +204,8 @@ void cmd_stats(BaseSequentialStream *chp, int argc, char *argv[]) {
   print_word(chp, "Voltage:", ggVoltage, "%d mV");
   print_signed_word(chp, "Current:", ggCurrent, "%d mA");
   print_signed_word(chp, "Average current:", ggAverageCurrent, "%d mA");
-  print_word(chp, "Charging voltage:", ggChargingVoltage, "%d mV");
-  print_signed_word(chp, "Target current:", ggChargingCurrent, "%d mA");
+  print_word(chp, "Target voltage:", ggChargingVoltage, "%d mV");
+  print_word(chp, "Target current:", ggChargingCurrent, "%d mA");
 
   print_byte(chp, "Number of cells:", ggCellCount, "%d cells");
   for (cell = 1; cell <= 4; cell++) {
