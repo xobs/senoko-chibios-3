@@ -55,16 +55,6 @@ void cmd_chg(BaseSequentialStream *chp, int argc, char *argv[]) {
     return;
   }
 
-  else if (argc == 2 && argv[1][0] == '+') {
-    chprintf(chp, "Enabling CHG_CE\r\n");
-    palWritePad(GPIOA, PA12, 1);
-  }
-
-  else if (argc == 2 && argv[1][0] == '-') {
-    chprintf(chp, "Disabling CHG_CE\r\n");
-    palWritePad(GPIOA, PA12, 0);
-  }
-
   else {
     uint32_t current, voltage, input;
 
@@ -79,8 +69,8 @@ void cmd_chg(BaseSequentialStream *chp, int argc, char *argv[]) {
       chprintf(chp, "Error: That's too much current\r\n");
       return;
     }
-    if (current < 128) {
-      chprintf(chp, "Error: 128 mA is the minimum charge current\r\n");
+    if (current < 0) {
+      chprintf(chp, "Error: 0 mA is the minimum charge current\r\n");
       return;
     }
 
@@ -90,8 +80,8 @@ void cmd_chg(BaseSequentialStream *chp, int argc, char *argv[]) {
       return;
     }
 
-    if (voltage < 1024) {
-      chprintf(chp, "Error: Too little voltage (1024 mV min)\r\n");
+    if (voltage < 0) {
+      chprintf(chp, "Error: Too little voltage (0 mV min)\r\n");
       return;
     }
 
