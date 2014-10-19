@@ -17,6 +17,7 @@
 #define CELL_COUNT 3
 #define CELL_CAPACITY 5000
 #define CHARGE_CURRENT 3000
+#define WALL_CURRENT 3750
 
 /* This is the ABSOLUTE MAXIMUM voltage allowed for each cell.*/
 #define MV_MAX 4200
@@ -25,7 +26,6 @@
 /* Voltages and currents for waking up gas gauge when it's asleep.*/
 #define CHARGE_GG_WAKEUP_CURRENT 1024
 #define CHARGE_GG_WAKEUP_VOLTAGE 12600
-#define CHARGE_GG_WALL_CURRENT 1024
 
 static uint16_t g_current;
 static uint16_t g_voltage;
@@ -47,55 +47,41 @@ static int chg_setblock(void *data, int size) {
   return 0;
 }
 
-int chgSet(uint16_t current, uint16_t voltage) {
-  int ret;
+static int chg_set_voltage(uint16_t voltage) {
   uint8_t bfr[3];
-
-  if (current > 8064)
-    return -1;
 
   if (voltage > 19200)
     return -1;
 
-  current &= 0x1f80;
-
   voltage &= 0x7ff0;
-
-  g_current = current;
-  bfr[0] = 0x14;
-  bfr[1] = g_current;
-  bfr[2] = g_current >> 8;
-  ret = chg_setblock(bfr, sizeof(bfr));
-  if (ret)
-    return ret;
 
   g_voltage = voltage;
   bfr[0] = 0x15;
   bfr[1] = g_voltage;
   bfr[2] = g_voltage >> 8;
-  ret = chg_setblock(bfr, sizeof(bfr));
-  if (ret)
-    return ret;
-
-  return 0;
+  return chg_setblock(bfr, sizeof(bfr));
 }
 
-int chgSetAll(uint16_t current, uint16_t voltage, uint16_t input) {
-  int ret;
+static int chg_set_current(uint16_t current) {
   uint8_t bfr[3];
 
   if (current > 8064)
     return -1;
 
-  if (voltage > 19200)
-    return -1;
+  current &= 0x1f80;
+
+  g_current = current;
+  bfr[0] = 0x14;
+  bfr[1] = g_current;
+  bfr[2] = g_current >> 8;
+  return chg_setblock(bfr, sizeof(bfr));
+}
+
+static int chg_set_input(uint16_t input) {
+  uint8_t bfr[3];
 
   if (input > 11004)
     return -1;
-
-  current &= 0x1f80;
-
-  voltage &= 0x7ff0;
 
   input >>= 1;
   input &= 0x1f80;
@@ -104,27 +90,27 @@ int chgSetAll(uint16_t current, uint16_t voltage, uint16_t input) {
   bfr[0] = 0x3f;
   bfr[1] = g_input;
   bfr[2] = g_input >> 8;
-  ret = chg_setblock(bfr, sizeof(bfr));
-  if (ret)
-    return ret;
+  return chg_setblock(bfr, sizeof(bfr));
+}
 
-  g_current = current;
-  bfr[0] = 0x14;
-  bfr[1] = g_current;
-  bfr[2] = g_current >> 8;
-  ret = chg_setblock(bfr, sizeof(bfr));
-  if (ret)
-    return ret;
+int chgSetAll(uint16_t current, uint16_t voltage, uint16_t input) {
 
-  g_voltage = voltage;
-  bfr[0] = 0x15;
-  bfr[1] = g_voltage;
-  bfr[2] = g_voltage >> 8;
-  ret = chg_setblock(bfr, sizeof(bfr));
-  if (ret)
-    return ret;
+  int ret = 0;
 
-  return 0;
+  ret |= chg_set_current(current);
+  ret |= chg_set_voltage(voltage);
+  ret |= chg_set_input(input);
+
+  return ret;
+}
+
+int chgSet(uint16_t current, uint16_t voltage) {
+  int ret = 0;
+
+  ret |= chg_set_current(current);
+  ret |= chg_set_voltage(voltage);
+
+  return ret;
 }
 
 int chgRefresh(uint16_t *current, uint16_t *voltage, uint16_t *input) {
@@ -194,8 +180,7 @@ static msg_t chg_thread(void *arg) {
          * Turn on the charger to ensure the gas gauge wakes up.  Reset the
          * error count, because this isn't a charge-related error.
          */
-        chgSet(CHARGE_GG_WAKEUP_CURRENT,
-               CHARGE_GG_WAKEUP_VOLTAGE);
+        chgSet(CHARGE_GG_WAKEUP_CURRENT, CHARGE_GG_WAKEUP_VOLTAGE);
         continue;
       }
     }
@@ -243,6 +228,8 @@ int chgPresent(void) {
 }
 
 void chgInit(void) {
+  chg_set_input(WALL_CURRENT);
+
   chThdCreateStatic(waChgThread, sizeof(waChgThread),
                     HIGHPRIO - 10, chg_thread, NULL);
 }
