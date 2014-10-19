@@ -85,6 +85,15 @@ void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]) {
     }
     ggSetInhibitHigh(strtoul(argv[1], NULL, 0));
   }
+  else if (is_command(argc, argv, "prechg")) {
+    if (argc != 2) {
+      int16_t temp;
+      ggPrechgTemp(&temp);
+      chprintf(chp, "Pre-charge temperature: %d\r\n", temp);
+      return;
+    }
+    ggSetPrechgTemp(strtoul(argv[1], NULL, 0));
+  }
   else if (is_command(argc, argv, "capacity")) {
     uint16_t capacity;
     int cells;
@@ -171,6 +180,7 @@ void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]) {
       "gg cal           Calibrate battery pack\r\n"
       "gg templow [t]   Set charge-inhibit low temperature\r\n"
       "gg temphigh [t]  Set charge-inhibit high temperature\r\n"
+      "gg prechg [t]    Set pre-chg temperature\r\n"
       "gg pfreset       Reset permanent failure fuse\r\n"
       "gg reset         Reset gas gauge completely\r\n"
       "gg auto [0|1]    Whether the gas gauge can run the charger\r\n"
