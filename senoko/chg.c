@@ -11,7 +11,7 @@
 
 #define CHG_ADDR 0x9
 
-#define THREAD_SLEEP_MS 1100
+#define THREAD_SLEEP_MS 5100
 
 /* Defaults for this board, for an unconfigured gas gauge.*/
 #define CELL_COUNT 3
@@ -209,8 +209,8 @@ static msg_t chg_thread(void *arg) {
         powerOff();
 
       /* If we exceed the max voltage, shut down charging.*/
-      if (cell_mv > MV_MAX && (g_current || g_voltage))
-        chgSet(0, 0);
+//      if (cell_mv > MV_MAX && (g_current || g_voltage))
+//        chgSet(0, 0);
     }
 
     /*
@@ -225,10 +225,16 @@ static msg_t chg_thread(void *arg) {
       /* State is "normal discharge" */
       if ((status & 0xf) == 1) {
 
-        if (ggChargingStatus(&status) == 0) {
-          if ( !(status & (1 << 15)) ) {
-            chgSet(KICKSTART_CURRENT, KICKSTART_VOLTAGE);
-            continue;
+        if (!ggStatus(&status))
+          continue;
+
+        /* Don't have the "terminate charge alarm" or "overcharge alarm".*/
+        if ( (!(status & (1 << 14))) && (!(status & (1 << 15))) ) {
+          if (ggChargingStatus(&status) == 0) {
+            if ( !(status & (1 << 15)) ) {
+              chgSet(KICKSTART_CURRENT, KICKSTART_VOLTAGE);
+              continue;
+            }
           }
         }
       }
