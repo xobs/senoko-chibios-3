@@ -73,8 +73,9 @@ static const char *gpio_name(int bank, int pad) {
 }
 
 void cmd_gpio(BaseSequentialStream *chp, int argc, char *argv[]) {
-  int ret;
   int bank, pad;
+  (void)argc;
+  (void)argv;
 
   for (bank = 'A'; bank <= 'E'; bank++) {
     chprintf(chp, "GPIO %c:\r\n", bank);
