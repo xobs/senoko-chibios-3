@@ -476,6 +476,20 @@ int ggSetCellCount(int cells) {
   return 0;
 }
 
+int ggSetTemperatureSource(enum gg_temp_source source) {
+
+  int ret;
+  uint8_t cfg_a[2];
+
+  ret = gg_getflash(64, 0, cfg_a, sizeof(cfg_a));
+  if (ret != MSG_OK)
+    return ret;
+
+  cfg_a[1] &= ~(3 << 3);
+  cfg_a[1] |= source << 3;
+  return gg_setflash(64, 0, cfg_a, sizeof(cfg_a));
+}
+
 int ggCellCount(uint8_t *cells) {
   int ret;
   uint8_t cfg_a[2];

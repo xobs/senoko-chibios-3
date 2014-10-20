@@ -63,4 +63,12 @@ int ggSetBroadcast(int broadcast);
 int ggSetFastChargeCurrent(int current);
 int ggSetDefaults(int cells, int capacity, int current);
 
+enum gg_temp_source {
+  temp_internal,
+  temp_ts1,
+  temp_greater_ts1_or_ts2,
+  temp_average_ts1_and_ts2,
+};
+int ggSetTemperatureSource(enum gg_temp_source);
+
 #endif /* __SENOKO_GG_H__ */
