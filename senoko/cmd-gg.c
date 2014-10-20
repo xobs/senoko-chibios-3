@@ -67,6 +67,33 @@ void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]) {
       return;
     }
   }
+  else if (is_command(argc, argv, "tempsource")) {
+
+    if (argc == 2) {
+      if (!strcasecmp(argv[1], "internal")) {
+        ggSetTemperatureSource(temp_internal);
+        return;
+      }
+      else if (!strcasecmp(argv[1], "ts1")) {
+        ggSetTemperatureSource(temp_ts1);
+        return;
+      }
+      else if (!strcasecmp(argv[1], "greater")) {
+        ggSetTemperatureSource(temp_greater_ts1_or_ts2);
+        return;
+      }
+      else if (!strcasecmp(argv[1], "average")) {
+        ggSetTemperatureSource(temp_average_ts1_and_ts2);
+        return;
+      }
+    }
+    chprintf(chp, "Usage: gg tempsource [internal | ts1 | greater | average]\r\n");
+    chprintf(chp, "    internal - Use internal temperature sensor\r\n");
+    chprintf(chp, "    ts1      - Use temperature sensor attached to TS1\r\n");
+    chprintf(chp, "    greater  - Use TS1 or TS2, whichever is greater\r\n");
+    chprintf(chp, "    average  - Use the average of TS1 and TS2\r\n");
+    return;
+  }
   else if (is_command(argc, argv, "templow")) {
     if (argc != 2) {
       int16_t temp;
@@ -183,6 +210,7 @@ void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]) {
       "gg prechg [t]    Set pre-chg temperature\r\n"
       "gg pfreset       Reset permanent failure fuse\r\n"
       "gg reset         Reset gas gauge completely\r\n"
+      "gg tempsource    Set how the temperature is sensed\r\n"
       "gg auto [0|1]    Whether the gas gauge can run the charger\r\n"
       );
     return;
