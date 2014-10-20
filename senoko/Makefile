@@ -119,6 +119,7 @@ CSRC = $(PORTSRC) \
        senoko-events.c \
        senoko-i2c.c \
        senoko-shell.c \
+       senoko-slave.c \
        senoko-wdt.c \
        main.c
 
