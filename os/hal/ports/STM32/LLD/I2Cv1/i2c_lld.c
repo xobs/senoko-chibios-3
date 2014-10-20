@@ -301,6 +301,8 @@ static void i2c_lld_serve_event_interrupt(I2CDriver *i2cp) {
     if (event & (I2C_SR1_ADDR | I2C_SR1_ADD10)) {
       /* Reset rx buffer pointer when starting new reception.*/
       i2cp->rxind = 0;
+      i2cp->rxcount = 0;
+      i2cp->txcount = 0;
 
       /* Clear Addr Flag by reading SR1, followed by SR2.*/
       event = dp->SR1;
@@ -308,10 +310,12 @@ static void i2c_lld_serve_event_interrupt(I2CDriver *i2cp) {
     }
     if (event & I2C_SR1_TXE) {
       dp->DR = i2cp->txbuf[i2cp->txind++];
+      i2cp->txcount++;
       if (i2cp->txind >= i2cp->txbytes)
         i2cp->txind = 0;
     }
     if (event & I2C_SR1_RXNE) {
+      i2cp->rxcount++;
       i2cp->rxbuf[i2cp->rxind++] = dp->DR;
       if (i2cp->rxind >= i2cp->rxbytes)
         i2cp->rxind = 0;
@@ -323,14 +327,16 @@ static void i2c_lld_serve_event_interrupt(I2CDriver *i2cp) {
 
       /* Notify user about receive finish.*/
       if (i2cp->rxcb)
-        i2cp->rxcb(i2cp, i2cp->rxbytes);
+        i2cp->rxcb(i2cp, i2cp->rxcount);
+      i2cp->rxcount = 0;
     }
     if (event & I2C_SR1_AF) {
       dp->SR1 &= ~I2C_SR1_AF;
 
       /* Notify user about transfer finish.*/
       if (i2cp->txcb)
-        i2cp->txcb(i2cp, i2cp->txbytes);
+        i2cp->txcb(i2cp, i2cp->txcount);
+      i2cp->txcount = 0;
     }
   }
   #endif /* I2C_USE_SLAVE_MODE */
@@ -434,7 +440,9 @@ static void i2c_lld_serve_error_interrupt(I2CDriver *i2cp, uint16_t sr) {
 
     /* Notify user about transfer finish.*/
     if (i2cp->txcb)
-      i2cp->txcb(i2cp, i2cp->txbytes);
+      i2cp->txcb(i2cp, i2cp->txcount - 1);
+    i2cp->txcount = 0;
+    i2cp->txind--;
   }
 #endif
 
@@ -988,11 +996,13 @@ msg_t i2c_lld_slave_io_timeout(I2CDriver *i2cp, i2caddr_t addr,
   i2cp->rxbuf   = rxbuf;
   i2cp->rxbytes = rxbytes;
   i2cp->rxind   = 0;
+  i2cp->rxcount = 0;
   i2cp->rxcb    = rxcb;
 
   i2cp->txbuf   = txbuf;
   i2cp->txbytes = txbytes;
   i2cp->txind   = 0;
+  i2cp->txcount = 0;
   i2cp->txcb    = txcb;
 
   i2cp->slave_mode = 1;

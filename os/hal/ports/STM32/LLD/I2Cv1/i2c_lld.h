@@ -462,11 +462,13 @@ struct I2CDriver {
 #if I2C_USE_SLAVE_MODE
   uint8_t                   slave_mode;
   uint8_t                   *rxbuf;
+  size_t                    rxcount;
   size_t                    rxbytes;
   size_t                    rxind;
   TI2cSlaveCb               rxcb;
 
   uint8_t                   *txbuf;
+  size_t                    txcount;
   size_t                    txbytes;
   size_t                    txind;
   TI2cSlaveCb               txcb;
