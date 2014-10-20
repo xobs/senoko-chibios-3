@@ -225,15 +225,15 @@ static msg_t chg_thread(void *arg) {
       /* State is "normal discharge" */
       if ((status & 0xf) == 1) {
 
-        if (!ggStatus(&status))
-          continue;
+        if (!ggStatus(&status)) {
 
-        /* Don't have the "terminate charge alarm" or "overcharge alarm".*/
-        if ( (!(status & (1 << 14))) && (!(status & (1 << 15))) ) {
-          if (ggChargingStatus(&status) == 0) {
-            if ( !(status & (1 << 15)) ) {
-              chgSet(KICKSTART_CURRENT, KICKSTART_VOLTAGE);
-              continue;
+          /* Don't have the "terminate charge alarm" or "overcharge alarm".*/
+          if ( (!(status & (1 << 14))) && (!(status & (1 << 15))) ) {
+            if (ggChargingStatus(&status) == 0) {
+              if ( !(status & (1 << 15)) ) {
+                chgSet(KICKSTART_CURRENT, KICKSTART_VOLTAGE);
+                continue;
+              }
             }
           }
         }
