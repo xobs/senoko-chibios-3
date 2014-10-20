@@ -26,6 +26,7 @@
 #include "senoko-events.h"
 #include "senoko-i2c.h"
 #include "senoko-shell.h"
+#include "senoko-slave.h"
 #include "senoko-wdt.h"
 
 #include "chg.h"
@@ -121,6 +122,9 @@ int main(void) {
 
   /* Set up I2C early, to prevent conflicting with the RAM DDC.*/
   senokoI2cInit();
+
+  /* Set up the various I2C slave handlers.*/
+  senokoSlaveInit();
 
   /* Start serial, so we can get status output.*/
   senokoShellInit();
