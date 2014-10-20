@@ -4,6 +4,8 @@
 
 #include "senoko.h"
 #include "power.h"
+#include "bionic.h"
+#include "senoko-slave.h"
 
 #if !HAL_USE_I2C
 #error "I2C is not enabled"
@@ -13,27 +15,15 @@
 
 static const systime_t timeout = MS2ST(25);
 
-static uint8_t i2c_registers[0x23];
-static uint8_t i2c_buffer[sizeof(i2c_registers)];
-static int current_register = 0;
 static binary_semaphore_t client_sem, transmit_sem;
+
+struct i2c_registers registers;
+static uint8_t i2c_buffer[sizeof(registers) + 1];
 
 static enum client_mode {
   I2C_MODE_SLAVE,
   I2C_MODE_MASTER,
 } client_mode;
-
-static const I2CConfig senokoI2cHost = {
-  OPMODE_SMBUS_HOST,
-  100000,
-  STD_DUTY_CYCLE,
-};
-
-static const I2CConfig senokoI2cDevice = {
-  OPMODE_SMBUS_DEVICE,
-  100000,
-  STD_DUTY_CYCLE,
-};
 
 static const I2CConfig senokoI2cMode = {
   OPMODE_I2C,
@@ -43,10 +33,19 @@ static const I2CConfig senokoI2cMode = {
 
 static void i2cRxFinished(I2CDriver *i2cp, size_t bytes)
 {
-  if (bytes) {
-    current_register = i2c_buffer[0];
-    i2cSlaveSetTxOffset(i2cp, i2c_buffer[0]);
-  }
+  (void)i2cp;
+  uint8_t addr;
+
+  /* Shouldn't ever happen.*/
+  if (!bytes)
+    return;
+
+  addr = i2c_buffer[0];
+
+  if (bytes > 1)
+    senokoSlaveDispatch(i2c_buffer, bytes);
+
+  i2cSlaveSetTxOffset(i2cp, addr + bytes - 1);
 }
 
 static void i2cTxFinished(I2CDriver *i2cp, size_t bytes)
@@ -68,7 +67,7 @@ static void senokoI2cReinit(void)
     i2cSlaveIoTimeout(i2cBus, SENOKO_I2C_SLAVE_ADDR,
 
                       /* Tx buffer */
-                      i2c_registers, sizeof(i2c_registers),
+                      (uint8_t *)&registers, sizeof(registers),
 
                       /* Rx buffer */
                       i2c_buffer, sizeof(i2c_buffer),
@@ -85,15 +84,7 @@ static void senokoI2cReinit(void)
 
 void senokoI2cInit(void)
 {
-  uint32_t reg = 0;
-  int counter = 0x40;
-
   i2cStart(i2cBus, &senokoI2cMode);
-  i2c_registers[0] = 'S';
-  i2c_registers[1] = SENOKO_OS_VERSION_MAJOR;
-  i2c_registers[2] = SENOKO_OS_VERSION_MINOR;
-  for (reg = 3; reg < sizeof(i2c_registers); reg++)
-    i2c_registers[reg] = counter++;
 
   chBSemObjectInit(&client_sem, 0);
   chBSemObjectInit(&transmit_sem, 0);
