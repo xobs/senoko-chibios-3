@@ -137,6 +137,11 @@ int main(void) {
       SENOKO_OS_VERSION_MAJOR,
       SENOKO_OS_VERSION_MINOR,
       gitversion);
+  chprintf(stream, "Before boot, PC was at: 0x%08x in thread 0x%08x\r\n",
+            (((*((uint32_t *)(0x40006c00 + 0x04))) & 0xffff) << 0) |
+            (((*((uint32_t *)(0x40006c00 + 0x08))) & 0xffff) << 16),
+            (((*((uint32_t *)(0x40006c00 + 0x0c))) & 0xffff) << 0) |
+            (((*((uint32_t *)(0x40006c00 + 0x10))) & 0xffff) << 16));
 
   /* Turn on the charger (and start charging, if necessary).*/
   chgInit();
