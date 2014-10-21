@@ -16,7 +16,7 @@
 /* Defaults for this board, for an unconfigured gas gauge.*/
 #define CELL_COUNT 3
 #define CELL_CAPACITY 5000
-#define CHARGE_CURRENT 3000
+#define CHARGE_CURRENT 5000
 #define WALL_CURRENT 3750
 
 /* Minimum amount of current to move from 'normal discharge' to 'charging'.*/
@@ -232,6 +232,7 @@ static msg_t chg_thread(void *arg) {
             if (ggChargingStatus(&status) == 0) {
               if ( !(status & (1 << 15)) ) {
                 chgSet(KICKSTART_CURRENT, KICKSTART_VOLTAGE);
+                ggSetChgFET(1);
                 continue;
               }
             }
@@ -249,6 +250,8 @@ static msg_t chg_thread(void *arg) {
     if (ret)
       continue;
 
+    if (!current && !voltage)
+      ggSetChgFET(0);
     chgSet(current, voltage);
   }
   return 0;
