@@ -41,25 +41,20 @@ static void shell_termination_handler(eventid_t id) {
   senokoShellRestart();
 }
 
-enum release_action {
-  action_none,
-  action_suspend,
-  action_poweroff,
-};
-static enum release_action release_action;
+static int pb_is_armed;
+static virtual_timer_t release_vt;
 
 static void release_poweroff(void *arg) {
   (void)arg;
 
-  if (release_action == action_suspend) {
-    release_action = action_none;
+  if (pb_is_armed) {
+    pb_is_armed = 0;
     powerOff();
   }
 }
 
 static void power_button_pressed_handler(eventid_t id) {
   (void)id;
-  static virtual_timer_t release_vt;
 
   /* If we're powered off, power on.
    * Otherwise, wait 4 seconds.  If the button is released, suspend.  Otherwise,
@@ -71,18 +66,19 @@ static void power_button_pressed_handler(eventid_t id) {
   }
   else {
     chprintf(stream, " [Wait] ");
-    release_action = action_suspend;
-    chVTReset(&release_vt);
+    pb_is_armed = 1;
     chVTSet(&release_vt, S2ST(3), release_poweroff, NULL);
   }
 }
 
 static void power_button_released_handler(eventid_t id) {
   (void)id;
-  if (release_action == action_suspend)
+  if (pb_is_armed) {
     chprintf(stream, " [Suspending] ");
+    pb_is_armed = 0;
+  }
   else
-    chprintf(stream, " [Powered off already] ");
+    chprintf(stream, " [Already off] ");
 }
 
 static void ac_unplugged_handler(eventid_t id) {
