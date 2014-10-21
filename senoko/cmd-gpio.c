@@ -77,20 +77,33 @@ void cmd_gpio(BaseSequentialStream *chp, int argc, char *argv[]) {
   (void)argc;
   (void)argv;
 
-  for (bank = 'A'; bank <= 'E'; bank++) {
-    chprintf(chp, "GPIO %c:\r\n", bank);
-    for (pad = 0; pad < 16; pad++) {
-      int val;
+  if ((argc > 0) && !strcasecmp(argv[0], "set")) {
+    chprintf(chp, "Setting PA0\r\n");
+    palWritePad(GPIOA, PA0, 1);
+  }
+  else if ((argc > 0) && !strcasecmp(argv[0], "clr")) {
+    chprintf(chp, "Clearing PA0\r\n");
+    palWritePad(GPIOA, PA0, 0);
+  }
+  else if ((argc > 0) && !strcasecmp(argv[0], "val")) {
+    chprintf(chp, "Value at PA0: %d\r\n", palReadPad(GPIOA, PA0));
+  }
+  else {
+    for (bank = 'A'; bank <= 'E'; bank++) {
+      chprintf(chp, "GPIO %c:\r\n", bank);
+      for (pad = 0; pad < 16; pad++) {
+        int val;
 
-      if (bank == 'A')
-          val = !!palReadPad(GPIOA, pad);
-      else if (bank == 'B')
-          val = !!palReadPad(GPIOB, pad);
-      else if (bank == 'C')
-          val = !!palReadPad(GPIOC, pad);
+        if (bank == 'A')
+      val = !!palReadPad(GPIOA, pad);
+        else if (bank == 'B')
+      val = !!palReadPad(GPIOB, pad);
+        else if (bank == 'C')
+      val = !!palReadPad(GPIOC, pad);
 
-      chprintf(chp, "    P%c%d: %d  %s\r\n", bank, pad, val,
-          gpio_name(bank, pad));
+        chprintf(chp, "    P%c%d: %d  %s\r\n", bank, pad, val,
+      gpio_name(bank, pad));
+      }
     }
   }
 }
