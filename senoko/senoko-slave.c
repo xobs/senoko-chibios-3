@@ -5,39 +5,40 @@
 #include "senoko-events.h"
 #include "senoko-slave.h"
 
+/* Mask: 0b[s][b]  s = state, b = button */
 #define POWER_BUTTON_RELEASED_ID 0
 #define AC_CONNETED_ID 1
 #define POWER_BUTTON_PRESSED_ID 2
 #define AC_UNPLUGGED_ID 3
 
-#include "chprintf.h"
+static void update_irq(void) {
+  if (registers.gpio_irq_stat_a)
+      palWritePad(GPIOA, PA0, 1);
+  else
+      palWritePad(GPIOA, PA0, 0);
+}
 
 static void button_event(eventid_t id) {
   int button;
   int state;
 
   button = id & 1;
-  state = !!(id & (1 << 1));
+  state = !!(id & 2);
 
   /* Button press */
   if (state) {
     registers.gpio_val_a |= (1 << button);
-    if (registers.gpio_irq_rise_a & button)
+    if (registers.gpio_irq_rise_a & (1 << button))
       registers.gpio_irq_stat_a |= (1 << button);
   }
   /* Button release */
   else {
     registers.gpio_val_a &= ~(1 << button);
-    if (registers.gpio_irq_fall_a & button)
+    if (registers.gpio_irq_fall_a & (1 << button))
       registers.gpio_irq_stat_a |= (1 << button);
   }
 
-  if (registers.gpio_irq_stat_a)
-      palWritePad(GPIOA, PA0, 1);
-  else
-      palWritePad(GPIOA, PA0, 0);
-
-  chprintf(stream, "Got event %d\r\n", id);
+  update_irq();
 }
 
 static evhandler_t evthandler[] = { 
@@ -71,10 +72,7 @@ void senokoSlaveDispatch(void *bfr, uint32_t size) {
     offset++;
   }
 
-  if (registers.gpio_irq_stat_a)
-      palWritePad(GPIOA, PA0, 1);
-  else
-      palWritePad(GPIOA, PA0, 0);
+  update_irq();
 
 }
 
