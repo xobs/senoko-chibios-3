@@ -403,6 +403,7 @@ typedef struct I2CDriver I2CDriver;
 
 #if I2C_USE_SLAVE_MODE
     typedef void (* TI2cSlaveCb)(I2CDriver * i2cp, size_t bytes);
+    typedef void (* TI2cSlaveStartCb)(I2CDriver * i2cp);
 #endif
 
 /**
@@ -472,6 +473,8 @@ struct I2CDriver {
   size_t                    txbytes;
   size_t                    txind;
   TI2cSlaveCb               txcb;
+
+  TI2cSlaveStartCb          startcb;
 #endif
 };
 
@@ -525,6 +528,7 @@ extern "C" {
                                  uint8_t *rxbuf, size_t rxbytes,
                                  TI2cSlaveCb txcb,
                                  TI2cSlaveCb rxcb,
+                                 TI2cSlaveStartCb startcb,
                                  systime_t timeout);
   size_t i2c_lld_slave_get_tx_offset(I2CDriver *i2cp);
   void i2c_lld_slave_set_tx_offset(I2CDriver *i2cp, size_t offset);
