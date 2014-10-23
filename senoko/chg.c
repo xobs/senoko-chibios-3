@@ -147,11 +147,25 @@ int chgGetDevice(uint16_t *word) {
   return chg_getblock(0xff, word, 2);
 }
 
+static void set_chgfet(int newval) {
+  static int val = -1;
+  if (newval != val)
+    ggSetChgFET(newval);
+  val = newval;
+}
+
+static void set_dsgfet(int newval) {
+  static int val = -1;
+  if (newval != val)
+    ggSetDsgFET(newval);
+  val = newval;
+}
+
 static THD_WORKING_AREA(waChgThread, 256);
 static msg_t chg_thread(void *arg) {
   (void)arg;
 
-  uint16_t status;
+  uint16_t status, state;
   chRegSetThreadName("charge controller");
   chThdSleepMilliseconds(200);
 
@@ -159,8 +173,6 @@ static msg_t chg_thread(void *arg) {
   chg_set_input(WALL_CURRENT);
 
   while (1) {
-    uint16_t cell_mv;
-    int cell;
     int ret;
     uint8_t cell_count;
     uint16_t voltage, current;
@@ -196,24 +208,6 @@ static msg_t chg_thread(void *arg) {
       continue;
     }
 
-    for (cell = 1; cell <= cell_count; cell++) {
-      ret = ggCellVoltage(cell, &cell_mv);
-      if (ret)
-        continue;
-
-      /*
-       * If any one cell goes below the minimum, shut down
-       * everything.  These cells are very prone to expanding,
-       * and we don't want to stress them.
-       */
-      if (cell_mv > 0 && cell_mv < MV_MIN && (!g_current || !g_voltage))
-        powerOff();
-
-      /* If we exceed the max voltage, shut down charging.*/
-//      if (cell_mv > MV_MAX && (g_current || g_voltage))
-//        chgSet(0, 0);
-    }
-
     /*
      * The gas gauge will only attempt to charge if the current is positive.
      * In Senoko, a "neutral" system is one in which the current is around
@@ -221,19 +215,20 @@ static msg_t chg_thread(void *arg) {
      * If the board is in discharge mode, AC is connected, and if charging
      * is allowed, then turn the charger on at low voltage.
      */
-    if (!ggState(&status)) {
+    if (!ggStatus(&status)) {
 
-      /* State is "normal discharge" */
-      if ((status & 0xf) == 1) {
+      /* Don't have the "terminate charge alarm" or "overcharge alarm".*/
+      if ( (!(status & (1 << 14))) && (!(status & (1 << 15))) ) {
+        if (!ggState(&state)) {
 
-        if (!ggStatus(&status)) {
+          /* State is "normal discharge" */
+          if ((state & 0xf) == 1) {
 
-          /* Don't have the "terminate charge alarm" or "overcharge alarm".*/
-          if ( (!(status & (1 << 14))) && (!(status & (1 << 15))) ) {
-            if (ggChargingStatus(&status) == 0) {
-              if ( !(status & (1 << 15)) ) {
+            uint16_t chgstatus;
+            if (ggChargingStatus(&chgstatus) == 0) {
+              if ( !(chgstatus & (1 << 15)) ) {
                 chgSet(KICKSTART_CURRENT, KICKSTART_VOLTAGE);
-                ggSetChgFET(1);
+                set_chgfet(1);
                 continue;
               }
             }
@@ -241,6 +236,16 @@ static msg_t chg_thread(void *arg) {
         }
       }
     }
+
+    /*
+     * Since we're having to manually kickstart things, we have to
+     * manually manipulate the FETs as well.  Enable the DSG FET if
+     * the system doesn't think we should turn off.
+     */
+    if (status & ((1 << 11) | (1 << 9) | (1 << 8)))
+      set_dsgfet(0);
+    else
+      set_dsgfet(1);
 
     /* Figure out what the gas gauge wants us to charge at.*/
     ret = ggChargingVoltage(&voltage);
@@ -252,7 +257,9 @@ static msg_t chg_thread(void *arg) {
       continue;
 
     if (!current && !voltage)
-      ggSetChgFET(0);
+      set_chgfet(0);
+    else
+      set_chgfet(1);
     chgSet(current, voltage);
   }
   return 0;
