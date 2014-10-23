@@ -59,7 +59,7 @@ static const SerialConfig serialConfig = {
 };
 
 static thread_t *shell_tp = NULL;
-static THD_WORKING_AREA(waShellThread, 2048);
+static THD_WORKING_AREA(waShellThread, 1024);
 
 void senokoShellInit(void) {
   sdStart(serialDriver, &serialConfig);
@@ -73,5 +73,5 @@ void senokoShellRestart(void) {
   if (shell_tp && chThdTerminatedX(shell_tp))
     chThdRelease(shell_tp);
   shell_tp = shellCreateStatic(&shellConfig, waShellThread,
-                              sizeof(waShellThread), NORMALPRIO);
+                              sizeof(waShellThread), NORMALPRIO - 5);
 }
