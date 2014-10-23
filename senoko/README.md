@@ -65,7 +65,7 @@ The following registers are defined
     | 0x06 | Uptime (byte 4)   | Byte 4 of the Senoko uptime (seconds)       |
     +------+-------------------+---------------------------------------------+
     | 0x07 | Power Control     | Reflects Senoko's current power status.     |
-    |      |                   |  Bits: xxxx xwpp                            |
+    |      |                   |  Bits: kxxb awpp                            |
     |      |                   |    p Power state.  Values:                  |
     |      |                   |      0 - System is powered up               |
     |      |                   |      1 - System is powered down             |
@@ -75,9 +75,33 @@ The following registers are defined
     |      |                   |    w Watchdog enabled.  Values:             |
     |      |                   |      0 - Watchdog is disabled               |
     |      |                   |      1 - Watchdog is enabled                |
+    |      |                   |    a AC plug status.  Values:               |
+    |      |                   |      0 - AC is unplugged                    |
+    |      |                   |      1 - AC is connected                    |
+    |      |                   |    k Key.  Must be set to 1 to change power |
+    |      |                   |            state from 'powered up'.         |
     +------+-------------------+---------------------------------------------+
     | 0x08 | Watchdog Seconds  | Number of seconds until watchdog resets     |
     |      |                   | the mainboard.  Write a new value to update |
+    +------+-------------------+---------------------------------------------+
+    | 0x09 | IRQ enable        | Which IRQs to enable.                       |
+    |      |                   |  Bits: xxxx arkg                            |
+    |      |                   |    a - Alarm (for wake-alarm)               |
+    |      |                   |    r - Regulator (i.e. AC plug status)      |
+    |      |                   |    k - Keypad IRQ (e.g. power button)       |
+    |      |                   |    g - GPIO button event                    |
+    +------+-------------------+---------------------------------------------+
+    | 0x0a | IRQ status        | Which IRQs are currently firing.            |
+    |      |                   |  Bits: xxxx arkg                            |
+    |      |                   |    a - Alarm (for wake-alarm)               |
+    |      |                   |    r - Regulator (i.e. AC plug status)      |
+    |      |                   |    k - Keypad IRQ (e.g. power button)       |
+    |      |                   |    g - GPIO button event                    |
+    |      |                   | Write 0 to clear a IRQs.                    |
+    +------+-------------------+---------------------------------------------+
+    | 0x0b | Keyboard status   | Current values on the keypad                |
+    |      |                   |  Bits: xxxx xxxp                            |
+    |      |                   |    p - Power button                         |
     +------+-------------------+---------------------------------------------+
     | ...................................................................... |
     +------+-------------------+---------------------------------------------+
