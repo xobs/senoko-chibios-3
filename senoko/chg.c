@@ -156,6 +156,8 @@ static msg_t chg_thread(void *arg) {
   chThdSleepMilliseconds(200);
 
   senokoI2cAcquireBus();
+  chg_set_input(WALL_CURRENT);
+
   while (1) {
     uint16_t cell_mv;
     int cell;
@@ -166,7 +168,6 @@ static msg_t chg_thread(void *arg) {
     senokoI2cReleaseBus();
     chThdSleepMilliseconds(THREAD_SLEEP_MS);
     senokoI2cAcquireBus();
-
     /*
      * Examine each cell to determine if it's undervoltage or
      * overvoltage.  If it's undervoltage, cut power to the
@@ -263,8 +264,6 @@ int chgPresent(void) {
 }
 
 void chgInit(void) {
-  chg_set_input(WALL_CURRENT);
-
   chThdCreateStatic(waChgThread, sizeof(waChgThread),
                     HIGHPRIO - 10, chg_thread, NULL);
 }
