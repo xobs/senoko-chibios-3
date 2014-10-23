@@ -307,6 +307,9 @@ static void i2c_lld_serve_event_interrupt(I2CDriver *i2cp) {
       /* Clear Addr Flag by reading SR1, followed by SR2.*/
       event = dp->SR1;
       regSR2 = dp->SR2;
+
+      if (i2cp->startcb)
+        i2cp->startcb(i2cp);
     }
     if (event & I2C_SR1_TXE) {
       dp->DR = i2cp->txbuf[i2cp->txind++];
@@ -781,6 +784,7 @@ void i2c_lld_stop(I2CDriver *i2cp) {
  *
  * @notapi
  */
+
 msg_t i2c_lld_master_receive_timeout(I2CDriver *i2cp, i2caddr_t addr,
                                      uint8_t *rxbuf, size_t rxbytes,
                                      systime_t timeout) {
@@ -836,6 +840,8 @@ msg_t i2c_lld_master_receive_timeout(I2CDriver *i2cp, i2caddr_t addr,
   dp->CR1 |= I2C_CR1_START | I2C_CR1_ACK;
 
   /* Waits for the operation completion or a timeout.*/
+  i2cp->thread = NULL;
+
   return osalThreadSuspendTimeoutS(&i2cp->thread, timeout);
 }
 
@@ -925,9 +931,10 @@ msg_t i2c_lld_master_transmit_timeout(I2CDriver *i2cp, i2caddr_t addr,
   dp->CR1 |= I2C_CR1_START;
 
   /* Waits for the operation completion or a timeout.*/
+  i2cp->thread = NULL;
+
   return osalThreadSuspendTimeoutS(&i2cp->thread, timeout);
 }
-#include "chprintf.h"
 
 #if I2C_USE_SLAVE_MODE
 /**
@@ -959,6 +966,7 @@ msg_t i2c_lld_slave_io_timeout(I2CDriver *i2cp, i2caddr_t addr,
                                uint8_t *rxbuf, size_t rxbytes,
                                TI2cSlaveCb txcb,
                                TI2cSlaveCb rxcb,
+                               TI2cSlaveStartCb startcb,
                                systime_t timeout) {
   I2C_TypeDef *dp = i2cp->i2c;
   systime_t start, end;
@@ -1004,6 +1012,8 @@ msg_t i2c_lld_slave_io_timeout(I2CDriver *i2cp, i2caddr_t addr,
   i2cp->txind   = 0;
   i2cp->txcount = 0;
   i2cp->txcb    = txcb;
+
+  i2cp->startcb = startcb;
 
   i2cp->slave_mode = 1;
   /* Starts the operation.*/
