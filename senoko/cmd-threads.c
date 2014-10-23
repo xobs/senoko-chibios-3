@@ -28,7 +28,7 @@ void cmd_threads(BaseSequentialStream *chp, int argc, char *argv[])
     chprintf(chp, "Usage: threads\r\n");
     return;
   }
-  chprintf(chp, "    addr       pc    stack prio refs   state time  name\r\n");
+  chprintf(chp, "    addr      pc    stack prio refs   state time  name\r\n");
   tp = chRegFirstThread();
   do {
     chprintf(chp, "%.8lx %.8lx %.8lx %4lu %4lu %12s  %-10s\r\n",
