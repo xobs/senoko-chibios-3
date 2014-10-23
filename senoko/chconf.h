@@ -440,11 +440,10 @@
  * @details This hook is invoked just before switching between threads.
  */
 #define CH_CFG_CONTEXT_SWITCH_HOOK(ntp, otp) {                              \
-  /* System halt code here.*/                                               \
   *((uint32_t *)(0x40006c00 + 0x04)) = ((uint32_t)(ntp->p_ctx.r13->lr)) >> 0; \
-  *((uint32_t *)(0x40006c00 + 0x08)) = ((uint32_t)(ntp->p_ctx.r13->lr)) >> 16;\
-  *((uint32_t *)(0x40006c00 + 0x0c)) = ((uint32_t)(ntp)) >> 0; \
-  *((uint32_t *)(0x40006c00 + 0x10)) = ((uint32_t)(ntp)) >> 16;\
+  *((uint32_t *)(0x40006c00 + 0x08)) = ((uint32_t)(ntp)) >> 0; \
+  *((uint32_t *)(0x40006c00 + 0x0c)) = ((uint32_t)(otp->p_ctx.r13->lr)) >> 0; \
+  *((uint32_t *)(0x40006c00 + 0x10)) = ((uint32_t)(otp)) >> 0; \
 }
 
 /**
@@ -489,6 +488,9 @@
  */
 #define CH_CFG_SYSTEM_HALT_HOOK(reason) {                                   \
   int i;                                                                    \
+  /* Save the halt reason here, since the WDT will reboot us soon, and */   \
+  /* the serial port has a habit of not printing when we're locked up. */   \
+  *((uint32_t *)(0x40006c00 + 0x14)) = ((uint32_t)(reason)) >> 0;           \
   extern BaseSequentialStream *stream;                                      \
   for (i = 0; reason[i]; i++)                                               \
     chSequentialStreamPut(stream, (uint8_t)reason[i]);                      \
