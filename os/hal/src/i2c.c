@@ -167,6 +167,7 @@ i2cflags_t i2cGetErrors(I2CDriver *i2cp) {
  *
  * @api
  */
+
 msg_t i2cMasterTransmitTimeout(I2CDriver *i2cp,
                                i2caddr_t addr,
                                const uint8_t *txbuf,
@@ -285,6 +286,7 @@ msg_t i2cSlaveIoTimeout(I2CDriver *i2cp,
                         uint8_t *rxbuf, size_t rxbytes,
                         TI2cSlaveCb txcb,
                         TI2cSlaveCb rxcb,
+                        TI2cSlaveStartCb startcb,
                         systime_t timeout) {
   msg_t rdymsg;
 
@@ -297,6 +299,7 @@ msg_t i2cSlaveIoTimeout(I2CDriver *i2cp,
                                     rxbuf, rxbytes,
                                     txcb,
                                     rxcb,
+                                    startcb,
                                     timeout);
   if (rdymsg == MSG_TIMEOUT)
     i2cp->state = I2C_LOCKED;
