@@ -8,7 +8,10 @@ struct i2c_registers {
   uint8_t uptime[4];        /* 0x03 - 0x06 */
   uint8_t power;            /* 0x07 */
   uint8_t wdt_seconds;      /* 0x08 */
-  uint8_t padding0[7];      /* 0x09 - 0x0f */
+  uint8_t ier;              /* 0x09 */
+  uint8_t irq_status;       /* 0x0a */
+  uint8_t key_status;       /* 0x0b */
+  uint8_t padding0[4];      /* 0x0c - 0x0f */
 
   /* -- GPIO block -- */
   uint8_t gpio_dir_a;       /* 0x10 */
