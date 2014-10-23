@@ -174,25 +174,27 @@ static msg_t chg_thread(void *arg) {
 
   while (1) {
     int ret;
-    uint8_t cell_count;
+    uint16_t cell_capacity;
     uint16_t voltage, current;
 
     senokoI2cReleaseBus();
     chThdSleepMilliseconds(THREAD_SLEEP_MS);
     senokoI2cAcquireBus();
+
     /*
-     * Examine each cell to determine if it's undervoltage or
-     * overvoltage.  If it's undervoltage, cut power to the
-     * mainboard.  For overvoltage, stop charging.
+     * Use the design capacity to determine if the gas gauge has been
+     * programmed or not.
+     * We can also use this to determine if the gas gauge is responding
+     * at all.
      */
-    ret = ggCellCount(&cell_count);
+    ret = ggDesignCapacity(&cell_capacity);
     if (ret != MSG_OK) {
 
       /* Try again.  The bus might just be busy, or the GG is off. */
-      ret = ggCellCount(&cell_count);
+      ret = ggDesignCapacity(&cell_capacity);
       if (ret != MSG_OK) {
         /*
-         * If we failed twice in a row to get the cell count, then the
+         * If we failed twice in a row to get the cell capacity, then the
          * gas gauge might be asleep.  It does that sometimes, particularly
          * on first powerup.
          * Turn on the charger to ensure the gas gauge wakes up.  Reset the
@@ -203,7 +205,7 @@ static msg_t chg_thread(void *arg) {
       }
     }
 
-    if (cell_count != CELL_COUNT) {
+    if (cell_capacity != CELL_CAPACITY) {
       ggSetDefaults(CELL_COUNT, CELL_CAPACITY, CHARGE_CURRENT);
       continue;
     }
