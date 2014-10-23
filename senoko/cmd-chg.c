@@ -21,6 +21,7 @@
 #include "chg.h"
 #include "bionic.h"
 #include "chprintf.h"
+#include "senoko-i2c.h"
 
 void cmd_chg(BaseSequentialStream *chp, int argc, char *argv[]) {
   int ret;
@@ -30,6 +31,8 @@ void cmd_chg(BaseSequentialStream *chp, int argc, char *argv[]) {
     uint16_t current, voltage, input;
 
     chprintf(chp, "Current is measured in mA, voltage in mV\r\n");
+
+    senokoI2cAcquireBus();
 
     ret = chgGetManuf(&word);
     if (ret < 0)
@@ -44,7 +47,6 @@ void cmd_chg(BaseSequentialStream *chp, int argc, char *argv[]) {
     chprintf(chp, "Charger state: %dmA @ %dmV (input: %dmA)\r\n",
         current, voltage, input);
     chprintf(chp, "Usage: chg [current] [voltage] [[input]]\r\n");
-    return;
   }
 
   else if (argc == 1) {
@@ -52,7 +54,6 @@ void cmd_chg(BaseSequentialStream *chp, int argc, char *argv[]) {
     ret = chgSet(0, 0);
     if (ret < 0)
       chprintf(chp, "Error setting charge: %d\n", ret);
-    return;
   }
 
   else {
@@ -67,12 +68,12 @@ void cmd_chg(BaseSequentialStream *chp, int argc, char *argv[]) {
     /* Figure/check current */
     if (current > 8064) {
       chprintf(chp, "Error: That's too much current\r\n");
-      return;
+      goto out;
     }
     /* Figure/check voltage */
     if (voltage > 19200) {
       chprintf(chp, "Error: 19.2V is the max voltage\r\n");
-      return;
+      goto out;
     }
 
     if (input != 65536) {
@@ -81,11 +82,11 @@ void cmd_chg(BaseSequentialStream *chp, int argc, char *argv[]) {
       if (input > 11004) {
         chprintf(chp,
         "Error: 11004 mA is the max supported input current\r\n");
-        return;
+        goto out;
       }
       if (input < 256) {
         chprintf(chp, "Error: Input current must be at least 256 mA\r\n");
-        return;
+        goto out;
       }
 
       chprintf(chp, "Setting charger: %dmA @ %dmV (input: %dmA)... ",
@@ -103,5 +104,7 @@ void cmd_chg(BaseSequentialStream *chp, int argc, char *argv[]) {
       chprintf(chp, "Ok\r\n");
   }
 
+out:
+  senokoI2cReleaseBus();
   return;
 }
