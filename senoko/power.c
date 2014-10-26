@@ -4,7 +4,7 @@
 #include "chg.h"
 
 #define THREAD_SLEEP_MS 1000
-#define TESTING_POWER
+//#define TESTING_POWER
 
 enum power_state {
   power_off = 0,
