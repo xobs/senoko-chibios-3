@@ -165,7 +165,7 @@ static int gg_getmfgr(uint16_t reg, void *data, int size)
                                             bfr, 1,
                                             data, size);
   if (status != MSG_OK)
-    return senokoI2cErrors();
+    return senokoI2cErrors() | ((status & 0xff) << 24);
 
   if (data && size == 2) {
     tmp = data8[0];
@@ -179,12 +179,13 @@ static int gg_getblock(uint8_t reg, void *data, int size)
 {
   msg_t status;
 
+  memset(data, 0x55, size);
   status = senokoI2cMasterTransmitTimeout(GG_ADDR,
                                           &reg, sizeof(reg),
                                           data, size);
 
   if (status != MSG_OK)
-    return senokoI2cErrors();
+    return senokoI2cErrors() | ((status & 0xff) << 24);
   return 0;
 }
 
@@ -362,7 +363,7 @@ static int gg_setblock(uint8_t reg, void *data, int size) {
                                           NULL, 0);
 
   if (status != MSG_OK)
-    return senokoI2cErrors();
+    return senokoI2cErrors() | ((status & 0xff) << 24);
   return 0;
 }
 
