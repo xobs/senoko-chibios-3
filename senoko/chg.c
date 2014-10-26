@@ -161,6 +161,7 @@ static void set_dsgfet(int newval) {
   val = newval;
 }
 
+#include "chprintf.h"
 static THD_WORKING_AREA(waChgThread, 256);
 static msg_t chg_thread(void *arg) {
   (void)arg;
@@ -206,6 +207,7 @@ static msg_t chg_thread(void *arg) {
     }
 
     if (cell_capacity != CELL_CAPACITY) {
+      chprintf(stream, "Cell capacity is %d, not %d.  Setting defaults...\r\n", cell_capacity, CELL_CAPACITY);
       ggSetDefaults(CELL_COUNT, CELL_CAPACITY, CHARGE_CURRENT);
       continue;
     }
@@ -217,24 +219,25 @@ static msg_t chg_thread(void *arg) {
      * If the board is in discharge mode, AC is connected, and if charging
      * is allowed, then turn the charger on at low voltage.
      */
-    if (!ggStatus(&status)) {
+    if (ggStatus(&status))
+      continue;
 
-      /* Don't have the "terminate charge alarm" or "overcharge alarm".*/
-      if ( (!(status & (1 << 14))) && (!(status & (1 << 15))) ) {
-        if (!ggState(&state)) {
+    /* Don't have the "terminate charge alarm" or "overcharge alarm".*/
+    if ( (!(status & (1 << 14))) && (!(status & (1 << 15))) ) {
+      if (ggState(&state))
+        continue;
 
-          /* State is "normal discharge" */
-          if ((state & 0xf) == 1) {
+      /* State is "normal discharge" */
+      if ((state & 0xf) == 1) {
 
-            uint16_t chgstatus;
-            if (ggChargingStatus(&chgstatus) == 0) {
-              if ( !(chgstatus & (1 << 15)) ) {
-                chgSet(KICKSTART_CURRENT, KICKSTART_VOLTAGE);
-                set_chgfet(1);
-                continue;
-              }
-            }
-          }
+        uint16_t chgstatus;
+        if (ggChargingStatus(&chgstatus))
+          continue;
+
+        if ( !(chgstatus & (1 << 15)) ) {
+          chgSet(KICKSTART_CURRENT, KICKSTART_VOLTAGE);
+          set_chgfet(1);
+          continue;
         }
       }
     }
