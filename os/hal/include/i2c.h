@@ -166,6 +166,7 @@ extern "C" {
                           uint8_t *rxbuf, size_t rxbytes,
                           TI2cSlaveCb txcb,
                           TI2cSlaveCb rxcb,
+                          TI2cSlaveStartCb startcb,
                           systime_t timeout);
   size_t i2cSlaveGetTxOffset(I2CDriver *i2cp);
   void i2cSlaveSetTxOffset(I2CDriver *i2cp, size_t offset);

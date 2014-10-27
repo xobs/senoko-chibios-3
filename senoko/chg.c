@@ -148,17 +148,11 @@ int chgGetDevice(uint16_t *word) {
 }
 
 static void set_chgfet(int newval) {
-  static int val = -1;
-  if (newval != val)
-    ggSetChgFET(newval);
-  val = newval;
+  ggSetChgFET(newval);
 }
 
 static void set_dsgfet(int newval) {
-  static int val = -1;
-  if (newval != val)
-    ggSetDsgFET(newval);
-  val = newval;
+  ggSetDsgFET(newval);
 }
 
 #include "chprintf.h"
