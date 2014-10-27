@@ -3,14 +3,14 @@
 
 #include "chg.h"
 
-#define THREAD_SLEEP_MS 1000
-//#define TESTING_POWER
-
 enum power_state {
   power_off = 0,
   power_on = 1,
 };
-static enum power_state power_state = power_off;
+
+#define THREAD_SLEEP_MS 1000
+//#define TESTING_POWER
+static uint32_t *power_state = ((uint32_t *)(0x40006c00 + 0x18));
 
 #include "senoko.h"
 #include "chprintf.h"
@@ -21,7 +21,7 @@ static void power_set_state(enum power_state state) {
 #else
   palWritePad(GPIOB, PB15, state);
 #endif
-  power_state = state;
+  *power_state = ((*power_state) & ~1) | (!state);
   return;
 }
 
@@ -31,11 +31,11 @@ void powerOff(void) {
 }
 
 int powerIsOn(void) {
-  return power_state == power_on;
+  return (!((*power_state) & 1)) == power_on;
 }
 
 int powerIsOff(void) {
-  return power_state == power_off;
+  return (!((*power_state) & 1)) == power_off;
 }
 
 void powerOn(void) {
@@ -44,7 +44,7 @@ void powerOn(void) {
 }
 
 void powerToggle(void) {
-  if (power_state == power_on)
+  if (powerIsOn())
     powerOff();
   else
     powerOn();
@@ -52,5 +52,8 @@ void powerToggle(void) {
 }
 
 void powerInit(void) {
-  powerOn();
+  if (powerIsOn())
+    powerOn();
+  else
+    powerOff();
 }
