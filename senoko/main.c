@@ -44,12 +44,15 @@ static void shell_termination_handler(eventid_t id) {
 static int pb_is_armed;
 static virtual_timer_t release_vt;
 
-static void release_poweroff(void *arg) {
+static void release_powerbutton(void *arg) {
   (void)arg;
 
   if (pb_is_armed) {
     pb_is_armed = 0;
-    powerOff();
+    if (powerIsOff())
+      powerOn();
+    else
+      powerOff();
   }
 }
 
@@ -60,14 +63,14 @@ static void power_button_pressed_handler(eventid_t id) {
    * Otherwise, wait 4 seconds.  If the button is released, suspend.  Otherwise,
    * hard-cut poweroff.
    */
+  pb_is_armed = 1;
   if (powerIsOff()) {
-    chprintf(stream, " [Poweron] ");
-    powerOn();
+    chprintf(stream, " [Poweron Wait] ");
+    chVTSet(&release_vt, MS2ST(200), release_powerbutton, NULL);
   }
   else {
-    chprintf(stream, " [Wait] ");
-    pb_is_armed = 1;
-    chVTSet(&release_vt, S2ST(3), release_poweroff, NULL);
+    chprintf(stream, " [Poweroff Wait] ");
+    chVTSet(&release_vt, S2ST(3), release_powerbutton, NULL);
   }
 }
 
@@ -77,8 +80,10 @@ static void power_button_released_handler(eventid_t id) {
     chprintf(stream, " [Suspending] ");
     pb_is_armed = 0;
   }
-  else
+  else {
     chprintf(stream, " [Already off] ");
+    pb_is_armed = 0;
+  }
 }
 
 static void ac_unplugged_handler(eventid_t id) {
