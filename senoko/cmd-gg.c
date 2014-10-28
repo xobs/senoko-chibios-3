@@ -121,6 +121,18 @@ void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]) {
     }
     ggSetPrechgTemp(strtoul(argv[1], NULL, 0));
   }
+  else if (is_command(argc, argv, "deadband")) {
+    if (argc != 2) {
+      uint8_t db;
+      ggDeadband(&db);
+      chprintf(chp, "Gas gauge deadband: +/- %d mA\r\n", db);
+      return;
+    }
+    if (ggSetDeadband(strtoul(argv[1], NULL, 0)))
+      chprintf(chp, "Error\r\n");
+    else
+      chprintf(chp, "Ok\r\n");
+  }
   else if (is_command(argc, argv, "capacity")) {
     uint16_t capacity;
     int cells;
@@ -210,6 +222,7 @@ void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]) {
       "gg prechg [t]    Set pre-chg temperature\r\n"
       "gg pfreset       Reset permanent failure fuse\r\n"
       "gg reset         Reset gas gauge completely\r\n"
+      "gg deadband      Modify deadband, which is where 0mA is considered\r\n"
       "gg tempsource    Set how the temperature is sensed\r\n"
       "gg auto [0|1]    Whether the gas gauge can run the charger\r\n"
       );
