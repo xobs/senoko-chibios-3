@@ -798,6 +798,16 @@ int ggSetPrechgTemp(int16_t temp)
   return gg_setflash_word(33, 2, temp);
 }
 
+int ggDeadband(uint8_t *deadband)
+{
+  return gg_getflash(107, 1, deadband, 1);
+}
+
+int ggSetDeadband(uint8_t deadband)
+{
+  return gg_setflash(107, 1, &deadband, 1);
+}
+
 int ggChargingStatus(uint16_t *status) {
   return gg_getword(0x55, status);
 }
