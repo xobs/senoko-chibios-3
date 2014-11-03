@@ -169,8 +169,8 @@ static msg_t chg_thread(void *arg) {
 
   while (1) {
     int ret;
-    uint16_t cell_capacity;
-    uint16_t voltage, current;
+    static uint16_t cell_capacity;
+    static uint16_t voltage, current;
 
     senokoI2cReleaseBus();
     chThdSleepMilliseconds(THREAD_SLEEP_MS);
@@ -182,6 +182,7 @@ static msg_t chg_thread(void *arg) {
      * We can also use this to determine if the gas gauge is responding
      * at all.
      */
+    cell_capacity = 0;
     ret = ggDesignCapacity(&cell_capacity);
     if (ret != MSG_OK) {
 
@@ -200,7 +201,8 @@ static msg_t chg_thread(void *arg) {
       }
     }
 
-    if (cell_capacity != CELL_CAPACITY) {
+    /* 6336 is watt-hours */
+    if ((cell_capacity != 6336) && (cell_capacity != CELL_CAPACITY)) {
       chprintf(stream, "Cell capacity is %d, not %d.  Setting defaults...\r\n", cell_capacity, CELL_CAPACITY);
       ggSetDefaults(CELL_COUNT, CELL_CAPACITY, CHARGE_CURRENT);
       continue;
@@ -242,6 +244,16 @@ static msg_t chg_thread(void *arg) {
      * the system doesn't think we should turn off.
      */
     if (status & ((1 << 11) | (1 << 9) | (1 << 8)))
+      set_dsgfet(0);
+    else
+      set_dsgfet(1);
+
+    voltage = 0;
+    if (ggVoltage(&voltage))
+      continue;
+    if ((!voltage) || (voltage == 0x5555))
+      continue;
+    if (voltage < 9000)
       set_dsgfet(0);
     else
       set_dsgfet(1);
