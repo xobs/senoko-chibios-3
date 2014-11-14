@@ -673,6 +673,14 @@ int ggStatus(uint16_t *word) {
   return gg_getword(0x16, word);
 }
 
+int ggSafetyAlert(uint16_t *word) {
+  return gg_getword(0x50, word);
+}
+
+int ggSafetyStatus(uint16_t *word) {
+  return gg_getword(0x51, word);
+}
+
 int ggFirmwareVersion(uint16_t *word) {
   return gg_getmfgr(0x0001, word, 2);
 }
