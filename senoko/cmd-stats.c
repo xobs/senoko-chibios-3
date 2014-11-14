@@ -286,6 +286,91 @@ void cmd_stats(BaseSequentialStream *chp, int argc, char *argv[]) {
   else
     chprintf(chp, "No errors detected\r\n");
 
+  ret = ggSafetyAlert(&word);
+  if (ret) {
+    chprintf(chp, "Unable to read safety alerts\r\n");
+  }
+  else if (word) {
+    chprintf(chp, "Safety alerts:\r\n");
+    if (word & (1 << 15))
+      chprintf(chp, "    Discharge overtemperature alert\r\n");
+    if (word & (1 << 14))
+      chprintf(chp, "    Charge overtemperature alert\r\n");
+    if (word & (1 << 13))
+      chprintf(chp, "    Discharge overcurrent alert\r\n");
+    if (word & (1 << 12))
+      chprintf(chp, "    Charge overcurrent alert\r\n");
+    if (word & (1 << 11))
+      chprintf(chp, "    Tier-2 discharge overcurrent  alert\r\n");
+    if (word & (1 << 10))
+      chprintf(chp, "    Tier-2 charge overcurrent  alert\r\n");
+    if (word & (1 << 9))
+      chprintf(chp, "    Pack undervoltage alert\r\n");
+    if (word & (1 << 8))
+      chprintf(chp, "    Pack overvoltage alert\r\n");
+    if (word & (1 << 7))
+      chprintf(chp, "    Cell undervoltage alert\r\n");
+    if (word & (1 << 6))
+      chprintf(chp, "    Permanent failure alert\r\n");
+    if (word & (1 << 5))
+      chprintf(chp, "    Cell overvoltage alert\r\n");
+    if (word & (1 << 4))
+      chprintf(chp, "    Host watchdog alert\r\n");
+    if (word & (1 << 3))
+      chprintf(chp, "    AFE watchdog alert\r\n");
+    if (word & (1 << 2))
+      chprintf(chp, "    AFE discharge overcurrent alert\r\n");
+    if (word & (1 << 1))
+      chprintf(chp, "    Charge short-circuit alert\r\n");
+    if (word & (1 << 0))
+      chprintf(chp, "    Discharge short-circuit alert\r\n");
+  }
+  else
+    chprintf(chp, "No safety alerts\r\n");
+
+  ret = ggSafetyStatus(&word);
+  if (ret) {
+    chprintf(chp, "Unable to read safety status\r\n");
+  }
+  else if (word) {
+    chprintf(chp, "Safety status:\r\n");
+    if (word & (1 << 15))
+      chprintf(chp, "    Discharge overtemperature condition\r\n");
+    if (word & (1 << 14))
+      chprintf(chp, "    Charge overtemperature condition\r\n");
+    if (word & (1 << 13))
+      chprintf(chp, "    Discharge overcurrent condition\r\n");
+    if (word & (1 << 12))
+      chprintf(chp, "    Charge overcurrent condition\r\n");
+    if (word & (1 << 11))
+      chprintf(chp, "    Tier-2 discharge overcurrent condition\r\n");
+    if (word & (1 << 10))
+      chprintf(chp, "    Tier-2 charge overcurrent condition\r\n");
+    if (word & (1 << 9))
+      chprintf(chp, "    Pack undervoltage condition\r\n");
+    if (word & (1 << 8))
+      chprintf(chp, "    Pack overvoltage condition\r\n");
+    if (word & (1 << 7))
+      chprintf(chp, "    Cell undervoltage condition\r\n");
+    if (word & (1 << 6))
+      chprintf(chp, "    Permanent failure condition\r\n");
+    if (word & (1 << 5))
+      chprintf(chp, "    Cell overvoltage condition\r\n");
+    if (word & (1 << 4))
+      chprintf(chp, "    Host watchdog condition\r\n");
+    if (word & (1 << 3))
+      chprintf(chp, "    AFE watchdog condition\r\n");
+    if (word & (1 << 2))
+      chprintf(chp, "    AFE discharge overcurrent condition\r\n");
+    if (word & (1 << 1))
+      chprintf(chp, "    Charge short-circuit condition\r\n");
+    if (word & (1 << 0))
+      chprintf(chp, "    Discharge short-circuit condition\r\n");
+  }
+  else
+    chprintf(chp, "No safety status messages\r\n");
+
+
   senokoI2cReleaseBus();
 
   return;
