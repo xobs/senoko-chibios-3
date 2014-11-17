@@ -190,8 +190,16 @@ void cmd_stats(BaseSequentialStream *chp, int argc, char *argv[]) {
   print_str(chp, "Chemistry:", ggChemistry, "%s");
   print_word(chp, "Serial number:", ggSerial, "0x%04x");
   print_byte(chp, "Charge:", ggPercent, "%d%%");
-  print_word(chp, "Max capacity:", ggFullCapacity, "%d mAh");
-  print_word(chp, "Design capacity:", ggDesignCapacity, "%d mAh");
+
+  ggMode(&word);
+  if (word & (1 << 15)) {
+    print_word(chp, "Max capacity:", ggFullCapacity, "%d0 mWh");
+    print_word(chp, "Design capacity:", ggDesignCapacity, "%d0 mWh");
+  }
+  else {
+    print_word(chp, "Max capacity:", ggFullCapacity, "%d mAh");
+    print_word(chp, "Design capacity:", ggDesignCapacity, "%d mAh");
+  }
 
   {
     int16_t temperature;
