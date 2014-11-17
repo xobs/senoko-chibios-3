@@ -208,7 +208,7 @@ static msg_t chg_thread(void *arg) {
     }
 
     /* 6336 is watt-hours */
-    if ((cell_capacity != 6336) && (cell_capacity != CELL_CAPACITY)) {
+    if ((cell_capacity != 6335) && (cell_capacity != CELL_CAPACITY)) {
       chprintf(stream, "Cell capacity is %d, not %d.  Setting defaults...\r\n", cell_capacity, CELL_CAPACITY);
       ggSetDefaults(CELL_COUNT, CELL_CAPACITY, CHARGE_CURRENT);
       continue;
