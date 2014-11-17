@@ -71,22 +71,26 @@ The following registers are defined
     +------+-------------------+---------------------------------------------+
     | 0x02 | Version (Minor)   | Returns Senoko minor version                |
     +------+-------------------+---------------------------------------------+
-    | 0x03 | Uptime (byte 1)   | Byte 1 of the Senoko uptime (seconds)       |
+    | 0x03 | Board type        | ID code of this board:                      |
+    |      |                   |   0 - Abbreviated Senoko (i.e. desktop)     |
+    |      |                   |   1 - Full Senoko (i.e. laptop with battery)|
     +------+-------------------+---------------------------------------------+
-    | 0x04 | Uptime (byte 2)   | Byte 2 of the Senoko uptime (seconds)       |
+    | 0x04 | Uptime (byte 1)   | Byte 1 of the Senoko uptime (seconds)       |
     +------+-------------------+---------------------------------------------+
-    | 0x05 | Uptime (byte 3)   | Byte 3 of the Senoko uptime (seconds)       |
+    | 0x05 | Uptime (byte 2)   | Byte 2 of the Senoko uptime (seconds)       |
     +------+-------------------+---------------------------------------------+
-    | 0x06 | Uptime (byte 4)   | Byte 4 of the Senoko uptime (seconds)       |
+    | 0x06 | Uptime (byte 3)   | Byte 3 of the Senoko uptime (seconds)       |
     +------+-------------------+---------------------------------------------+
-    | 0x07 | IRQ enable        | Which IRQs to enable.                       |
+    | 0x07 | Uptime (byte 4)   | Byte 4 of the Senoko uptime (seconds)       |
+    +------+-------------------+---------------------------------------------+
+    | 0x08 | IRQ enable        | Which IRQs to enable.                       |
     |      |                   |  Bits: xxxx arkg                            |
     |      |                   |    a - Alarm (for wake-alarm)               |
     |      |                   |    r - Regulator (i.e. AC plug status)      |
     |      |                   |    k - Keypad IRQ (e.g. power button)       |
     |      |                   |    g - GPIO event                           |
     +------+-------------------+---------------------------------------------+
-    | 0x08 | IRQ status        | Which IRQs are currently firing.            |
+    | 0x09 | IRQ status        | Which IRQs are currently firing.            |
     |      |                   |  Bits: xxxx arkg                            |
     |      |                   |    a - Alarm (for wake-alarm)               |
     |      |                   |    r - Regulator (i.e. AC plug status)      |
