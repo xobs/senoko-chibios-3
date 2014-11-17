@@ -16,4 +16,6 @@ extern void *stream;
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(*x))
 #endif
 
+extern uint32_t senoko_uptime;
+
 #endif /* __SENOKO_H__ */
