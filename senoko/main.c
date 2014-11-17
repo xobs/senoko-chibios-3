@@ -33,6 +33,8 @@
 #include "power.h"
 #include "gg.h"
 
+uint32_t senoko_uptime = 0; /* Incremented every time TIM2 overflows */
+
 static void shell_termination_handler(eventid_t id) {
   static int i = 1;
   (void)id;
