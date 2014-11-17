@@ -488,12 +488,11 @@
  */
 #define CH_CFG_SYSTEM_HALT_HOOK(reason) {                                   \
   int i;                                                                    \
+  extern void senokoHandleHalt(const char *reason);                         \
   /* Save the halt reason here, since the WDT will reboot us soon, and */   \
   /* the serial port has a habit of not printing when we're locked up. */   \
   *((uint32_t *)(0x40006c00 + 0x14)) = ((uint32_t)(reason)) >> 0;           \
-  extern BaseSequentialStream *stream;                                      \
-  for (i = 0; reason[i]; i++)                                               \
-    chSequentialStreamPut(stream, (uint8_t)reason[i]);                      \
+  senokoHandleHalt(reason);                                                 \
 }
 
 /** @} */

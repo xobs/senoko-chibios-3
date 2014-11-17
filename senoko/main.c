@@ -201,3 +201,15 @@ int main(void) {
 
   return 0;
 }
+
+void senokoHandleHalt(const char *reason) {
+  extern void cmd_threads(BaseSequentialStream *chp, int argc, char *argv[]);
+  chprintf(stream, "\r\n\r\nSystem halt!\r\n");
+  chprintf(stream, "Reason: %s\r\n", reason);
+  chprintf(stream, "Threads:\r\n");
+  cmd_threads(stream, 0, NULL);
+  chprintf(stream, "System will reboot now\r\n");
+  int i;
+  for (i = 32; i < 128; i++)
+    chprintf(stream, "%c", i);
+}
