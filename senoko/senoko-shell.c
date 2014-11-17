@@ -23,15 +23,16 @@
 /* Global stream variable, lets modules use chprintf().*/
 void *stream;
 
-void cmd_threads(BaseSequentialStream *chp, int argc, char *argv[]);
-void cmd_mem(BaseSequentialStream *chp, int argc, char *argv[]);
+void cmd_chg(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_gpio(BaseSequentialStream *chp, int argc, char *argv[]);
+void cmd_leds(BaseSequentialStream *chp, int argc, char *argv[]);
+void cmd_mem(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_power(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_stats(BaseSequentialStream *chp, int argc, char *argv[]);
-void cmd_chg(BaseSequentialStream *chp, int argc, char *argv[]);
-void cmd_leds(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_reboot(BaseSequentialStream *chp, int argc, char *argv[]);
+void cmd_threads(BaseSequentialStream *chp, int argc, char *argv[]);
+void cmd_uptime(BaseSequentialStream *chp, int argc, char *argv[]);
 
 static const ShellCommand shellCommands[] = {
   {"chg", cmd_chg},
@@ -43,6 +44,7 @@ static const ShellCommand shellCommands[] = {
   {"stats", cmd_stats},
   {"reboot", cmd_reboot},
   {"threads", cmd_threads},
+  {"uptime", cmd_uptime},
   {NULL, NULL}
 };
 

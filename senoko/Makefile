@@ -113,6 +113,7 @@ CSRC = $(PORTSRC) \
        cmd-reboot.c \
        cmd-stats.c \
        cmd-threads.c \
+       cmd-uptime.c \
        gg.c \
        gitversion.c \
        power.c \
