@@ -27,7 +27,6 @@ Threads (handled by timers)
 GPIO Handlers (invoked by PLA IRQ)
 ----------------------------------
 
-* System-on-fire - Shut down charger, power
 * AC unplug - Generate I2C interrupt
 * Power button - On press, run power button event engine.
 
@@ -44,6 +43,22 @@ I2C slave
 Senoko acts as an I2C slave device, to allow for things such as setting
 time and date, and powering off the board.  You can also do initial battery
 configuration over I2C.
+
+Since Senoko is a multifunction device, functional areas are broken up into
+banks of I2C registers.
+
+
+    +------+-----------------------------------------------------------------+
+    | Bank | Description                                                     |
+    +------+-----------------------------------------------------------------+
+    | 0x00 | General registers (ID, IRQ, etc.)                               |
+    +------+-----------------------------------------------------------------+
+    | 0x0f | Power management (state of AC, power, power button, etc.)       |
+    +------+-----------------------------------------------------------------+
+    | 0x10 | GPIO expansion                                                  |
+    +------+-----------------------------------------------------------------+
+    | 0x20 | Realtime clock RTC alarm, and watchdog                          |
+    +------+-----------------------------------------------------------------+
 
 The following registers are defined
 
@@ -64,7 +79,22 @@ The following registers are defined
     +------+-------------------+---------------------------------------------+
     | 0x06 | Uptime (byte 4)   | Byte 4 of the Senoko uptime (seconds)       |
     +------+-------------------+---------------------------------------------+
-    | 0x07 | Power Control     | Reflects Senoko's current power status.     |
+    | 0x07 | IRQ enable        | Which IRQs to enable.                       |
+    |      |                   |  Bits: xxxx arkg                            |
+    |      |                   |    a - Alarm (for wake-alarm)               |
+    |      |                   |    r - Regulator (i.e. AC plug status)      |
+    |      |                   |    k - Keypad IRQ (e.g. power button)       |
+    |      |                   |    g - GPIO event                           |
+    +------+-------------------+---------------------------------------------+
+    | 0x08 | IRQ status        | Which IRQs are currently firing.            |
+    |      |                   |  Bits: xxxx arkg                            |
+    |      |                   |    a - Alarm (for wake-alarm)               |
+    |      |                   |    r - Regulator (i.e. AC plug status)      |
+    |      |                   |    k - Keypad IRQ (e.g. power button)       |
+    |      |                   |    g - GPIO event                           |
+    |      |                   | Write 0 to clear a IRQs.                    |
+    +------+-------------------+---------------------------------------------+
+    | 0x0f | Power Control     | Reflects Senoko's current power status.     |
     |      |                   |  Bits: kxxb awpp                            |
     |      |                   |    p Power state.  Values:                  |
     |      |                   |      0 - System is powered up               |
@@ -78,30 +108,11 @@ The following registers are defined
     |      |                   |    a AC plug status.  Values:               |
     |      |                   |      0 - AC is unplugged                    |
     |      |                   |      1 - AC is connected                    |
+    |      |                   |    b Power button status.  Values:          |
+    |      |                   |      0 - Power button released              |
+    |      |                   |      1 - Power button pressed               |
     |      |                   |    k Key.  Must be set to 1 to change power |
     |      |                   |            state from 'powered up'.         |
-    +------+-------------------+---------------------------------------------+
-    | 0x08 | Watchdog Seconds  | Number of seconds until watchdog resets     |
-    |      |                   | the mainboard.  Write a new value to update |
-    +------+-------------------+---------------------------------------------+
-    | 0x09 | IRQ enable        | Which IRQs to enable.                       |
-    |      |                   |  Bits: xxxx arkg                            |
-    |      |                   |    a - Alarm (for wake-alarm)               |
-    |      |                   |    r - Regulator (i.e. AC plug status)      |
-    |      |                   |    k - Keypad IRQ (e.g. power button)       |
-    |      |                   |    g - GPIO button event                    |
-    +------+-------------------+---------------------------------------------+
-    | 0x0a | IRQ status        | Which IRQs are currently firing.            |
-    |      |                   |  Bits: xxxx arkg                            |
-    |      |                   |    a - Alarm (for wake-alarm)               |
-    |      |                   |    r - Regulator (i.e. AC plug status)      |
-    |      |                   |    k - Keypad IRQ (e.g. power button)       |
-    |      |                   |    g - GPIO button event                    |
-    |      |                   | Write 0 to clear a IRQs.                    |
-    +------+-------------------+---------------------------------------------+
-    | 0x0b | Keyboard status   | Current values on the keypad                |
-    |      |                   |  Bits: xxxx xxxp                            |
-    |      |                   |    p - Power button                         |
     +------+-------------------+---------------------------------------------+
     | ...................................................................... |
     +------+-------------------+---------------------------------------------+
@@ -139,6 +150,16 @@ The following registers are defined
     +------+-------------------+---------------------------------------------+
     | 0x19 | Reserved          |                                             |
     +------+-------------------+---------------------------------------------+
+    | 0x1a | GPIO Pull enable  | If a bit is set to 1, a pull up/down is     |
+    |      |                   | enabled on the pin.                         |
+    +------+-------------------+---------------------------------------------+
+    | 0x1b | Reserved          |                                             |
+    +------+-------------------+---------------------------------------------+
+    | 0x1c | GPIO Pull dir     | If a bit is set to 1, a pullup will be set. |
+    |      |                   | Otherwise, a pulldown will be set.          |
+    +------+-------------------+---------------------------------------------+
+    | 0x1d | Reserved          |                                             |
+    +------+-------------------+---------------------------------------------+
     | ...................................................................... |
     +------+-------------------+---------------------------------------------+
     | 0x20 | RTC Seconds       | Number of seconds since 1 January 2014      |
@@ -150,4 +171,16 @@ The following registers are defined
     +------+-------------------+---------------------------------------------+
     | 0x23 | RTC Seconds       | Bits 24-31                                  |
     +------+-------------------+---------------------------------------------+
-
+    | 0x24 | Wake alarm        | Send an IRQ this many seconds from now      |
+    |      |                   | Bits 0-7                                    |
+    +------+-------------------+---------------------------------------------+
+    | 0x25 | Wake alarm        | Bits 8-15                                   |
+    +------+-------------------+---------------------------------------------+
+    | 0x26 | Wake alarm        | Bits 16-23                                  |
+    +------+-------------------+---------------------------------------------+
+    | 0x27 | Wake alarm        | Bits 24-31                                  |
+    +------+-------------------+---------------------------------------------+
+    | 0x28 | Watchdog Seconds  | Number of seconds until watchdog resets     |
+    |      |                   | the mainboard.  Write a new value to kick   |
+    |      |                   | the watchdog.  Write 0 to disable.          |
+    +------+-------------------+---------------------------------------------+
