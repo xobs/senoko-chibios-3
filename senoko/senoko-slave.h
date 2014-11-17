@@ -5,10 +5,11 @@ struct i2c_registers {
   uint8_t signature;        /* 0x00 */
   uint8_t version_major;    /* 0x01 */
   uint8_t version_minor;    /* 0x02 */
-  uint8_t uptime[4];        /* 0x03 - 0x06 */
-  uint8_t irq_enable;       /* 0x07 */
-  uint8_t irq_status;       /* 0x08 */
-  uint8_t padding0[6];      /* 0x09 - 0x0e */
+  uint8_t board_type;       /* 0x03 */
+  uint8_t uptime[4];        /* 0x04 - 0x07 */
+  uint8_t irq_enable;       /* 0x08 */
+  uint8_t irq_status;       /* 0x09 */
+  uint8_t padding0[5];      /* 0x0a - 0x0e */
   uint8_t power;            /* 0x0f */
 
   /* -- GPIO block -- */
@@ -57,6 +58,7 @@ struct i2c_registers {
 extern struct i2c_registers registers;
 
 void senokoSlaveDispatch(void *bfr, uint32_t size);
+void senokoSlavePrepTransaction(void);
 void senokoSlaveInit(void);
 
 #endif /* __SENOKO_SLAVE_H__ */

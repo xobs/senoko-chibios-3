@@ -5,6 +5,7 @@
 #include "senoko.h"
 #include "senoko-events.h"
 #include "senoko-slave.h"
+#include "bionic.h"
 
 /* Mask: 0b[s][b]  s = state, b = button */
 #define POWER_BUTTON_PRESSED_ID 0
@@ -79,7 +80,10 @@ void senokoSlaveDispatch(void *bfr, uint32_t size) {
   }
 
   update_irq();
+}
 
+void senokoSlavePrepTransaction(void) {
+  memcpy(registers.uptime, &senoko_uptime, sizeof(registers.uptime));
 }
 
 static THD_WORKING_AREA(waI2cSlaveThread, 256);
@@ -105,8 +109,7 @@ void senokoSlaveInit(void) {
   registers.signature = 'S';
   registers.version_major = SENOKO_OS_VERSION_MAJOR;
   registers.version_minor = SENOKO_OS_VERSION_MINOR;
-  if (boardType() == senoko_full)
-    registers.version_minor |= 1;
+  registers.board_type = boardType();
 
   registers.power = ((!!palReadPad(GPIOA, PA8)) << REG_POWER_AC_STATUS_SHIFT)
                   | ((!palReadPad(GPIOB, PB14)) << REG_POWER_PB_STATUS_SHIFT)
