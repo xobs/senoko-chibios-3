@@ -116,6 +116,8 @@ static const char *files[] = {
  /*  4 */  "chmtx.c",
  /*  5 */  "chschd.c",
  /*  6 */  "chthread.c",
+ /*  7 */  "chg.c",
+ /*  8 */  "gg.c",
 };
 
 /*
