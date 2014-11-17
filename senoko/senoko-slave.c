@@ -1,6 +1,7 @@
 #include "ch.h"
 #include "hal.h"
 
+#include "board-type.h"
 #include "senoko.h"
 #include "senoko-events.h"
 #include "senoko-slave.h"
@@ -21,12 +22,12 @@ static void update_irq(void) {
 static void button_event(eventid_t id) {
 
   if (id == POWER_BUTTON_PRESSED_ID)
-    registers.key_status |= (1 << 0);
+    registers.power |= REG_POWER_PB_STATUS_MASK;
   else if (id == POWER_BUTTON_RELEASED_ID)
-    registers.key_status &= ~(1 << 0);
+    registers.power &= ~REG_POWER_PB_STATUS_MASK;
 
-  if (registers.ier & (1 << 1))
-    registers.irq_status |= (1 << 1);
+  if (registers.irq_enable & REG_IRQ_KEYPAD_MASK)
+    registers.irq_status |= REG_IRQ_KEYPAD_MASK;
 
   update_irq();
 }
@@ -34,12 +35,12 @@ static void button_event(eventid_t id) {
 static void ac_event(eventid_t id) {
 
   if (id == AC_UNPLUGGED_ID)
-    registers.power &= ~(1 << 3);
+    registers.power &= ~REG_POWER_AC_STATUS_MASK;
   else if (id == AC_CONNETED_ID)
-    registers.power |= (1 << 3);
+    registers.power |= REG_POWER_AC_STATUS_MASK;
 
-  if (registers.ier & (1 << 2))
-    registers.irq_status |= (1 << 2);
+  if (registers.irq_status & REG_IRQ_POWER_MASK)
+    registers.irq_status |= REG_IRQ_POWER_MASK;
 
   update_irq();
 }
@@ -104,8 +105,12 @@ void senokoSlaveInit(void) {
   registers.signature = 'S';
   registers.version_major = SENOKO_OS_VERSION_MAJOR;
   registers.version_minor = SENOKO_OS_VERSION_MINOR;
-  registers.key_status = ((!palReadPad(GPIOB, PB14)) << 0);
-  registers.power = ((!!palReadPad(GPIOA, PA8 )) << 3);
+  if (boardType() == senoko_full)
+    registers.version_minor |= 1;
+
+  registers.power = ((!!palReadPad(GPIOA, PA8)) << REG_POWER_AC_STATUS_SHIFT)
+                  | ((!palReadPad(GPIOB, PB14)) << REG_POWER_PB_STATUS_SHIFT)
+                  | REG_POWER_KEY_READ;
 
   chThdCreateStatic(waI2cSlaveThread, sizeof(waI2cSlaveThread),
                           70, i2c_slave_thread, NULL);
