@@ -32,9 +32,7 @@ static binary_semaphore_t i2c_bus_sem;
 		*((uint32_t *)(0x40006c00 + 0x28)) = 1; \
 		*((uint32_t *)(0x40006c00 + 0x24)) = __LINE__; \
 	} while(0)
-static const systime_t timeout = MS2ST(5);
-
-//static mutex_t master_mtx, mode_mtx;
+static const systime_t timeout = MS2ST(25);
 
 struct i2c_registers registers;
 static uint8_t i2c_buffer[sizeof(registers) + 1];
@@ -81,8 +79,6 @@ static void i2c_rx_finished(I2CDriver *i2cp, size_t bytes)
   chSysLockFromISR();
   mark_line;
   chBSemSignalI(&master_slave_sem);
-  //mark_line;
-  //chSchRescheduleS();
   mark_line;
   chSysUnlockFromISR();
   mark_line;
@@ -163,7 +159,7 @@ void senokoI2cInit(void)
  *
  * @api
  */
-#define I2C_MAX_TRIES 10
+#define I2C_MAX_TRIES 50
 msg_t senokoI2cMasterTransmitTimeout(i2caddr_t addr,
                                      const uint8_t *txbuf,
                                      size_t txbytes,
