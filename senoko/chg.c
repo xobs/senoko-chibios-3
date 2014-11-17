@@ -11,7 +11,7 @@
 
 #define CHG_ADDR 0x9
 
-#define THREAD_SLEEP_MS 5100
+#define THREAD_SLEEP_MS 2500
 
 /* Defaults for this board, for an unconfigured gas gauge.*/
 #define CELL_COUNT 3
