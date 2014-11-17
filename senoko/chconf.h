@@ -56,7 +56,7 @@
  *          The value one is not valid, timeouts are rounded up to
  *          this value.
  */
-#define CH_CFG_ST_TIMEDELTA                 2
+#define CH_CFG_ST_TIMEDELTA                 0
 
 /** @} */
 
@@ -478,7 +478,8 @@
  *          after processing the virtual timers queue.
  */
 #define CH_CFG_SYSTEM_TICK_HOOK() {                                         \
-  /* System tick event code here.*/                                         \
+  extern uint32_t senoko_uptime;                                            \
+  senoko_uptime++;                                                          \
 }
 
 /**
@@ -487,7 +488,6 @@
  *          the system is halted.
  */
 #define CH_CFG_SYSTEM_HALT_HOOK(reason) {                                   \
-  int i;                                                                    \
   extern void senokoHandleHalt(const char *reason);                         \
   /* Save the halt reason here, since the WDT will reboot us soon, and */   \
   /* the serial port has a habit of not printing when we're locked up. */   \
