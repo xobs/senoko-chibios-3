@@ -52,9 +52,9 @@ static void release_powerbutton(void *arg) {
   if (pb_is_armed) {
     pb_is_armed = 0;
     if (powerIsOff())
-      powerOn();
+      powerOnI();
     else
-      powerOff();
+      powerOffI();
   }
 }
 
@@ -83,7 +83,10 @@ static void power_button_released_handler(eventid_t id) {
     pb_is_armed = 0;
   }
   else {
-    chprintf(stream, " [Already off] ");
+    if (powerIsOff())
+      chprintf(stream, " [Already off] ");
+    else
+      chprintf(stream, " [Already on] ");
     pb_is_armed = 0;
   }
 }
@@ -98,12 +101,24 @@ static void ac_plugged_handler(eventid_t id) {
   chprintf(stream, " [AC plugged] ");
 }
 
+static void powered_off_handler(eventid_t id) {
+  (void)id;
+  chprintf(stream, " [Powered off] ");
+}
+
+static void powered_on_handler(eventid_t id) {
+  (void)id;
+  chprintf(stream, " [Powered on] ");
+}
+
 static evhandler_t event_handlers[] = {
   shell_termination_handler,
   power_button_pressed_handler,
   power_button_released_handler,
   ac_unplugged_handler,
   ac_plugged_handler,
+  powered_off_handler,
+  powered_on_handler,
 };
 
 static event_listener_t event_listeners[ARRAY_SIZE(event_handlers)];
@@ -173,6 +188,8 @@ int main(void) {
   chEvtRegister(&power_button_released, &event_listeners[2], 2);
   chEvtRegister(&ac_unplugged, &event_listeners[3], 3);
   chEvtRegister(&ac_plugged, &event_listeners[4], 4);
+  chEvtRegister(&powered_off, &event_listeners[5], 5);
+  chEvtRegister(&powered_on, &event_listeners[6], 6);
 
   chprintf(stream, "\r\nStarting Senoko (Ver %d.%d, git version %s)\r\n", 
       SENOKO_OS_VERSION_MAJOR,
@@ -204,16 +221,4 @@ int main(void) {
     chEvtDispatch(event_handlers, chEvtWaitOne(ALL_EVENTS));
 
   return 0;
-}
-
-void senokoHandleHalt(const char *reason) {
-  extern void cmd_threads(BaseSequentialStream *chp, int argc, char *argv[]);
-  chprintf(stream, "\r\n\r\nSystem halt!\r\n");
-  chprintf(stream, "Reason: %s\r\n", reason);
-  chprintf(stream, "Threads:\r\n");
-  cmd_threads(stream, 0, NULL);
-  chprintf(stream, "System will reboot now\r\n");
-  int i;
-  for (i = 32; i < 128; i++)
-    chprintf(stream, "%c", i);
 }
