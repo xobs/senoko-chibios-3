@@ -299,6 +299,17 @@ static void i2c_lld_serve_event_interrupt(I2CDriver *i2cp) {
   }
   else {
     if (event & (I2C_SR1_ADDR | I2C_SR1_ADD10)) {
+      /* If a start condition is received but data is present, then
+       * it likely is a restart case, e.g. where the host sent us an
+       * address and then wants to immediately read that address.
+       * In this case, finish up the transaction by calling the callback,
+       * if one exists.
+       */
+      if (i2cp->rxcount && i2cp->rxcb)
+        i2cp->rxcb(i2cp, i2cp->rxcount);
+      if (i2cp->txcount && i2cp->txcb)
+        i2cp->txcb(i2cp, i2cp->txcount);
+
       /* Reset rx buffer pointer when starting new reception.*/
       i2cp->rxind = 0;
       i2cp->rxcount = 0;
