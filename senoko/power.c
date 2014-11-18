@@ -12,7 +12,7 @@ enum power_state {
   power_on = 1,
 };
 
-#define TESTING_POWER
+//#define TESTING_POWER
 static uint32_t *power_state = ((uint32_t *)(0x40006c00 + 0x18));
 
 static void power_set_state_x(enum power_state state) {
