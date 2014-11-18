@@ -107,6 +107,7 @@ CSRC = $(PORTSRC) \
        cmd-chg.c \
        cmd-gg.c \
        cmd-gpio.c \
+       cmd-i2clog.c \
        cmd-leds.c \
        cmd-mem.c \
        cmd-power.c \
