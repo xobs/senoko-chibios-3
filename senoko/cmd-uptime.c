@@ -25,5 +25,8 @@ void cmd_uptime(BaseSequentialStream *chp, int argc, char *argv[]) {
     chprintf(chp, "Usage: uptime\r\n");
     return;
   }
-  chprintf(chp, "%lu\r\n", senoko_uptime);
+  uint32_t uptime_msec = senoko_uptime;
+  uint32_t uptime_sec = uptime_msec / 1000;
+  uptime_msec -= (uptime_sec * 1000);
+  chprintf(chp, "%lu.%03lu seconds\r\n", uptime_sec, uptime_msec);
 }
