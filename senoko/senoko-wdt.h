@@ -13,5 +13,10 @@
 #define SENOKO_WATCHDOG_THREAD_MS   500
 
 void senokoWatchdogInit(void);
+int senokoWatchdogEnabled(void);
+int senokoWatchdogTimeToReset(void);
+void senokoWatchdogEnable(void);
+void senokoWatchdogDisable(void);
+void senokoWatchdogSet(int new_seconds);
 
 #endif /* __SENOKO_WDT_H__ */
