@@ -71,9 +71,9 @@ The following registers are defined
     +------+-------------------+---------------------------------------------+
     | 0x02 | Version (Minor)   | Returns Senoko minor version                |
     +------+-------------------+---------------------------------------------+
-    | 0x03 | Board type        | ID code of this board:                      |
-    |      |                   |   0 - Abbreviated Senoko (i.e. desktop)     |
-    |      |                   |   1 - Full Senoko (i.e. laptop with battery)|
+    | 0x03 | Features          | Which features are present.                 |
+    |      |                   |   0 - Battery control circuitry             |
+    |      |                   |   1 - GPIO port expansion                   |
     +------+-------------------+---------------------------------------------+
     | 0x04 | Uptime (byte 1)   | Byte 1 of the Senoko uptime (seconds)       |
     +------+-------------------+---------------------------------------------+
