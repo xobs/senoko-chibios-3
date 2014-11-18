@@ -347,3 +347,16 @@ void *memset(void *dst0, int val, size_t length)
 	return dst0;
 }
 
+size_t strlen (const char *__s)
+{
+  size_t i = 0;
+  while(__s[i++]);
+  return i;
+}
+
+size_t strnlen (const char *__string, size_t __maxlen)
+{
+  size_t i = 0;
+  while(__string[i++] && i < __maxlen);
+  return i;
+}
