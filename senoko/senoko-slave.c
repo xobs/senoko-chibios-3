@@ -1,17 +1,21 @@
 #include "ch.h"
 #include "hal.h"
 
+#include "bionic.h"
 #include "board-type.h"
+#include "power.h"
 #include "senoko.h"
 #include "senoko-events.h"
 #include "senoko-slave.h"
-#include "bionic.h"
+#include "senoko-wdt.h"
 
 /* Mask: 0b[s][b]  s = state, b = button */
 #define POWER_BUTTON_PRESSED_ID 0
 #define POWER_BUTTON_RELEASED_ID 1
 #define AC_UNPLUGGED_ID 2
 #define AC_CONNETED_ID 3
+#define POWERED_OFF_ID 4
+#define POWERED_ON_ID 5
 
 static void update_irq(void) {
   if (registers.irq_status)
@@ -46,14 +50,28 @@ static void ac_event(eventid_t id) {
   update_irq();
 }
 
+static void power_event(eventid_t id) {
+
+  registers.power &= ~REG_POWER_STATE_MASK;
+
+  if (id == POWERED_OFF_ID)
+    registers.power |= REG_POWER_STATE_OFF;
+  else if (id == POWERED_ON_ID)
+    registers.power |= REG_POWER_STATE_ON;
+
+  update_irq();
+}
+
 static evhandler_t evthandler[] = { 
   button_event, /* Power button pressed */
   button_event, /* Power button released */
   ac_event, /* AC connected */
   ac_event, /* AC unplugged */
+  power_event,  /* Powered off */
+  power_event,  /* Powered on */
 };
 
-static event_listener_t event_listener[5];
+static event_listener_t event_listener[6];
 
 void senokoSlaveDispatch(void *bfr, uint32_t size) {
   uint32_t offset;
@@ -69,12 +87,51 @@ void senokoSlaveDispatch(void *bfr, uint32_t size) {
     offset %= sizeof(registers);
 
     /* Only certain registers are writeable */
-    if ( (offset >= 0x10 && offset < 0x11) || 
-         (offset >= 0x14 && offset < 0x19) ||
-         (offset == 0x7) ||
-         (offset == 0x8) ||
-         (offset == 0x9) || (offset == 0xa))
+    if (offset == REG_POWER) {
+      /* Power control */
+      if ((b[count] & REG_POWER_KEY_MASK) == REG_POWER_KEY_WRITE) {
+
+        if (b[count] & REG_POWER_WDT_ENABLE) {
+          senokoWatchdogEnable();
+          registers.power |= REG_POWER_WDT_MASK;
+        }
+        else {
+          senokoWatchdogDisable();
+          registers.power &= ~REG_POWER_WDT_MASK;
+        }
+
+        switch (b[count] & REG_POWER_STATE_MASK) {
+        case REG_POWER_STATE_OFF:
+          powerOffI();
+          break;
+
+        case REG_POWER_STATE_ON:
+          powerOnI();
+          break;
+
+        case REG_POWER_STATE_REBOOT:
+          powerRebootI();
+          break;
+
+        default:
+          break;
+        }
+      }
+    }
+    else if ((offset == REG_IRQ_ENABLE) || (offset == REG_IRQ_STATUS)) {
+      /* IRQ enable / status values */
       ((uint8_t *)&registers)[offset] = b[count];
+    }
+    else if (offset == REG_WATCHDOG_SECONDS) {
+      /* Watchdog */
+      senokoWatchdogSet(b[count]);
+      ((uint8_t *)&registers)[offset] = b[count];
+    }
+    else if ( (offset >= 0x10 && offset < 0x11) || 
+         (offset >= 0x14 && offset < 0x1b)) {
+      /* GPIO registers */
+      ((uint8_t *)&registers)[offset] = b[count];
+    }
 
     offset++;
   }
@@ -84,6 +141,11 @@ void senokoSlaveDispatch(void *bfr, uint32_t size) {
 
 void senokoSlavePrepTransaction(void) {
   memcpy(registers.uptime, &senoko_uptime, sizeof(registers.uptime));
+  registers.wdt_seconds = senokoWatchdogTimeToReset();
+  if (senokoWatchdogEnabled())
+    registers.power |= REG_POWER_WDT_ENABLE;
+  else
+    registers.power &= ~REG_POWER_WDT_ENABLE;
 }
 
 static THD_WORKING_AREA(waI2cSlaveThread, 256);
@@ -97,6 +159,8 @@ static msg_t i2c_slave_thread(void *arg) {
   chEvtRegister(&power_button_released, &event_listener[1], POWER_BUTTON_RELEASED_ID);
   chEvtRegister(&ac_unplugged, &event_listener[2], AC_UNPLUGGED_ID);
   chEvtRegister(&ac_plugged, &event_listener[3], AC_CONNETED_ID);
+  chEvtRegister(&powered_off, &event_listener[4], POWERED_OFF_ID);
+  chEvtRegister(&powered_on, &event_listener[5], POWERED_ON_ID);
 
   while (TRUE)
     chEvtDispatch(evthandler, chEvtWaitOne(ALL_EVENTS));
@@ -109,7 +173,11 @@ void senokoSlaveInit(void) {
   registers.signature = 'S';
   registers.version_major = SENOKO_OS_VERSION_MAJOR;
   registers.version_minor = SENOKO_OS_VERSION_MINOR;
-  registers.board_type = boardType();
+
+  if (boardType() == senoko_full)
+    registers.features = REG_FEATURES_BATTERY;
+  else
+    registers.features = REG_FEATURES_GPIO;
 
   registers.power = ((!!palReadPad(GPIOA, PA8)) << REG_POWER_AC_STATUS_SHIFT)
                   | ((!palReadPad(GPIOB, PB14)) << REG_POWER_PB_STATUS_SHIFT)

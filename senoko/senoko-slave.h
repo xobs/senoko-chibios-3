@@ -5,7 +5,7 @@ struct i2c_registers {
   uint8_t signature;        /* 0x00 */
   uint8_t version_major;    /* 0x01 */
   uint8_t version_minor;    /* 0x02 */
-  uint8_t board_type;       /* 0x03 */
+  uint8_t features;         /* 0x03 */
   uint8_t uptime[4];        /* 0x04 - 0x07 */
   uint8_t irq_enable;       /* 0x08 */
   uint8_t irq_status;       /* 0x09 */
@@ -35,18 +35,26 @@ struct i2c_registers {
   uint8_t wdt_seconds;      /* 0x28 */
 };
 
+#define REG_FEATURES 0x03
+#define REG_FEATURES_BATTERY (1 << 0)
+#define REG_FEATURES_GPIO (1 << 1)
+
+#define REG_IRQ_ENABLE 0x08
+#define REG_IRQ_STATUS 0x09
 #define REG_IRQ_GPIO_MASK         (1 << 0)
 #define REG_IRQ_KEYPAD_MASK       (1 << 1)
 #define REG_IRQ_POWER_MASK        (1 << 2)
 #define REG_IRQ_ALARM_MASK        (1 << 3)
 
+#define REG_POWER 0x0f
 #define REG_POWER_STATE_MASK      (3 << 0)
-#define REG_POWER_STATE_UP        (0 << 0)
-#define REG_POWER_STATE_DOWN      (1 << 0)
+#define REG_POWER_STATE_ON        (0 << 0)
+#define REG_POWER_STATE_OFF       (1 << 0)
 #define REG_POWER_STATE_REBOOT    (2 << 0)
 #define REG_POWER_WDT_MASK        (1 << 2)
 #define REG_POWER_WDT_DISABLE     (0 << 2)
 #define REG_POWER_WDT_ENABLE      (1 << 2)
+#define REG_POWER_WDT_STATE       (1 << 2)
 #define REG_POWER_AC_STATUS_MASK  (1 << 3)
 #define REG_POWER_AC_STATUS_SHIFT (3)
 #define REG_POWER_PB_STATUS_MASK  (1 << 4)
@@ -54,6 +62,8 @@ struct i2c_registers {
 #define REG_POWER_KEY_MASK        (3 << 6)
 #define REG_POWER_KEY_READ        (1 << 6)
 #define REG_POWER_KEY_WRITE       (2 << 6)
+
+#define REG_WATCHDOG_SECONDS 0x28
 
 extern struct i2c_registers registers;
 
