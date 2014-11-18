@@ -116,7 +116,9 @@ CSRC = $(PORTSRC) \
        cmd-uptime.c \
        gg.c \
        gitversion.c \
+       panic.c \
        power.c \
+       vsprintf.c \
        senoko-events.c \
        senoko-i2c.c \
        senoko-shell.c \
