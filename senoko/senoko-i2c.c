@@ -6,6 +6,7 @@
 #include "power.h"
 #include "bionic.h"
 #include "senoko-slave.h"
+#include "senoko-i2c.h"
 
 #if !HAL_USE_I2C
 #error "I2C is not enabled"
@@ -25,7 +26,6 @@ static binary_semaphore_t i2c_bus_sem;
  *    - When a slave transaction occurs, take a semaphore
  *    - When a slave transaction finishes, release the semaphore
  */
-
 
 #define mark_line \
 	do { \
@@ -51,9 +51,26 @@ static const I2CConfig senokoI2cMode = {
   STD_DUTY_CYCLE,
 };
 
+#ifdef I2C_LOGGING
+struct i2clog i2clog;
+static void senokoI2cLogAppend(struct i2clog *log, int type,
+                               void *buffer, size_t bytes)
+{
+  memcpy(log->entries[log->head].data, buffer, bytes);
+  log->entries[log->head].size = bytes;
+  log->entries[log->head].type = type;
+    log->head++;
+  if (log->head > I2C_LOG_ENTRIES)
+    log->head = 0;
+}
+#else /* ! I2C_LOGGING */
+#define senokoI2cLogAppend(log, type, buffer, bytes)
+#endif /* ! I2C_LOGGING */
+
 static void i2c_transaction_start(I2CDriver *i2cp)
 {
   (void)i2cp;
+  senokoI2cLogAppend(&i2clog, I2C_ENTRY_TYPE_START, NULL, 0);
   chSysLockFromISR();
   chBSemResetI(&master_slave_sem, 1);
   senokoSlavePrepTransaction();
@@ -63,19 +80,23 @@ static void i2c_transaction_start(I2CDriver *i2cp)
 static void i2c_rx_finished(I2CDriver *i2cp, size_t bytes)
 {
   (void)i2cp;
-  uint8_t addr;
+
+  senokoI2cLogAppend(&i2clog, I2C_ENTRY_TYPE_READ, i2c_buffer, bytes);
 
   /* Shouldn't ever happen.*/
   if (!bytes)
     return;
 
-  addr = i2c_buffer[0];
+  if (bytes) {
+    uint8_t addr = i2c_buffer[0];
 
-  if (bytes > 1)
-    senokoSlaveDispatch(i2c_buffer, bytes);
+    if (bytes > 1)
+      senokoSlaveDispatch(i2c_buffer, bytes);
 
-  mark_line;
-  i2cSlaveSetTxOffset(i2cp, addr + bytes - 1);
+    mark_line;
+    i2cSlaveSetTxOffset(i2cp, addr + bytes - 1);
+  }
+
   mark_line;
   chSysLockFromISR();
   mark_line;
@@ -94,8 +115,9 @@ static void i2c_tx_finished(I2CDriver *i2cp, size_t bytes)
   chSysLockFromISR();
   mark_line;
   chBSemSignalI(&master_slave_sem);
-  //mark_line;
-  //chSchRescheduleS();
+
+  senokoI2cLogAppend(&i2clog, I2C_ENTRY_TYPE_WRITE, i2c_buffer, bytes);
+
   mark_line;
   chSysUnlockFromISR();
   mark_line;
