@@ -26,6 +26,7 @@ void *stream;
 void cmd_chg(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_gpio(BaseSequentialStream *chp, int argc, char *argv[]);
+void cmd_i2clog(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_leds(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_mem(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_power(BaseSequentialStream *chp, int argc, char *argv[]);
@@ -38,6 +39,7 @@ static const ShellCommand shellCommands[] = {
   {"chg", cmd_chg},
   {"gg", cmd_gg},
   {"gpio", cmd_gpio},
+  {"i2clog", cmd_i2clog},
   {"leds", cmd_leds},
   {"mem", cmd_mem},
   {"power", cmd_power},
