@@ -10,6 +10,8 @@ event_source_t power_button_pressed;
 event_source_t power_button_released;
 event_source_t ac_plugged;
 event_source_t ac_unplugged;
+event_source_t powered_off;
+event_source_t powered_on;
 
 enum gpio_pin_names {
   pin_power,
@@ -97,6 +99,8 @@ void senokoEventsInit(void) {
   chEvtObjectInit(&power_button_released);
   chEvtObjectInit(&ac_plugged);
   chEvtObjectInit(&ac_unplugged);
+  chEvtObjectInit(&powered_off);
+  chEvtObjectInit(&powered_on);
 
   refresh_gpios(gpio_states);
 
