@@ -15,7 +15,14 @@
 
 /* Defaults for this board, for an unconfigured gas gauge.*/
 #define CELL_COUNT 3
-#define CELL_CAPACITY 5000
+#define CELL_CAPACITY_MAH 5000
+#define CELL_CAPACITY_MAH_SLOP 10
+#define CELL_CAPACITY_MAH_MIN (CELL_CAPACITY_MAH - CELL_CAPACITY_MAH_SLOP)
+#define CELL_CAPACITY_MAH_MAX (CELL_CAPACITY_MAH + CELL_CAPACITY_MAH_SLOP)
+#define CELL_CAPACITY_MWH 6335
+#define CELL_CAPACITY_MWH_SLOP 10
+#define CELL_CAPACITY_MWH_MIN (CELL_CAPACITY_MWH - CELL_CAPACITY_MWH_SLOP)
+#define CELL_CAPACITY_MWH_MAX (CELL_CAPACITY_MWH + CELL_CAPACITY_MWH_SLOP)
 #define CHARGE_CURRENT 5000
 #define WALL_CURRENT 3750
 
@@ -207,10 +214,15 @@ static msg_t chg_thread(void *arg) {
       }
     }
 
-    /* 6336 is watt-hours */
-    if ((cell_capacity != 6335) && (cell_capacity != CELL_CAPACITY)) {
-      chprintf(stream, "Cell capacity is %d, not %d.  Setting defaults...\r\n", cell_capacity, CELL_CAPACITY);
-      ggSetDefaults(CELL_COUNT, CELL_CAPACITY, CHARGE_CURRENT);
+    if (((cell_capacity < CELL_CAPACITY_MAH_MIN) ||
+        (cell_capacity > CELL_CAPACITY_MAH_MAX))
+        && ((cell_capacity < CELL_CAPACITY_MWH_MIN) ||
+          (cell_capacity > CELL_CAPACITY_MWH_MAX))) {
+      chprintf(stream, "Cell capacity is %d, not %d +/- %d or %d +/- %d.  "
+          "Setting defaults...\r\n", cell_capacity,
+          CELL_CAPACITY_MAH, CELL_CAPACITY_MAH_SLOP,
+          CELL_CAPACITY_MWH, CELL_CAPACITY_MWH_SLOP);
+      ggSetDefaults(CELL_COUNT, CELL_CAPACITY_MAH, CHARGE_CURRENT);
       continue;
     }
 
