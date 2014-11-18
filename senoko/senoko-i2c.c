@@ -56,6 +56,7 @@ static void i2c_transaction_start(I2CDriver *i2cp)
   (void)i2cp;
   chSysLockFromISR();
   chBSemResetI(&master_slave_sem, 1);
+  senokoSlavePrepTransaction();
   chSysUnlockFromISR();
 }
 
@@ -79,6 +80,7 @@ static void i2c_rx_finished(I2CDriver *i2cp, size_t bytes)
   chSysLockFromISR();
   mark_line;
   chBSemSignalI(&master_slave_sem);
+  senokoSlavePrepTransaction();
   mark_line;
   chSysUnlockFromISR();
   mark_line;
