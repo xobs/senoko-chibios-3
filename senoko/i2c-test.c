@@ -203,6 +203,18 @@ int main(int argc, char **argv) {
 	else
 		printf("Unknown power state\n");
 
+	uint8_t irq;
+	senoko_read_i2c(dev, REG_IRQ_ENABLE, &irq, 1);
+	printf("Enabled IRQs: 0x%02x\n", irq);
+	senoko_read_i2c(dev, REG_IRQ_STATUS, &irq, 1);
+	printf("Triggered IRQs: 0x%02x\n", irq);
+
+//	printf("Enabling keypad and clearing IRQs...\n");
+//	irq |= REG_IRQ_KEYPAD_MASK;
+//	senoko_write_i2c(dev, REG_IRQ_ENABLE, &irq, 1);
+//	irq = 0;
+//	senoko_write_i2c(dev, REG_IRQ_STATUS, &irq, 1);
+
 #if 0
 	power &= ~REG_POWER_KEY_MASK;
 	power |= REG_POWER_KEY_WRITE;
