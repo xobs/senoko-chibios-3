@@ -193,6 +193,32 @@ void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]) {
       chprintf(chp, "Usage: gg auto [0|1]\r\n");
     }
   }
+  else if (is_command(argc, argv, "rm")) {
+    int handled = 0;
+    if (argc == 2) {
+      if (argv[1][0] == '1') {
+        ggSetRemovable(1);
+        chprintf(chp, "Setting battery as removable\r\n");
+        handled = 1;
+      }
+      else if (argv[1][0] == '0') {
+        chprintf(chp, "Setting battery as non-removable\r\n");
+        ggSetRemovable(0);
+        handled = 1;
+      }
+    }
+    else if (argc == 1) {
+      if (ggRemovable())
+        chprintf(chp, "Battery is set as removable\r\n");
+      else
+        chprintf(chp, "Battery is set as non-removable\r\n");
+      handled = 1;
+    }
+
+    if (!handled) {
+      chprintf(chp, "Usage: gg rm [0|1]\r\n");
+    }
+  }
   else if (is_command(argc, argv, "it")) {
     chprintf(chp, "Starting ImpedenceTrackTM algorithm...\r\n");
     ggStartImpedenceTrackTM();
@@ -257,6 +283,7 @@ void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]) {
       "gg tempsource    Set how the temperature is sensed\r\n"
       "gg auto [0|1]    Whether the gas gauge can run the charger\r\n"
       "gg it            Start a runthrough of the ImpedenceTrack algorithm\r\n"
+      "gg rm [0|1]      Set or print whether battery is removable\r\n"
       );
     return;
   }
