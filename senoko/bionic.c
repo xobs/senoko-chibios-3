@@ -339,6 +339,13 @@ unsigned long strtoul(const char *nptr, char **endptr, int base)
 	return (acc);
 }
 
+long strtol(const char *cp,char **endp,unsigned int base)
+{
+	if(*cp=='-')
+		return -strtoul(cp+1,endp,base);
+	return strtoul(cp,endp,base);
+}
+
 void *memset(void *dst0, int val, size_t length)
 {
 	uint8_t *ptr = dst0;
