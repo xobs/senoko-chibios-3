@@ -66,6 +66,7 @@ int ggPermanentFailureFlags2(uint16_t *flags);
 int ggPermanentFailureReset(void);
 int ggReboot(void);
 int ggSetBroadcast(int broadcast);
+int ggFastChargeCurrent(int16_t *current);
 int ggSetFastChargeCurrent(int current);
 int ggSetDefaults(int cells, int capacity, int current);
 

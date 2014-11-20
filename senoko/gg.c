@@ -575,6 +575,10 @@ int ggSetFastChargeCurrent(int current) {
   return gg_setflash_word(34, 0, current);
 }
 
+int ggFastChargeCurrent(int16_t *current) {
+  return gg_getflash_word(34, 0, current);
+}
+
 int ggSetBroadcast(int broadcast) {
   int ret;
   uint8_t cfg_b[2];
