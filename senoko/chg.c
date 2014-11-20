@@ -205,18 +205,6 @@ static msg_t chg_thread(void *arg) {
       }
     }
 
-    if (((cell_capacity < CELL_CAPACITY_MAH_MIN) ||
-        (cell_capacity > CELL_CAPACITY_MAH_MAX))
-        && ((cell_capacity < CELL_CAPACITY_MWH_MIN) ||
-          (cell_capacity > CELL_CAPACITY_MWH_MAX))) {
-      chprintf(stream, "Cell capacity is %d, not %d +/- %d or %d +/- %d.  "
-          "Setting defaults...\r\n", cell_capacity,
-          CELL_CAPACITY_MAH, CELL_CAPACITY_MAH_SLOP,
-          CELL_CAPACITY_MWH, CELL_CAPACITY_MWH_SLOP);
-      ggSetDefaults(CELL_COUNT, CELL_CAPACITY_MAH, CHARGE_CURRENT);
-      continue;
-    }
-
     /* Figure out what the gas gauge wants us to charge at.*/
     ret = ggChargingVoltage(&voltage);
     if (ret)
