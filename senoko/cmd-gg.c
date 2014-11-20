@@ -209,6 +209,33 @@ void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]) {
     else
       chprintf(chp, " ok.\r\n");
   }
+  else if (is_command(argc, argv, "cal")) {
+    if (argc != 4) {
+      chprintf(chp, "Usage: gg cal [voltage] [current] [temperature]\r\n",
+                    "    voltage - Millivolts of something, not sure what\r\n"
+                    "    current - Milliamps (negative) of something, not sure what\r\n"
+                    "temperature - Temperature in degrees C\r\n"
+          );
+    }
+    else {
+      int16_t voltage;
+      int16_t current;
+      int16_t cells = 3; /* Only support three-cell configuration */
+      uint16_t temperature;
+
+      voltage = strtol(argv[1], NULL, 0);
+      current = strtol(argv[2], NULL, 0);
+      temperature = (strtol(argv[3], NULL, 0) + 273) * 10;
+
+      chprintf(chp, "Calibrating battery.\r\n");
+      chprintf(chp, "        Cells: %d\r\n", cells);
+      chprintf(chp, "      Voltage: %d mV\r\n", voltage);
+      chprintf(chp, "      Current: %d mA\r\n", current);
+      chprintf(chp, "  Temperature: %d dK\r\n", temperature);
+      ggCalibrate(voltage, current, temperature, cells);
+      chprintf(chp, " ok.\r\n");
+    }
+  }
 
   else {
     chprintf(chp,
