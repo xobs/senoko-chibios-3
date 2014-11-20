@@ -193,6 +193,10 @@ void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]) {
       chprintf(chp, "Usage: gg auto [0|1]\r\n");
     }
   }
+  else if (is_command(argc, argv, "it")) {
+    chprintf(chp, "Starting ImpedenceTrackTM algorithm...\r\n");
+    ggStartImpedenceTrackTM();
+  }
   else if (is_command(argc, argv, "pfreset")) {
     chprintf(chp, "Resetting permanent failure flags...");
     ret = ggPermanentFailureReset();
@@ -252,6 +256,7 @@ void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]) {
       "gg deadband      Modify deadband, which is where 0mA is considered\r\n"
       "gg tempsource    Set how the temperature is sensed\r\n"
       "gg auto [0|1]    Whether the gas gauge can run the charger\r\n"
+      "gg it            Start a runthrough of the ImpedenceTrack algorithm\r\n"
       );
     return;
   }
