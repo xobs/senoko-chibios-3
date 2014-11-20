@@ -160,20 +160,11 @@ int chgGetDevice(uint16_t *word) {
   return chg_getblock(0xff, word, 2);
 }
 
-static void set_chgfet(int newval) {
-  ggSetChgFET(newval);
-}
-
-static void set_dsgfet(int newval) {
-  ggSetDsgFET(newval);
-}
-
 #include "chprintf.h"
 static THD_WORKING_AREA(waChgThread, 256);
 static msg_t chg_thread(void *arg) {
   (void)arg;
 
-  uint16_t status, state;
   chRegSetThreadName("charge controller");
   chThdSleepMilliseconds(200);
 
@@ -226,56 +217,6 @@ static msg_t chg_thread(void *arg) {
       continue;
     }
 
-    /*
-     * The gas gauge will only attempt to charge if the current is positive.
-     * In Senoko, a "neutral" system is one in which the current is around
-     * -8 mA.
-     * If the board is in discharge mode, AC is connected, and if charging
-     * is allowed, then turn the charger on at low voltage.
-     */
-    if (ggStatus(&status))
-      continue;
-
-    /* Don't have the "terminate charge alarm" or "overcharge alarm".*/
-    if ( (!(status & (1 << 14))) && (!(status & (1 << 15))) ) {
-      if (ggState(&state))
-        continue;
-
-      /* State is "normal discharge" */
-      if ((state & 0xf) == 1) {
-
-        uint16_t chgstatus;
-        if (ggChargingStatus(&chgstatus))
-          continue;
-
-        if ( !(chgstatus & (1 << 15)) ) {
-          chgSet(KICKSTART_CURRENT, KICKSTART_VOLTAGE);
-          set_chgfet(1);
-          continue;
-        }
-      }
-    }
-
-    /*
-     * Since we're having to manually kickstart things, we have to
-     * manually manipulate the FETs as well.  Enable the DSG FET if
-     * the system doesn't think we should turn off.
-     */
-    if (status & ((1 << 11) | (1 << 9) | (1 << 8)))
-      set_dsgfet(0);
-    else
-      set_dsgfet(1);
-
-    voltage = 0;
-    if (ggVoltage(&voltage))
-      continue;
-    if ((!voltage) || (voltage == 0x5555))
-      continue;
-    if (voltage < 9000)
-      set_dsgfet(0);
-    else
-      set_dsgfet(1);
-
     /* Figure out what the gas gauge wants us to charge at.*/
     ret = ggChargingVoltage(&voltage);
     if (ret)
@@ -285,10 +226,6 @@ static msg_t chg_thread(void *arg) {
     if (ret)
       continue;
 
-    if (!current && !voltage)
-      set_chgfet(0);
-    else
-      set_chgfet(1);
     chgSet(current, voltage);
   }
   return 0;
