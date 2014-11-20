@@ -44,7 +44,7 @@ static void ac_event(eventid_t id) {
   else if (id == AC_CONNETED_ID)
     registers.power |= REG_POWER_AC_STATUS_MASK;
 
-  if (registers.irq_status & REG_IRQ_POWER_MASK)
+  if (registers.irq_enable & REG_IRQ_POWER_MASK)
     registers.irq_status |= REG_IRQ_POWER_MASK;
 
   update_irq();
