@@ -201,9 +201,9 @@ void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]) {
     else
       chprintf(chp, " ok.\r\n");
   }
-  else if (is_command(argc, argv, "reset")) {
-    chprintf(chp, "Resetting gas gauge completely...");
-    ret = ggFullReset();
+  else if (is_command(argc, argv, "reboot")) {
+    chprintf(chp, "Rebooting the gas gauge chip...");
+    ret = ggReboot();
     if (ret != MSG_OK)
       chprintf(chp, " Error: %x\r\n", ret);
     else
@@ -248,7 +248,7 @@ void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]) {
       "gg temphigh [t]  Set charge-inhibit high temperature\r\n"
       "gg prechg [t]    Set pre-chg temperature\r\n"
       "gg pfreset       Reset permanent failure fuse\r\n"
-      "gg reset         Reset gas gauge completely\r\n"
+      "gg reboot        Reboot the gas gauge chip\r\n"
       "gg deadband      Modify deadband, which is where 0mA is considered\r\n"
       "gg tempsource    Set how the temperature is sensed\r\n"
       "gg auto [0|1]    Whether the gas gauge can run the charger\r\n"
