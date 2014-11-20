@@ -704,7 +704,7 @@ int ggSetLeds(int state) {
   }
 }
 
-int ggSetITEnable(void) {
+int ggStartImpedenceTrackTM(void) {
   return gg_getmfgr(0x0021, NULL, 0);
 }
 
@@ -753,11 +753,40 @@ int ggCalibrate(int16_t voltage, int16_t current,
   return 0;
 }
 
+int ggSetRemovable(int removable) {
+  uint8_t cfg_b[2];
+  int ret;
+
+  ret = gg_getflash(64, 2, cfg_b, sizeof(cfg_b));
+  if (ret != MSG_OK)
+    return ret;
+
+  /* Byteswapped.  Low-byte is offset 1. */
+  if (removable)
+    cfg_b[1] &=  ~(1 << 3);
+  else
+    cfg_b[1] |=  (1 << 3);
+
+  ret = gg_setflash(64, 2, cfg_b, sizeof(cfg_b));
+
+  return ret;
+}
+
+int ggRemovable(void) {
+  uint8_t cfg_b[2];
+  int ret;
+
+  ret = gg_getflash(64, 2, cfg_b, sizeof(cfg_b));
+  if (ret != MSG_OK)
+    return ret;
+
+  /* Byteswapped.  Low-byte is offset 1. */
+  return !(cfg_b[1] & (1 << 3));
+}
 
 #include "chprintf.h"
 int ggSetDefaults(int cells, int capacity, int current) {
   int ret;
-  uint8_t cfg_b[2];
 
   chprintf(stream, "Setting cells: %d\r\n", cells);
   ret = ggSetCellCount(cells);
@@ -769,10 +798,7 @@ int ggSetDefaults(int cells, int capacity, int current) {
   ret = ggSetFastChargeCurrent(current);
 
   chprintf(stream, "Setting non-removable (NR) mode\r\n");
-  ret = gg_getflash(64, 2, cfg_b, sizeof(cfg_b));
-  /* Byteswapped.  Low-byte is offset 1. */
-  cfg_b[1] |=  (1 << 3);
-  ret = gg_setflash(64, 2, cfg_b, sizeof(cfg_b));
+  ret = ggSetRemovable(0);
 
   return ret;
 }

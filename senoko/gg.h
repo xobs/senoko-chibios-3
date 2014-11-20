@@ -36,9 +36,11 @@ int ggSetChemistry(uint8_t chem[4]);
 int ggSetCellCount(int cells);
 int ggCellCount(uint8_t *cells);
 int ggSetCapacity(int cells, uint16_t capacity);
-int ggSetITEnable(void);
+int ggStartImpedenceTrackTM(void);
 int ggTimeToEmpty(uint16_t *minutes);
 int ggTimeToFull(uint16_t *minutes);
+int ggSetRemovable(int removable);
+int ggRemovable(void);
 int ggCalibrate(int16_t voltage, int16_t current,
                 uint16_t temperature, int cells);
 int ggSetInhibitLow(int16_t temp);
