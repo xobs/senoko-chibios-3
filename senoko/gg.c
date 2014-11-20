@@ -911,7 +911,7 @@ int ggPermanentFailureFlags2(uint16_t *flags) {
   return gg_getflash_word(96, 28, flags);
 }
 
-int ggFullReset(void) {
+int ggReboot(void) {
   return gg_getmfgr(0x0041, NULL, 0);
 }
 
