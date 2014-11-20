@@ -133,6 +133,15 @@ void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]) {
     else
       chprintf(chp, "Ok\r\n");
   }
+  else if (is_command(argc, argv, "current")) {
+    if (argc != 2) {
+      int16_t current;
+      ggFastChargeCurrent(&current);
+      chprintf(chp, "Fastcharge current is now: %d mA\r\n", current);
+      return;
+    }
+    ggSetFastChargeCurrent(strtoul(argv[1], NULL, 0));
+  }
   else if (is_command(argc, argv, "capacity")) {
     uint16_t capacity;
     int cells;
@@ -272,7 +281,9 @@ void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]) {
       "Usage:\r\n"
       "gg dsg +/-       Force dsg fet on or let it turn off\r\n"
       "gg chg +/-       Force chg fet on or let it turn off\r\n"
+      "gg capacity [m]  Set cell capacity to [mAh]\r\n"
       "gg cells [3|4]   Set cell count\r\n"
+      "gg current [cur] Set fastcharge current to [cur]\r\n"
       "gg cal           Calibrate battery pack\r\n"
       "gg templow [t]   Set charge-inhibit low temperature\r\n"
       "gg temphigh [t]  Set charge-inhibit high temperature\r\n"
