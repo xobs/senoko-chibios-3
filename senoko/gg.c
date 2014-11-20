@@ -708,6 +708,52 @@ int ggSetITEnable(void) {
   return gg_getmfgr(0x0021, NULL, 0);
 }
 
+int ggCalibrate(int16_t voltage, int16_t current,
+                uint16_t temperature, int cells) {
+  uint8_t byte;
+  enum temp_sensor_source {
+    external_temp_1 = 0xd5,
+    external_temp_1_and_2 = 0xf5,
+    internal_temp = 0xcd,
+  };
+
+  /* Put device into calibration mode */
+  gg_setword(0, 0x40);
+  byte = 0x40;
+  gg_setblock(0, &byte, 1);
+
+  gg_setword(0x63, cells);
+  gg_setword(0x60, current);
+  gg_setword(0x61, voltage);
+  gg_setword(0x62, temperature);
+
+  /* Perform calibration */
+  gg_setword(0x51, 0xc000 | external_temp_1);
+
+  /* Status is held in byte 0x51.  Ignore the two upper bits, which are
+   * always set to 1.  If any of the remaining bits are nonzero, then
+   * then calibration is still ongoing.
+   */
+  while (1) {
+    uint16_t status;
+    gg_getword(0x51, &status);
+    status &= ~0xc000;
+    if (!status)
+      break;
+    chThdSleepMilliseconds(200);
+  }
+
+  /* Write results to flash */
+  gg_setblock(0x72, NULL, 0);
+  chThdSleepMilliseconds(100); /* Wait for flash to write */
+
+  /* Exit calibration mode */
+  gg_setblock(0x73, NULL, 0);
+
+  return 0;
+}
+
+
 #include "chprintf.h"
 int ggSetDefaults(int cells, int capacity, int current) {
   int ret;
