@@ -47,6 +47,7 @@
 static uint16_t g_current;
 static uint16_t g_voltage;
 static uint16_t g_input;
+static bool chg_paused;
 
 static int chg_getblock(uint8_t reg, void *data, int size) {
   if (senokoI2cMasterTransmitTimeout(CHG_ADDR,
@@ -130,6 +131,10 @@ int chgSet(uint16_t current, uint16_t voltage) {
   return ret;
 }
 
+int chgSetInput(uint16_t current) {
+  return chg_set_input(current);
+}
+
 int chgRefresh(uint16_t *current, uint16_t *voltage, uint16_t *input) {
 
   int ret = 0;
@@ -160,7 +165,18 @@ int chgGetDevice(uint16_t *word) {
   return chg_getblock(0xff, word, 2);
 }
 
-#include "chprintf.h"
+void chgPause(void) {
+  chg_paused = true;
+}
+
+void chgResume(void) {
+  chg_paused = false;
+}
+
+bool chgPaused(void) {
+  return chg_paused;
+}
+
 static THD_WORKING_AREA(waChgThread, 256);
 static msg_t chg_thread(void *arg) {
   (void)arg;
@@ -179,6 +195,9 @@ static msg_t chg_thread(void *arg) {
     senokoI2cReleaseBus();
     chThdSleepMilliseconds(THREAD_SLEEP_MS);
     senokoI2cAcquireBus();
+
+    if (chg_paused)
+      continue;
 
     /*
      * Use the design capacity to determine if the gas gauge has been
@@ -225,6 +244,8 @@ int chgPresent(void) {
 }
 
 void chgInit(void) {
+  chgRefresh(NULL, NULL, NULL);
+  chg_paused = false;
   chThdCreateStatic(waChgThread, sizeof(waChgThread),
                     HIGHPRIO - 10, chg_thread, NULL);
 }
