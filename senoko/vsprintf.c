@@ -28,8 +28,7 @@ const char hex_asc[] = "0123456789abcdef";
 #define hex_asc_lo(x)   hex_asc[((x) & 0x0f)]
 #define hex_asc_hi(x)   hex_asc[((x) & 0xf0) >> 4]
 
-
-int isspace(char c)
+int isspace(int c)
 {
   return (c == ' '
     || c == '\f'
@@ -39,39 +38,39 @@ int isspace(char c)
     || c == '\v');
 }
 
-int isdigit(char c)
+int isdigit(int c)
 {
   return (c >= '0' && c <= '9');
 }
 
-int isxdigit(char c)
+int isxdigit(int c)
 {
   return ((c >= '0' && c <= '9') ||
     (c >= 'a' && c <= 'f') ||
     (c >= 'A' && c <= 'F'));
 }
 
-int isupper(char c)
+int isupper(int c)
 {
   return (c >= 'A' && c <= 'Z');
 }
 
-int islower(char c)
+int islower(int c)
 {
   return (c >= 'a' && c <= 'z');
 }
 
-int isalpha(char c)
+int isalpha(int c)
 {
   return isupper(c) || islower(c);
 }
 
-int isalnum(char c)
+int isalnum(int c)
 {
   return isalpha(c) || isdigit(c);
 }
 
-int toupper(char c)
+int toupper(int c)
 {
   if (!islower(c))
     return c;
@@ -545,6 +544,8 @@ static char *pointer(const char *fmt, char *buf, char *end, void *ptr,
 		flags &= ~SPECIAL;
 		break;
 	}
+#else
+	(void)fmt;
 #endif
 	flags |= SMALL;
 	if (field_width == -1) {
@@ -741,7 +742,7 @@ int emerg_vsnprintf(char *buf, size_t size, const char *fmt,
 
 int emerg_vscnprintf(char *buf, size_t size, const char *fmt, va_list args)
 {
-	int i;
+	unsigned int i;
 
 	i = emerg_vsnprintf(buf, size, fmt, args);
 
