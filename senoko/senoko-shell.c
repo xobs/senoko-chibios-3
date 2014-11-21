@@ -24,6 +24,7 @@
 void *stream;
 
 void cmd_chg(BaseSequentialStream *chp, int argc, char *argv[]);
+void cmd_date(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_gpio(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_i2clog(BaseSequentialStream *chp, int argc, char *argv[]);
@@ -37,6 +38,7 @@ void cmd_uptime(BaseSequentialStream *chp, int argc, char *argv[]);
 
 static const ShellCommand shellCommands[] = {
   {"chg", cmd_chg},
+  {"date", cmd_date},
   {"gg", cmd_gg},
   {"gpio", cmd_gpio},
   {"i2clog", cmd_i2clog},
