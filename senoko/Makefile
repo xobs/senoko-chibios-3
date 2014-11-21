@@ -105,6 +105,7 @@ CSRC = $(PORTSRC) \
        board-type.c \
        chg.c \
        cmd-chg.c \
+       cmd-date.c \
        cmd-gg.c \
        cmd-gpio.c \
        cmd-i2clog.c \
@@ -117,6 +118,7 @@ CSRC = $(PORTSRC) \
        cmd-uptime.c \
        gg.c \
        gitversion.c \
+       localtime.c \
        panic.c \
        power.c \
        vsprintf.c \
