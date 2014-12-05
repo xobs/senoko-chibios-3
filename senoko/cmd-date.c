@@ -22,6 +22,7 @@
 #include "bionic.h"
 #include "senoko.h"
 
+#if HAL_USE_RTC
 const char *dow[] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
 const char *mon[] = { "Non", "Jan", "Feb", "Mar", "Apr", "May", "Jun",
                              "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", };
@@ -67,8 +68,10 @@ static void print_time(BaseSequentialStream *chp, int usage) {
     chprintf(chp, "    date year [y]   Set the year to [y]\r\n");
   }
 }
+#endif /* HAL_USE_RTC */
 
 void cmd_date(BaseSequentialStream *chp, int argc, char *argv[]) {
+#if HAL_USE_RTC
   int usage = 1;
 
   if (argc >= 1 && !strcasecmp(argv[0], "day")) {
@@ -135,5 +138,10 @@ void cmd_date(BaseSequentialStream *chp, int argc, char *argv[]) {
   }
 
   print_time(chp, usage);
+#else
+  (void)argc;
+  (void)argv;
+  chprintf(chp, "RTC not enabled\r\n");
+#endif /* HAL_USE_RTC */
   return;
 }
