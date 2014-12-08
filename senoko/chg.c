@@ -48,12 +48,13 @@ static uint16_t g_current;
 static uint16_t g_voltage;
 static uint16_t g_input;
 static bool chg_paused;
+static bool chg_present;
 
 static int chg_getblock(uint8_t reg, void *data, int size) {
   if (senokoI2cMasterTransmitTimeout(CHG_ADDR,
                                      &reg, sizeof(reg),
                                      data, size))
-    return senokoI2cErrors();
+    return senokoI2cErrors() | 0x80000000;
   return 0;
 }
 
@@ -239,13 +240,18 @@ static msg_t chg_thread(void *arg) {
 }
 
 int chgPresent(void) {
-  uint16_t word;
-  return !chg_getblock(0xff, &word, 2);
+  return chg_present;
 }
 
 void chgInit(void) {
-  chgRefresh(NULL, NULL, NULL);
+
+  /* If the charger can't refresh, then it likely doesn't exist */
+  chg_present = false;
+  if (chgRefresh(NULL, NULL, NULL))
+    return;
+
   chg_paused = false;
+  chg_present = true;
   chThdCreateStatic(waChgThread, sizeof(waChgThread),
                     HIGHPRIO - 10, chg_thread, NULL);
 }
