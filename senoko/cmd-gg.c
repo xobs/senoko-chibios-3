@@ -19,6 +19,7 @@
 #include "chprintf.h"
 
 #include "bionic.h"
+#include "board-type.h"
 #include "senoko.h"
 #include "senoko-i2c.h"
 #include "gg.h"
@@ -29,6 +30,11 @@ static int is_command(int argc, char *argv[], const char *match) {
 
 void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]) {
   int ret;
+
+  if (boardType() != senoko_full) {
+    chprintf(chp, "Gas gauge not present on this board.\r\n");
+    return;
+  }
 
   /* Force the discharge FET on or off.*/
   if (is_command(argc, argv, "dsg")) {
