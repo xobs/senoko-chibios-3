@@ -19,9 +19,10 @@
 #include "chprintf.h"
 
 #include "bionic.h"
+#include "board-type.h"
+#include "gg.h"
 #include "senoko.h"
 #include "senoko-i2c.h"
-#include "gg.h"
 
 static const char *permafailures[] = {
   "fuse is blown",
@@ -132,6 +133,11 @@ void cmd_stats(BaseSequentialStream *chp, int argc, char *argv[]) {
   int ret;
   (void)argc;
   (void)argv;
+
+  if (boardType() != senoko_full) {
+    chprintf(chp, "Gas gauge not present on this board.\r\n");
+    return;
+  }
 
   senokoI2cAcquireBus();
 
