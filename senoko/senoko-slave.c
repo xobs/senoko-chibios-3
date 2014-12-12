@@ -9,6 +9,9 @@
 #include "senoko-slave.h"
 #include "senoko-wdt.h"
 
+/* Save ISR-enable values across boot.  Shared with power.c. */
+static uint32_t *power_state = ((uint32_t *)(0x40006c00 + 0x18));
+
 /* Mask: 0b[s][b]  s = state, b = button */
 #define POWER_BUTTON_PRESSED_ID 0
 #define POWER_BUTTON_RELEASED_ID 1
@@ -118,8 +121,13 @@ void senokoSlaveDispatch(void *bfr, uint32_t size) {
         }
       }
     }
-    else if ((offset == REG_IRQ_ENABLE) || (offset == REG_IRQ_STATUS)) {
-      /* IRQ enable / status values */
+    else if (offset == REG_IRQ_ENABLE) {
+      /* Save IRQ enable status across boots. */
+      *power_state = ((*power_state) & 0x00ff) | ((b[count] << 8) & 0xff00);
+      ((uint8_t *)&registers)[offset] = b[count];
+    }
+    else if (offset == REG_IRQ_STATUS) {
+      /* IRQ status values (allow user to clear status) */
       ((uint8_t *)&registers)[offset] = b[count];
     }
     else if (offset == REG_WATCHDOG_SECONDS) {
@@ -182,6 +190,8 @@ void senokoSlaveInit(void) {
   registers.power = ((!!palReadPad(GPIOA, PA8)) << REG_POWER_AC_STATUS_SHIFT)
                   | ((!palReadPad(GPIOB, PB14)) << REG_POWER_PB_STATUS_SHIFT)
                   | REG_POWER_KEY_READ;
+
+  registers.irq_enable = (*power_state) >> 8;
 
   chThdCreateStatic(waI2cSlaveThread, sizeof(waI2cSlaveThread),
                           70, i2c_slave_thread, NULL);
