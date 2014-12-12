@@ -4,7 +4,7 @@
 enum board_type {
   unknown,
   senoko_full,
-  senoko_half,
+  senoko_passthru,
 };
 
 enum board_type boardType(void);

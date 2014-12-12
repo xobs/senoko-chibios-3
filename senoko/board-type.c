@@ -12,7 +12,7 @@ static void get_board_type(void) {
   if (chgPresent())
     board_type = senoko_full;
   else
-    board_type = senoko_half;
+    board_type = senoko_passthru;
   senokoI2cReleaseBus();
 }
 
