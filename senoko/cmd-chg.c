@@ -16,15 +16,22 @@
 
 #include "ch.h"
 #include "hal.h"
-
-#include "senoko.h"
-#include "chg.h"
-#include "bionic.h"
 #include "chprintf.h"
+
+#include "bionic.h"
+#include "board-type.h"
+#include "chg.h"
+#include "senoko.h"
 #include "senoko-i2c.h"
 
 void cmd_chg(BaseSequentialStream *chp, int argc, char *argv[]) {
   int ret;
+
+  if (boardType() != senoko_full) {
+    chprintf(chp, "Charger not present on this board.\r\n");
+    return;
+  }
+
 
   if (argc >= 3 && !strcasecmp(argv[0], "set")) {
     uint32_t current, voltage, input;
