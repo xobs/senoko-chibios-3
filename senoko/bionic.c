@@ -367,3 +367,15 @@ size_t strnlen (const char *__string, size_t __maxlen)
   while(__string[i++] && i < __maxlen);
   return i;
 }
+
+extern int sprintf(char * buf, const char *fmt, ...);
+const char *minutesToTime(uint32_t minutes)
+{
+	static char str[16];
+	int hours = minutes / 60;
+
+	minutes -= (hours * 60);
+
+	sprintf(str, "%d:%02d", hours, minutes);
+	return str;
+}

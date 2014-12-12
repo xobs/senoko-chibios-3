@@ -795,7 +795,7 @@ int emerg_vsprintf(char *buf, const char *fmt, va_list args)
 	return vsnprintf_internal(buf, INT_MAX, fmt, args);
 }
 
-int emerg_sprintf(char * buf, const char *fmt, ...)
+int sprintf(char * buf, const char *fmt, ...)
 {
 	va_list args;
 	int i;
