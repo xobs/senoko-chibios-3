@@ -1,6 +1,7 @@
 #include "ch.h"
 #include "hal.h"
 
+#include "ac.h"
 #include "bionic.h"
 #include "board-type.h"
 #include "power.h"
@@ -187,7 +188,7 @@ void senokoSlaveInit(void) {
   else
     registers.features = REG_FEATURES_GPIO;
 
-  registers.power = ((!!palReadPad(GPIOA, PA8)) << REG_POWER_AC_STATUS_SHIFT)
+  registers.power = (acPlugged() << REG_POWER_AC_STATUS_SHIFT)
                   | ((!palReadPad(GPIOB, PB14)) << REG_POWER_PB_STATUS_SHIFT)
                   | REG_POWER_KEY_READ;
 
