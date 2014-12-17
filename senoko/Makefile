@@ -101,6 +101,7 @@ CSRC = $(PORTSRC) \
        $(BOARDSRC) \
        $(CHIBIOS)/os/various/shell.c \
        $(CHIBIOS)/os/various/chprintf.c \
+       ac.c \
        bionic.c \
        board-type.c \
        chg.c \
