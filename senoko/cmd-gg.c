@@ -77,21 +77,29 @@ void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]) {
 
     if (argc == 2) {
       if (!strcasecmp(argv[1], "internal")) {
-        ggSetTemperatureSource(temp_internal);
-        return;
+        ret = ggSetTemperatureSource(temp_internal);
       }
       else if (!strcasecmp(argv[1], "ts1")) {
-        ggSetTemperatureSource(temp_ts1);
-        return;
+        ret = ggSetTemperatureSource(temp_ts1);
       }
       else if (!strcasecmp(argv[1], "greater")) {
-        ggSetTemperatureSource(temp_greater_ts1_or_ts2);
-        return;
+        ret = ggSetTemperatureSource(temp_greater_ts1_or_ts2);
       }
       else if (!strcasecmp(argv[1], "average")) {
-        ggSetTemperatureSource(temp_average_ts1_and_ts2);
+        ret = ggSetTemperatureSource(temp_average_ts1_and_ts2);
+      }
+      else {
+        chprintf(chp, "Unrecognized temp source \"%s\".\r\n", argv[1]);
         return;
       }
+
+      if (ret) {
+        chprintf(chp, "Unable to set temp source: 0x%x\r\n", ret);
+        return;
+      }
+
+      chprintf(chp, "Set tempsource to %s\r\n", argv[1]);
+      return;
     }
     chprintf(chp, "Usage: gg tempsource [internal | ts1 | greater | average]\r\n");
     chprintf(chp, "    internal - Use internal temperature sensor\r\n");
@@ -140,13 +148,21 @@ void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]) {
       chprintf(chp, "Ok\r\n");
   }
   else if (is_command(argc, argv, "current")) {
+    int16_t current;
     if (argc != 2) {
-      int16_t current;
       ggFastChargeCurrent(&current);
       chprintf(chp, "Fastcharge current is now: %d mA\r\n", current);
       return;
     }
-    ggSetFastChargeCurrent(strtoul(argv[1], NULL, 0));
+
+    current = strtoul(argv[1], NULL, 0);
+    chprintf(chp, "Setting fastcharge curent... ");
+
+    ret = ggSetFastChargeCurrent(current);
+    if (ret < 0)
+      chprintf(chp, "Unable to set fastcharge current: 0x%x\r\n", ret);
+    else
+      chprintf(chp, "Set fastcharge current to %d mA\r\n", current);
   }
   else if (is_command(argc, argv, "capacity")) {
     uint16_t capacity;
@@ -235,8 +251,12 @@ void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]) {
     }
   }
   else if (is_command(argc, argv, "it")) {
-    chprintf(chp, "Starting ImpedenceTrackTM algorithm...\r\n");
-    ggStartImpedenceTrackTM();
+    chprintf(chp, "Starting ImpedenceTrackTM algorithm... ");
+    ret = ggStartImpedenceTrackTM();
+    if (ret)
+      chprintf(chp, "Error: 0x%08x\r\n", ret);
+    else
+      chprintf(chp, "Ok\r\n");
   }
   else if (is_command(argc, argv, "pfreset")) {
     chprintf(chp, "Resetting permanent failure flags...");
