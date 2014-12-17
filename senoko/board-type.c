@@ -1,23 +1,23 @@
 #include "ch.h"
 #include "hal.h"
 
-#include "chg.h"
 #include "board-type.h"
+#include "chg.h"
 #include "senoko-i2c.h"
 
-static enum board_type board_type = unknown;
+static enum board_type board_type = senoko_unknown;
 
-static void get_board_type(void) {
-  senokoI2cAcquireBus();
-  if (chgPresent())
-    board_type = senoko_full;
-  else
-    board_type = senoko_passthru;
-  senokoI2cReleaseBus();
-}
-
-enum board_type boardType(void) {
-  if (board_type == unknown)
-    get_board_type();
+enum board_type boardType(void)
+{
+  if (board_type == senoko_unknown)
+    boardTypeInit();
   return board_type;
 }
+
+void boardTypeInit(void)
+{
+  board_type = senoko_passthru;
+  if (chgPresent())
+    board_type = senoko_full;
+}
+
