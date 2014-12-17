@@ -215,6 +215,9 @@ int main(void) {
   /* Power up gas gauge.*/
   ggInit();
 
+  /* Figure out which sort of board this is.*/
+  boardTypeInit();
+
   chThdSetPriority(LOWPRIO + 10);
   senokoShellRestart();
   while (TRUE)
