@@ -579,6 +579,14 @@ int ggFastChargeCurrent(int16_t *current) {
   return gg_getflash_word(34, 0, current);
 }
 
+int ggSetTermVoltage(int voltage) {
+  return gg_setflash_word(80, 45, voltage);
+}
+
+int ggTermVoltage(int16_t *voltage) {
+  return gg_getflash_word(80, 45, voltage);
+}
+
 int ggSetBroadcast(int broadcast) {
   int ret;
   uint8_t cfg_b[2];

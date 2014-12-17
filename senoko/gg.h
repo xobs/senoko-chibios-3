@@ -70,6 +70,9 @@ int ggFastChargeCurrent(int16_t *current);
 int ggSetFastChargeCurrent(int current);
 int ggSetDefaults(int cells, int capacity, int current);
 
+int ggTermVoltage(int16_t *voltage);
+int ggSetTermVoltage(int voltage);
+
 enum gg_temp_source {
   temp_internal,
   temp_ts1,
@@ -77,5 +80,24 @@ enum gg_temp_source {
   temp_average_ts1_and_ts2,
 };
 int ggSetTemperatureSource(enum gg_temp_source);
+
+enum gg_state {
+  st_wake_up,
+  st_normal_discharge,
+  st_res1,
+  st_pre_charge,
+  st_res2,
+  st_charge,
+  st_res3,
+  st_charge_termination,
+  st_fault_charge_terminate,
+  st_permanent_failure,
+  st_overcurrent,
+  st_overtemperature,
+  st_battery_failure,
+  st_sleep,
+  st_reserved,
+  st_battery_removed,
+};
 
 #endif /* __SENOKO_GG_H__ */
