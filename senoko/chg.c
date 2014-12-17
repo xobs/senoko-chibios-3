@@ -2,6 +2,7 @@
 #include "hal.h"
 #include "i2c.h"
 
+#include "ac.h"
 #include "chg.h"
 #include "gg.h"
 #include "bionic.h"
@@ -192,6 +193,9 @@ static msg_t chg_thread(void *arg) {
     int ret;
     static uint16_t cell_capacity;
     static uint16_t voltage, current;
+    static uint16_t state;
+    static int16_t termvolt;
+    static enum gg_state system_state = -1;
 
     senokoI2cReleaseBus();
     chThdSleepMilliseconds(THREAD_SLEEP_MS);
@@ -224,6 +228,32 @@ static msg_t chg_thread(void *arg) {
         continue;
       }
     }
+
+    ret = ggState(&state);
+    if (ret != MSG_OK)
+      continue;
+
+    /*
+     * When the system transitions into the wake_up state, ensure
+     * that ImpedenceTrack is running.
+     */
+    if (((state & 0xf) == st_wake_up) && system_state != st_wake_up) {
+      system_state = (state & 0xf);
+      ggStartImpedenceTrackTM();
+      continue;
+    }
+
+    /* Get the current pack voltage, and the absolute minimum voltage. */
+    ret = ggVoltage(&voltage);
+    if (ret != MSG_OK)
+      continue;
+    ret = ggTermVoltage(&termvolt);
+    if (ret != MSG_OK)
+      continue;
+
+    /* If we're unplugged and low on power, turn off the mainboard. */
+    if ((voltage <= termvolt) && powerIsOn() && acRemoved())
+      powerOff();
 
     /* Figure out what the gas gauge wants us to charge at.*/
     ret = ggChargingVoltage(&voltage);
