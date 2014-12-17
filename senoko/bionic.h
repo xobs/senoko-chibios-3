@@ -1,6 +1,7 @@
 #ifndef __BIONIC_H__
 #define __BIONIC_H__
 
+#include <stdio.h>
 #include "ch.h"
 
 #define ULONG_MAX	4294967295UL
