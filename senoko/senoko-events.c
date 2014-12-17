@@ -2,6 +2,7 @@
 #include "hal.h"
 #include "ext.h"
 
+#include "ac.h"
 #include "senoko-events.h"
 
 #define BUTTON_DEBOUNCE_MS 10
@@ -23,7 +24,7 @@ static uint32_t gpio_states[__pin_last];
 
 static void refresh_gpios(uint32_t *states) {
   states[pin_power] = palReadPad(GPIOB, PB14);
-  states[pin_acok] = palReadPad(GPIOA, PA8);
+  states[pin_acok] = acPlugged();
 }
 
 static void debounce_button(void *arg) {
