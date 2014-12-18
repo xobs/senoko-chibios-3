@@ -19,7 +19,10 @@
 #define CHG_TRIES 50
 
 /* How much current the wall adapter supplies */
-#define WALL_CURRENT 3750
+#define WALL_CURRENT_MA 3470
+
+/* Charger defaults to this when it resets */
+#define CURRENT_UNSET_MA 256
 
 /* Minimum amount of current to move from 'normal discharge' to 'charging'.*/
 #define KICKSTART_VOLTAGE 12600
@@ -103,6 +106,12 @@ static int chg_set_input(uint16_t input) {
   return chg_setblock(bfr, sizeof(bfr));
 }
 
+static int chg_get_input(void) {
+  if (chg_getblock(0x3f, &g_input, 2))
+    return -1;
+  return g_input << 1;
+}
+
 int chgSetAll(uint16_t current, uint16_t voltage, uint16_t input) {
 
   int ret = 0;
@@ -177,7 +186,6 @@ static msg_t chg_thread(void *arg) {
   chThdSleepMilliseconds(200);
 
   senokoI2cAcquireBus();
-  chg_set_input(WALL_CURRENT);
 
   while (1) {
     int ret;
@@ -253,6 +261,10 @@ static msg_t chg_thread(void *arg) {
     ret = ggChargingCurrent(&current);
     if (ret)
       continue;
+
+    chg_get_input();
+    if (g_input <= CURRENT_UNSET_MA)
+      chg_set_input(WALL_CURRENT_MA);
 
     chgSet(current, voltage);
   }
