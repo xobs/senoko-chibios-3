@@ -12,28 +12,18 @@
 
 #define CHG_ADDR 0x9
 
+/* Number of milliseconds between runthrus of the charger thread */
 #define THREAD_SLEEP_MS 2500
 
-/* Defaults for this board, for an unconfigured gas gauge.*/
-#define CELL_COUNT 3
-#define CELL_CAPACITY_MAH 5000
-#define CELL_CAPACITY_MAH_SLOP 10
-#define CELL_CAPACITY_MAH_MIN (CELL_CAPACITY_MAH - CELL_CAPACITY_MAH_SLOP)
-#define CELL_CAPACITY_MAH_MAX (CELL_CAPACITY_MAH + CELL_CAPACITY_MAH_SLOP)
-#define CELL_CAPACITY_MWH 6335
-#define CELL_CAPACITY_MWH_SLOP 10
-#define CELL_CAPACITY_MWH_MIN (CELL_CAPACITY_MWH - CELL_CAPACITY_MWH_SLOP)
-#define CELL_CAPACITY_MWH_MAX (CELL_CAPACITY_MWH + CELL_CAPACITY_MWH_SLOP)
-#define CHARGE_CURRENT 5000
+/* Number of times to try looking for the gas gauge during startup */
+#define CHG_TRIES 50
+
+/* How much current the wall adapter supplies */
 #define WALL_CURRENT 3750
 
 /* Minimum amount of current to move from 'normal discharge' to 'charging'.*/
 #define KICKSTART_VOLTAGE 12600
 #define KICKSTART_CURRENT 128
-
-/* This is the ABSOLUTE MAXIMUM voltage allowed for each cell.*/
-#define MV_MAX 4200
-#define MV_MIN 3000
 
 /* Voltages and currents for waking up gas gauge when it's asleep.*/
 #define CHARGE_GG_WAKEUP_CURRENT 1024
@@ -274,14 +264,31 @@ int chgPresent(void) {
 }
 
 void chgInit(void) {
+  int i;
 
-  /* If the charger can't refresh, then it likely doesn't exist */
   chg_present = false;
-  if (chgRefresh(NULL, NULL, NULL))
+
+  /*
+   * If we're unplugged, then the charger won't respond.  However, it
+   * obviously must exist.
+   */
+  if (acPlugged()) {
+    /* If the charger can't refresh, then it likely doesn't exist */
+    for (i = 0; (i < CHG_TRIES) && !chg_present; i++) {
+      if (!chgRefresh(NULL, NULL, NULL))
+        chg_present = true;
+      else
+        chThdSleepMilliseconds(5);
+    }
+  }
+  else
+    chg_present = true;
+
+  /* No charger present means no charger thread to run */
+  if (!chg_present)
     return;
 
   chg_paused = false;
-  chg_present = true;
   chThdCreateStatic(waChgThread, sizeof(waChgThread),
                     HIGHPRIO - 10, chg_thread, NULL);
 }
