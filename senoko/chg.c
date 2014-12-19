@@ -206,6 +206,14 @@ static msg_t chg_thread(void *arg) {
       continue;
 
     /*
+     * If the charger input current is unset (which it is, by default,)
+     * set it to our known-good wall current.
+     */
+    chg_get_input();
+    if (g_input <= CURRENT_UNSET_MA)
+      chg_set_input(WALL_CURRENT_MA);
+
+    /*
      * Use the design capacity to determine if the gas gauge has been
      * programmed or not.
      * We can also use this to determine if the gas gauge is responding
@@ -264,10 +272,6 @@ static msg_t chg_thread(void *arg) {
     ret = ggChargingCurrent(&current);
     if (ret)
       continue;
-
-    chg_get_input();
-    if (g_input <= CURRENT_UNSET_MA)
-      chg_set_input(WALL_CURRENT_MA);
 
     chgSet(current, voltage);
   }
