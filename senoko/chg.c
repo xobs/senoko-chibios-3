@@ -26,7 +26,7 @@
 
 /* Minimum amount of current to move from 'normal discharge' to 'charging'.*/
 #define KICKSTART_VOLTAGE 12600
-#define KICKSTART_CURRENT 128
+#define KICKSTART_CURRENT 256
 
 /* Voltages and currents for waking up gas gauge when it's asleep.*/
 #define CHARGE_GG_WAKEUP_CURRENT 1024
@@ -99,17 +99,18 @@ static int chg_set_input(uint16_t input) {
   input >>= 1;
   input &= 0x1f80;
 
-  g_input = input;
+  g_input = (input << 1);
   bfr[0] = 0x3f;
-  bfr[1] = g_input;
-  bfr[2] = g_input >> 8;
+  bfr[1] = input;
+  bfr[2] = input >> 8;
   return chg_setblock(bfr, sizeof(bfr));
 }
 
 static int chg_get_input(void) {
   if (chg_getblock(0x3f, &g_input, 2))
     return -1;
-  return g_input << 1;
+  g_input <<= 1;
+  return g_input;
 }
 
 int chgSetAll(uint16_t current, uint16_t voltage, uint16_t input) {
@@ -144,8 +145,10 @@ int chgRefresh(uint16_t *current, uint16_t *voltage, uint16_t *input) {
   ret |= chg_getblock(0x14, &g_current, 2);
   ret |= chg_getblock(0x15, &g_voltage, 2);
 
+  g_input <<= 1;
+
   if (input)
-    *input = g_input << 1;
+    *input = g_input;
 
   if (current)
     *current = g_current;
