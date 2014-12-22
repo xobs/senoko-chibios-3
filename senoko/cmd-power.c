@@ -15,14 +15,30 @@
 */
 
 #include "ch.h"
-#include "shell.h"
 #include "chprintf.h"
+
+#include "bionic.h"
 #include "senoko.h"
 #include "power.h"
+#include "shell.h"
 
 void cmd_power(BaseSequentialStream *chp, int argc, char *argv[])
 {
-  (void)argv;
-  (void)argc;
-  chprintf(chp, "Power status: %s\r\n", powerIsOn() ? "on" : "off");
+  if ((argc > 0) && !strcasecmp(argv[0], "on")) {
+    chprintf(chp, "Powering on... ");
+    powerOn();
+    chprintf(chp, "Ok\r\n");
+  }
+  else if ((argc > 0) && !strcasecmp(argv[0], "off")) {
+    chprintf(chp, "Powering off... ");
+    powerOff();
+    chprintf(chp, "Ok\r\n");
+  }
+  else if ((argc > 0)) {
+    chprintf(chp, "Usage: power [on|off]\r\n");
+  }
+  else {
+    chprintf(chp, "Power status: %s\r\n", powerIsOn() ? "on" : "off");
+  }
+  chprintf(chp, "\r\n");
 }
