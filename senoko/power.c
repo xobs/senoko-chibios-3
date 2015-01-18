@@ -12,12 +12,17 @@ enum power_state {
   power_on = 1,
 };
 
+#define POWER_STATE_SIGNATURE_MASK 0x00f0
+#define POWER_STATE_SIGNATURE 0x0050
+#define POWER_STATE_MASK 0x1
+
 //#define TESTING_POWER
 
 /* Save power state across boots.  Shared with senoko-slave module. */
 static uint32_t *power_state = ((uint32_t *)(0x40006c00 + 0x18));
 
 static void power_set_state_x(enum power_state state) {
+  uint32_t new_power_state;
 #ifdef TESTING_POWER
 #warning "Testing power: Won't turn off"
   palWritePad(GPIOB, PB15, power_on);
@@ -26,12 +31,18 @@ static void power_set_state_x(enum power_state state) {
 #endif
 
   /* Save the value in a persistent register, in case we crash */
-  *power_state = ((*power_state) & ~1) | (!state);
+  new_power_state = (*power_state);
+  new_power_state &= ~POWER_STATE_MASK;
+  new_power_state &= ~POWER_STATE_SIGNATURE_MASK;
+  new_power_state |= state;
+  new_power_state |= POWER_STATE_SIGNATURE;
+
+  *power_state = new_power_state;
   return;
 }
 
 static enum power_state power_state_x(void) {
-  return (!((*power_state) & 1));
+  return ((*power_state) & POWER_STATE_MASK);
 }
 
 static void power_set_state_i(enum power_state state) {
@@ -115,6 +126,10 @@ void powerToggleI(void) {
 }
 
 void powerInit(void) {
+  /* If the signature is not valid, assume fresh STM32, and power on.*/
+  if (((*power_state) & POWER_STATE_SIGNATURE_MASK) != POWER_STATE_SIGNATURE)
+    powerOn();
+
   if (powerIsOn())
     powerOn();
   else
