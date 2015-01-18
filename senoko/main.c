@@ -29,6 +29,7 @@
 #include "senoko-slave.h"
 #include "senoko-wdt.h"
 
+#include "board-type.h"
 #include "chg.h"
 #include "power.h"
 #include "gg.h"
