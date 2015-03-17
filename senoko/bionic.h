@@ -13,5 +13,6 @@ unsigned long strtoul(const char *nptr, char **endptr, int base);
 long strtol(const char *cp, char **endptr, unsigned int base);
 size_t strlen (const char *__s);
 size_t strnlen (const char *__string, size_t __maxlen);
+int toupper(int c);
 
 #endif /* __BIONIC_H__ */
