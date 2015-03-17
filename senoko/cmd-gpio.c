@@ -88,6 +88,40 @@ void cmd_gpio(BaseSequentialStream *chp, int argc, char *argv[]) {
   else if ((argc > 0) && !strcasecmp(argv[0], "val")) {
     chprintf(chp, "Value at PA0: %d\r\n", palReadPad(GPIOA, PA0));
   }
+  else if ((argc > 0) && ((argv[0][0] == 'P') || (argv[0][0] == 'p'))) {
+    int val;
+    int pad;
+    char bank;
+
+    pad = strtoul(&argv[0][2], NULL, 10);
+
+    switch (argv[0][1]) {
+    case 'a':
+    case 'A':
+      val = !!palReadPad(GPIOA, pad);
+      bank = 'A';
+      break;
+
+    case 'b':
+    case 'B':
+      val = !!palReadPad(GPIOB, pad);
+      bank = 'B';
+      break;
+
+    case 'c':
+    case 'C':
+      val = !!palReadPad(GPIOC, pad);
+      bank = 'C';
+      break;
+
+    default:
+      chprintf(chp, "Unknown bank\r\n");
+      return;
+    }
+
+    chprintf(chp, "Value at P%c%d (%s): %d\r\n", bank, pad,
+          gpio_name(bank, pad), val);
+  }
   else {
     for (bank = 'A'; bank <= 'E'; bank++) {
       chprintf(chp, "GPIO %c:\r\n", bank);
@@ -95,14 +129,14 @@ void cmd_gpio(BaseSequentialStream *chp, int argc, char *argv[]) {
         int val;
 
         if (bank == 'A')
-      val = !!palReadPad(GPIOA, pad);
+          val = !!palReadPad(GPIOA, pad);
         else if (bank == 'B')
-      val = !!palReadPad(GPIOB, pad);
+          val = !!palReadPad(GPIOB, pad);
         else if (bank == 'C')
-      val = !!palReadPad(GPIOC, pad);
+          val = !!palReadPad(GPIOC, pad);
 
         chprintf(chp, "    P%c%d: %d  %s\r\n", bank, pad, val,
-      gpio_name(bank, pad));
+          gpio_name(bank, pad));
       }
     }
   }
