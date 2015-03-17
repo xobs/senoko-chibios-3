@@ -55,30 +55,34 @@ static void power_set_state_i(enum power_state state) {
   if (state != power_state_x()) {
     power_set_state_x(state);
 
-    chSysLockFromISR();
     if (state == power_on)
       chEvtBroadcastI(&powered_on);
     else if (state == power_off)
       chEvtBroadcastI(&powered_off);
-    chSysUnlockFromISR();
   }
 }
 
 static void power_set_state(enum power_state state) {
   if (state != power_state_x()) {
+    chSysLock();
     power_set_state_x(state);
 
     if (state == power_on)
-      chEvtBroadcast(&powered_on);
+      chEvtBroadcastI(&powered_on);
     else if (state == power_off)
-      chEvtBroadcast(&powered_off);
+      chEvtBroadcastI(&powered_off);
+
+    chSchRescheduleS();
+    chSysUnlock();
   }
 }
 
 static virtual_timer_t power_on_vt;
 static void call_power_on(void *arg) {
   (void)arg;
+  chSysLockFromISR();
   power_set_state_i(power_on);
+  chSysUnlockFromISR();
 }
 
 /* To prevent flap, make sure the board is off for a certain amount of time.*/
@@ -97,9 +101,11 @@ void powerOff(void) {
 }
 
 void powerOffI(void) {
+  chSysLockFromISR();
   power_set_state_i(power_off);
   cooling_off = 1;
   chVTSetI(&cool_off_vt, MS2ST(COOL_OFF_MS), stop_cool_off, NULL);
+  chSysUnlockFromISR();
   senokoWatchdogDisable();
   return;
 }
@@ -114,7 +120,9 @@ void powerOn(void) {
 void powerOnI(void) {
   if (cooling_off)
     return;
+  chSysLockFromISR();
   power_set_state_i(power_on);
+  chSysUnlockFromISR();
   return;
 }
 
