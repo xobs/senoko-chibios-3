@@ -5,7 +5,13 @@
 #include "senoko-wdt.h"
 #include "senoko-events.h"
 
+/* When a "reboot" is issued, stay powered off for this long */
 #define REBOOT_QUIESCE_MS 300
+
+/* When powered off, wait this long before allowing a powerup */
+#define COOL_OFF_MS 500
+
+static int cooling_off;
 
 enum power_state {
   power_off = 0,
@@ -75,24 +81,39 @@ static void call_power_on(void *arg) {
   power_set_state_i(power_on);
 }
 
+/* To prevent flap, make sure the board is off for a certain amount of time.*/
+static virtual_timer_t cool_off_vt;
+static void stop_cool_off(void *arg) {
+  (void)arg;
+  cooling_off = 0;
+}
+
 void powerOff(void) {
   power_set_state(power_off);
+  cooling_off = 1;
+  chVTSet(&cool_off_vt, MS2ST(COOL_OFF_MS), stop_cool_off, NULL);
   senokoWatchdogDisable();
   return;
 }
 
 void powerOffI(void) {
   power_set_state_i(power_off);
+  cooling_off = 1;
+  chVTSetI(&cool_off_vt, MS2ST(COOL_OFF_MS), stop_cool_off, NULL);
   senokoWatchdogDisable();
   return;
 }
 
 void powerOn(void) {
+  if (cooling_off)
+    return;
   power_set_state(power_on);
   return;
 }
 
 void powerOnI(void) {
+  if (cooling_off)
+    return;
   power_set_state_i(power_on);
   return;
 }
@@ -126,6 +147,9 @@ void powerToggleI(void) {
 }
 
 void powerInit(void) {
+
+  cooling_off = 0;
+
   /* If the signature is not valid, assume fresh STM32, and power on.*/
   if (((*power_state) & POWER_STATE_SIGNATURE_MASK) != POWER_STATE_SIGNATURE)
     powerOn();
