@@ -27,6 +27,7 @@ static const char *gpio_name(int bank, int pad) {
   switch (bank) {
 
   case 'A':
+  case 0:
     switch (pad) {
       case 0: return "CHG_IRQ";
       case 4: return "ANA_METER";
@@ -45,6 +46,7 @@ static const char *gpio_name(int bank, int pad) {
     }
 
   case 'B':
+  case 1:
     switch (pad) {
       case 0: return "CHG_ICOUT";
       case 2: return "REPROGRAM";
@@ -60,6 +62,7 @@ static const char *gpio_name(int bank, int pad) {
     }
 
   case 'C':
+  case 2:
     switch (pad) {
       case 13: return "TAMPER/RTC";
       case 14: return "PM_OSC32_IN";
@@ -72,70 +75,100 @@ static const char *gpio_name(int bank, int pad) {
   }
 }
 
+static int gpio_set(int bank, int pad, int val)
+{
+  switch(bank) {
+  case 'A':
+  case 0:
+    palWritePad(GPIOA, pad, val);
+    break;
+  case 'B':
+  case 1:
+    palWritePad(GPIOB, pad, val);
+    break;
+  case 'C':
+  case 2:
+    palWritePad(GPIOC, pad, val);
+    break;
+  case 'D':
+  case 3:
+    palWritePad(GPIOD, pad, val);
+    break;
+  case 'E':
+  case 4:
+    palWritePad(GPIOE, pad, val);
+    break;
+  default:
+    return -1;
+  }
+  return 0;
+}
+
+static int gpio_get(int bank, int pad)
+{
+  switch(bank) {
+  case 'A':
+  case 0:
+    return palReadPad(GPIOA, pad);
+    break;
+  case 'B':
+  case 1:
+    return palReadPad(GPIOB, pad);
+    break;
+  case 'C':
+  case 2:
+    return palReadPad(GPIOC, pad);
+    break;
+  case 'D':
+  case 3:
+    return palReadPad(GPIOD, pad);
+    break;
+  case 'E':
+  case 4:
+    return palReadPad(GPIOE, pad);
+    break;
+  default:
+    return -1;
+  }
+}
+
 void cmd_gpio(BaseSequentialStream *chp, int argc, char *argv[]) {
   int bank, pad;
   (void)argc;
   (void)argv;
 
-  if ((argc > 0) && !strcasecmp(argv[0], "set")) {
-    chprintf(chp, "Setting PA0\r\n");
-    palWritePad(GPIOA, PA0, 1);
-  }
-  else if ((argc > 0) && !strcasecmp(argv[0], "clr")) {
-    chprintf(chp, "Clearing PA0\r\n");
-    palWritePad(GPIOA, PA0, 0);
-  }
-  else if ((argc > 0) && !strcasecmp(argv[0], "val")) {
-    chprintf(chp, "Value at PA0: %d\r\n", palReadPad(GPIOA, PA0));
-  }
-  else if ((argc > 0) && ((argv[0][0] == 'P') || (argv[0][0] == 'p'))) {
+  if ((argc > 0) && ((argv[0][0] == 'P') || (argv[0][0] == 'p'))) {
     int val;
     int pad;
     char bank;
 
+    bank = toupper(argv[0][1]);
     pad = strtoul(&argv[0][2], NULL, 10);
-
-    switch (argv[0][1]) {
-    case 'a':
-    case 'A':
-      val = !!palReadPad(GPIOA, pad);
-      bank = 'A';
-      break;
-
-    case 'b':
-    case 'B':
-      val = !!palReadPad(GPIOB, pad);
-      bank = 'B';
-      break;
-
-    case 'c':
-    case 'C':
-      val = !!palReadPad(GPIOC, pad);
-      bank = 'C';
-      break;
-
-    default:
-      chprintf(chp, "Unknown bank\r\n");
+    if ((bank < 'A') || (bank > 'E')) {
+      chprintf(chp, "Usage: gpio PAD [val]\r\n");
+      chprintf(chp, "       Where PAD is a pad such as PA0 or PB15, and\r\n");
+      chprintf(chp, "       the optional [val] is a value to write,\r\n");
+      chprintf(chp, "       either 0 or 1. If omitted, the value is read.\r\n");
       return;
     }
 
-    chprintf(chp, "Value at P%c%d (%s): %d\r\n", bank, pad,
+    if (argc > 1) {
+      val = strtoul(argv[1], NULL, 0);
+      chprintf(chp, "Setting P%c%d (%s) to %d\r\n", bank, pad,
           gpio_name(bank, pad), val);
+      gpio_set(bank, pad, !!val);
+    }
+    else {
+      val = gpio_get(bank, pad);
+      chprintf(chp, "Value at P%c%d (%s): %d\r\n", bank, pad,
+          gpio_name(bank, pad), val);
+    }
   }
   else {
     for (bank = 'A'; bank <= 'E'; bank++) {
       chprintf(chp, "GPIO %c:\r\n", bank);
       for (pad = 0; pad < 16; pad++) {
-        int val;
-
-        if (bank == 'A')
-          val = !!palReadPad(GPIOA, pad);
-        else if (bank == 'B')
-          val = !!palReadPad(GPIOB, pad);
-        else if (bank == 'C')
-          val = !!palReadPad(GPIOC, pad);
-
-        chprintf(chp, "    P%c%d: %d  %s\r\n", bank, pad, val,
+        chprintf(chp, "    P%c%d: %d  %s\r\n", bank, pad, gpio_get(bank, pad),
           gpio_name(bank, pad));
       }
     }
