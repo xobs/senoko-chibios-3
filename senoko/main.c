@@ -184,6 +184,7 @@ int main(void) {
   chEvtRegister(&shell_terminated, &event_listeners[0], 0);
 
   /* Listen to GPIO events (e.g. button presses, status changes).*/
+  pb_is_armed = 0;
   senokoEventsInit();
   chEvtRegister(&power_button_pressed, &event_listeners[1], 1);
   chEvtRegister(&power_button_released, &event_listeners[2], 2);
