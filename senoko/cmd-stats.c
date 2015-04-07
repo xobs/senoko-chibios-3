@@ -212,7 +212,7 @@ void cmd_stats(BaseSequentialStream *chp, int argc, char *argv[]) {
     ret = ggTemperature(&temperature);
     chprintf(chp, "Temperature:        %d.%d C\r\n",
              temperature / 10,
-             word - (10 * (temperature / 10)));
+             temperature - (10 * (temperature / 10)));
   }
 
   print_word(chp, "Voltage:", ggVoltage, "%d mV");

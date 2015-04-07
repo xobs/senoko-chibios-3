@@ -150,8 +150,6 @@ static int gg_getmfgr(uint16_t reg, void *data, int size)
 {
   msg_t status;
   uint8_t bfr[3];
-  uint8_t *data8 = data;
-  uint8_t tmp;
 
   bfr[0] = 0;
   bfr[1] = reg;
@@ -167,11 +165,6 @@ static int gg_getmfgr(uint16_t reg, void *data, int size)
   if (status != MSG_OK)
     return senokoI2cErrors() | ((status & 0xff) << 24);
 
-  if (data && size == 2) {
-    tmp = data8[0];
-    data8[0] = data8[1];
-    data8[1] = tmp;
-  }
   return 0;
 }
 
@@ -694,7 +687,7 @@ int ggSafetyStatus(uint16_t *word) {
 }
 
 int ggFirmwareVersion(uint16_t *word) {
-  return gg_getmfgr(0x0001, word, 2);
+  return gg_getmfgr(0x0002, word, 2);
 }
 
 int ggState(uint16_t *word) {
@@ -702,6 +695,9 @@ int ggState(uint16_t *word) {
   ret = gg_getmfgr(0x0006, word, 2);
   if (ret != MSG_OK)
     return ret;
+
+  *word = *word>>8; // all the state bits are in the high byte
+
   return 0;
 }
 
