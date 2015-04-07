@@ -529,6 +529,7 @@ int ggCellVoltage(int cell, uint16_t *voltage) {
 int ggSetCapacity(int cells, uint16_t capacity) {
   int cell;
   int ret;
+  uint16_t energy;
 
   if (cells < 2 || cells > 4)
     return 1;
@@ -549,8 +550,15 @@ int ggSetCapacity(int cells, uint16_t capacity) {
   if (ret != MSG_OK)
     return ret;
 
-  /* Set the SBS value */
+  /* Set the SBS capacity value */
   ret = gg_setflash_word(48, 22, capacity);
+  if (ret != MSG_OK)
+    return ret;
+
+  /* Set the SBS energy value */
+  /* Convert mAh to mWh */
+  energy = (((uint32_t)capacity) * cell_cfgs[cells].design_voltage) / 10000;
+  ret = gg_setflash_word(48, 24, energy);
   if (ret != MSG_OK)
     return ret;
 
