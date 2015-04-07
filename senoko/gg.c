@@ -46,7 +46,7 @@ static const struct cell_cfg {
     .charging_voltage = 12600,
     .depleted_voltage = 8000,
     .depleted_recovery = 8500,
-    .design_voltage = 10800,
+    .design_voltage = 11100,
     .flash_update_ok_voltage = 7500,
     .shutdown_voltage = 7000,
     .term_voltage = 9000,
