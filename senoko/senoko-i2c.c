@@ -27,11 +27,6 @@ static binary_semaphore_t i2c_bus_sem;
  *    - When a slave transaction finishes, release the semaphore
  */
 
-#define mark_line \
-	do { \
-		*((uint32_t *)(0x40006c00 + 0x28)) = 1; \
-		*((uint32_t *)(0x40006c00 + 0x24)) = __LINE__; \
-	} while(0)
 static const systime_t timeout = MS2ST(25);
 
 struct i2c_registers registers;
@@ -93,34 +88,25 @@ static void i2c_rx_finished(I2CDriver *i2cp, size_t bytes)
     if (bytes > 1)
       senokoSlaveDispatch(i2c_buffer, bytes);
 
-    mark_line;
     i2cSlaveSetTxOffset(i2cp, addr + bytes - 1);
   }
 
-  mark_line;
   chSysLockFromISR();
-  mark_line;
   chBSemSignalI(&master_slave_sem);
   senokoSlavePrepTransaction();
-  mark_line;
   chSysUnlockFromISR();
-  mark_line;
 }
 
 static void i2c_tx_finished(I2CDriver *i2cp, size_t bytes)
 {
   (void)i2cp;
   (void)bytes;
-  mark_line;
   chSysLockFromISR();
-  mark_line;
   chBSemSignalI(&master_slave_sem);
 
   senokoI2cLogAppend(&i2clog, I2C_ENTRY_TYPE_WRITE, i2c_buffer, bytes);
 
-  mark_line;
   chSysUnlockFromISR();
-  mark_line;
 }
 
 static void senoko_i2c_mode_slave(void)
@@ -212,51 +198,37 @@ msg_t senokoI2cMasterTransmitTimeout(i2caddr_t addr,
   /* Try multiple times, since this is a multi-master system.*/
   for (tries = 0; tries < I2C_MAX_TRIES; tries++) {
 
-    mark_line;
     chBSemWait(&master_slave_sem);
-    mark_line;
     i2cStop(i2cBus);
-    mark_line;
     i2cStart(i2cBus, &senokoI2cMode);
 
     /* Perform the transaction (now operating in master mode).*/
-    mark_line;
     ret = i2cMasterTransmitTimeout(i2cBus, addr,
                                    txbuf, txbytes,
                                    rxbuf, rxbytes,
                                    timeout);
-    mark_line;
     chBSemSignal(&master_slave_sem);
-    mark_line;
     if (ret == MSG_OK)
       break;
 
-    mark_line;
   }
-  mark_line;
 
   /* Fixup one-byte copies (if necessary).*/
   if (rxbuf_do_hack)
     rxbuf_orig[0] = rxbuf_hack[0];
 
-  mark_line;
   senoko_i2c_mode_slave();
-  mark_line;
   return ret;
 }
 
 void senokoI2cAcquireBus(void) {
-  mark_line;
 //  i2cAcquireBus(i2cBus);
   chBSemWait(&i2c_bus_sem);
-  mark_line;
 }
 
 void senokoI2cReleaseBus(void) {
-  mark_line;
   chBSemSignal(&i2c_bus_sem);
 //  i2cReleaseBus(i2cBus);
-  mark_line;
 }
 
 int senokoI2cErrors(void) {

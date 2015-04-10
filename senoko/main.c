@@ -124,43 +124,14 @@ static evhandler_t event_handlers[] = {
 
 static event_listener_t event_listeners[ARRAY_SIZE(event_handlers)];
 
-static const char *files[] = {
- /*  0 */  "unknown",
- /*  1 */  "senoko-i2c.c",
- /*  2 */  "i2c.c",
- /*  3 */  "i2c-lld.c",
- /*  4 */  "chmtx.c",
- /*  5 */  "chschd.c",
- /*  6 */  "chthread.c",
- /*  7 */  "chg.c",
- /*  8 */  "gg.c",
-};
-
 /*
  * Application entry point.
  */
 int main(void) {
-  uint32_t pre_pc, pre_thr;
-  uint32_t cur_pc, cur_thr;
-  uint32_t crashln, crashfil;
-  uint32_t reason;
+  uint32_t crash_reason;
 
-  cur_pc  = (((*((uint32_t *)(0x40006c00 + 0x04))) & 0xffff) << 0) |
+  crash_reason  = (((*((uint32_t *)(0x40006c00 + 0x14))) & 0xffff) << 0) |
             0x08000000;
-  cur_thr = (((*((uint32_t *)(0x40006c00 + 0x08))) & 0xffff) << 0) |
-            0x20000000;
-  pre_pc  = (((*((uint32_t *)(0x40006c00 + 0x0c))) & 0xffff) << 0) |
-            0x08000000;
-  pre_thr = (((*((uint32_t *)(0x40006c00 + 0x10))) & 0xffff) << 0) |
-            0x20000000;
-
-  crashln = (((*((uint32_t *)(0x40006c00 + 0x24))) & 0xffff));
-  crashfil= (((*((uint32_t *)(0x40006c00 + 0x28))) & 0xffff));
-  reason  = (((*((uint32_t *)(0x40006c00 + 0x14))) & 0xffff) << 0) |
-            0x08000000;
-  if (crashfil > sizeof(files) / sizeof(*files))
-	  crashfil = 0;
-
   *((uint32_t *)(0x40006c00 + 0x14)) = 0;
 
   /*
@@ -197,13 +168,8 @@ int main(void) {
       SENOKO_OS_VERSION_MAJOR,
       SENOKO_OS_VERSION_MINOR,
       gitversion);
-  chprintf(stream, "Possibly crashed in %s:%d\r\n", files[crashfil], crashln);
-  if (reason)
-	  chprintf(stream, "Assertion on last boot: %s\r\n", (char *)reason);
-  chprintf(stream, "Before reboot, PC was at: 0x%08x in thread 0x%08x\r\n",
-                   cur_pc, cur_thr);
-  chprintf(stream, "Previous thread PC was at: 0x%08x in thread 0x%08x\r\n",
-                   pre_pc, pre_thr);
+  if (crash_reason)
+    chprintf(stream, "Assertion on last boot: %s\r\n", (char *)crash_reason);
 
   /* Start the Senoko watchdog timer thread.*/
   senokoWatchdogInit();

@@ -32,12 +32,6 @@
 #define CHARGE_GG_WAKEUP_CURRENT 1024
 #define CHARGE_GG_WAKEUP_VOLTAGE 12600
 
-#define mark_line \
-  do { \
-    *((uint32_t *)(0x40006c00 + 0x28)) = 7; \
-    *((uint32_t *)(0x40006c00 + 0x24)) = __LINE__; \
-  } while(0)
-
 static uint16_t g_current;
 static uint16_t g_voltage;
 static uint16_t g_input;
