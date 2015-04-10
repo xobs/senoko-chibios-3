@@ -245,6 +245,14 @@ static msg_t chg_thread(void *arg) {
       ggStartImpedenceTrackTM();
       continue;
     }
+    /* If both FETs are off and the state is 'normal discharge', the solution
+     * appears to be to run ImpedenceTrack here, too.  Not sure why, but
+     * it seems to help.
+     */
+    else if ((((state >> 6) & 3) == 2) && ((state & 0xf) == 1)) {
+      ggStartImpedenceTrackTM();
+      continue;
+    }
 
     /* Get the current pack voltage, and the absolute minimum voltage. */
     ret = ggVoltage(&voltage);
