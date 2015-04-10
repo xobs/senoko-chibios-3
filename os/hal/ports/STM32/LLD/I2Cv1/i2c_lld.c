@@ -250,6 +250,7 @@ static void i2c_lld_serve_event_interrupt(I2CDriver *i2cp) {
   #if I2C_USE_SLAVE_MODE
   if (!i2cp->slave_mode) {
   #endif /* I2C_USE_SLAVE_MODE */
+
   /* Interrupts are disabled just before dmaStreamEnable() because there
      is no need of interrupts until next transaction begin. All the work is
      done by the DMA.*/
@@ -278,6 +279,10 @@ static void i2c_lld_serve_event_interrupt(I2CDriver *i2cp) {
     dmaStreamEnable(i2cp->dmatx);
     break;
   case I2C_EV8_2_MASTER_BYTE_TRANSMITTED:
+
+    /* Hack to drain data register, to prevent lockup */
+    (void)dp->DR;
+
     /* Catches BTF event after the end of transmission.*/
     if (dmaStreamGetTransactionSize(i2cp->dmarx) > 0) {
       /* Starts "read after write" operation, LSB = 1 -> receive.*/
