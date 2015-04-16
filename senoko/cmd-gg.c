@@ -184,22 +184,16 @@ void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]) {
   }
   else if (is_command(argc, argv, "cells")) {
     if (argc == 1) {
-      chprintf(chp, "Usage: gg cells [3/4]\r\n");
+      chprintf(chp, "Usage: gg cells [2|3|4]\r\n");
     }
     else {
-      if (argv[1][0] == '3') {
-        ret = ggSetCellCount(3);
+      if (argv[1][0] >= '2' && argv[1][0] <= '4') {
+        int cellCount = argv[1][0]-'0';
+        ret = ggSetCellCount(cellCount);
         if (ret < 0)
-          chprintf(chp, "Unable to set 3 cells: 0x%x\r\n", ret);
+          chprintf(chp, "Unable to set %d cells: 0x%x\r\n", cellCount, ret);
         else
-          chprintf(chp, "Set 3-cell mode\r\n");
-      }
-      else if (argv[1][0] == '4') {
-        ret = ggSetCellCount(4);
-        if (ret < 0)
-          chprintf(chp, "Unable to set 4 cells: 0x%x\r\n", ret);
-        else
-          chprintf(chp, "Set 4-cell mode\r\n");
+          chprintf(chp, "Set %d-cell mode\r\n",cellCount);
       }
       else {
         chprintf(chp, "Unknown cell count: %c\r\n",
@@ -308,7 +302,7 @@ void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]) {
       "gg dsg +/-       Force dsg fet on or let it turn off\r\n"
       "gg chg +/-       Force chg fet on or let it turn off\r\n"
       "gg capacity [m]  Set cell capacity to [mAh]\r\n"
-      "gg cells [3|4]   Set cell count\r\n"
+      "gg cells [2|3|4]   Set cell count\r\n"
       "gg current [cur] Set fastcharge current to [cur]\r\n"
       "gg cal           Calibrate battery pack\r\n"
       "gg templow [t]   Set charge-inhibit low temperature\r\n"
