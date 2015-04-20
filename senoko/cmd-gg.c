@@ -201,23 +201,6 @@ void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]) {
       }
     }
   }
-  else if (is_command(argc, argv, "auto")) {
-    int handled = 0;
-    if (argc == 2) {
-      if (argv[1][0] == '1') {
-        ggSetBroadcast(1);
-        handled = 1;
-      }
-      else if (argv[1][0] == '0') {
-        ggSetBroadcast(0);
-        handled = 1;
-      }
-    }
-
-    if (!handled) {
-      chprintf(chp, "Usage: gg auto [0|1]\r\n");
-    }
-  }
   else if (is_command(argc, argv, "rm")) {
     int handled = 0;
     if (argc == 2) {
@@ -312,7 +295,6 @@ void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]) {
       "gg reboot        Reboot the gas gauge chip\r\n"
       "gg deadband      Modify deadband, which is where 0mA is considered\r\n"
       "gg tempsource    Set how the temperature is sensed\r\n"
-      "gg auto [0|1]    Whether the gas gauge can run the charger\r\n"
       "gg it            Start a runthrough of the ImpedenceTrack algorithm\r\n"
       "gg rm [0|1]      Set or print whether battery is removable\r\n"
       );

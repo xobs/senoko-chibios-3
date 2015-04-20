@@ -588,6 +588,8 @@ int ggTermVoltage(int16_t *voltage) {
   return gg_getflash_word(80, 45, voltage);
 }
 
+// Warning: Don't set this to 1 if senoko
+// is managing the charger configuration.
 int ggSetBroadcast(int broadcast) {
   int ret;
   uint8_t cfg_b[2];

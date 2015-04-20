@@ -184,6 +184,9 @@ static msg_t chg_thread(void *arg) {
 
   senokoI2cAcquireBus();
 
+  // ensure that the gas gauge doesn't try to control the charger
+  ret = ggSetBroadcast(0);
+
   while (1) {
     int ret;
     static uint16_t cell_capacity;
