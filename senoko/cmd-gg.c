@@ -184,44 +184,21 @@ void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]) {
   }
   else if (is_command(argc, argv, "cells")) {
     if (argc == 1) {
-      chprintf(chp, "Usage: gg cells [3/4]\r\n");
+      chprintf(chp, "Usage: gg cells [2|3|4]\r\n");
     }
     else {
-      if (argv[1][0] == '3') {
-        ret = ggSetCellCount(3);
+      if (argv[1][0] >= '2' && argv[1][0] <= '4') {
+        int cellCount = argv[1][0]-'0';
+        ret = ggSetCellCount(cellCount);
         if (ret < 0)
-          chprintf(chp, "Unable to set 3 cells: 0x%x\r\n", ret);
+          chprintf(chp, "Unable to set %d cells: 0x%x\r\n", cellCount, ret);
         else
-          chprintf(chp, "Set 3-cell mode\r\n");
-      }
-      else if (argv[1][0] == '4') {
-        ret = ggSetCellCount(4);
-        if (ret < 0)
-          chprintf(chp, "Unable to set 4 cells: 0x%x\r\n", ret);
-        else
-          chprintf(chp, "Set 4-cell mode\r\n");
+          chprintf(chp, "Set %d-cell mode\r\n",cellCount);
       }
       else {
         chprintf(chp, "Unknown cell count: %c\r\n",
             argv[1][0]);
       }
-    }
-  }
-  else if (is_command(argc, argv, "auto")) {
-    int handled = 0;
-    if (argc == 2) {
-      if (argv[1][0] == '1') {
-        ggSetBroadcast(1);
-        handled = 1;
-      }
-      else if (argv[1][0] == '0') {
-        ggSetBroadcast(0);
-        handled = 1;
-      }
-    }
-
-    if (!handled) {
-      chprintf(chp, "Usage: gg auto [0|1]\r\n");
     }
   }
   else if (is_command(argc, argv, "rm")) {
@@ -308,7 +285,7 @@ void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]) {
       "gg dsg +/-       Force dsg fet on or let it turn off\r\n"
       "gg chg +/-       Force chg fet on or let it turn off\r\n"
       "gg capacity [m]  Set cell capacity to [mAh]\r\n"
-      "gg cells [3|4]   Set cell count\r\n"
+      "gg cells [2|3|4]   Set cell count\r\n"
       "gg current [cur] Set fastcharge current to [cur]\r\n"
       "gg cal           Calibrate battery pack\r\n"
       "gg templow [t]   Set charge-inhibit low temperature\r\n"
@@ -318,7 +295,6 @@ void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]) {
       "gg reboot        Reboot the gas gauge chip\r\n"
       "gg deadband      Modify deadband, which is where 0mA is considered\r\n"
       "gg tempsource    Set how the temperature is sensed\r\n"
-      "gg auto [0|1]    Whether the gas gauge can run the charger\r\n"
       "gg it            Start a runthrough of the ImpedenceTrack algorithm\r\n"
       "gg rm [0|1]      Set or print whether battery is removable\r\n"
       );
