@@ -731,6 +731,14 @@ int ggFullCapacity(uint16_t *word) {
   return gg_getword(0x10, word);
 }
 
+int ggCycleCount(uint16_t *count) {
+  return gg_getword(0x17, count);
+}
+
+int ggSetCycleCount(uint16_t count) {
+  return gg_setword(0x17, count);
+}
+
 int ggDesignCapacity(uint16_t *word) {
   return gg_getword(0x18, word);
 }

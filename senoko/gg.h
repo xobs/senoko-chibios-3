@@ -18,6 +18,8 @@ int ggCurrent(int16_t *word);
 int ggChargingVoltage(uint16_t *word);
 int ggChargingCurrent(uint16_t *word);
 int ggFullCapacity(uint16_t *word);
+int ggCycleCount(uint16_t *count);
+int ggSetCycleCount(uint16_t count);
 int ggDesignCapacity(uint16_t *word);
 int ggCurrent(int16_t *word);
 int ggAverageCurrent(int16_t *word);
