@@ -196,6 +196,7 @@ void cmd_stats(BaseSequentialStream *chp, int argc, char *argv[]) {
   print_str(chp, "Chemistry:", ggChemistry, "%s");
   print_word(chp, "Serial number:", ggSerial, "0x%04x");
   print_word(chp, "Cycle count:", ggCycleCount, "%u");
+  print_word(chp, "Battery health:", ggHealth, "%d%%");
   print_byte(chp, "Charge:", ggPercent, "%d%%");
 
   ggMode(&word);

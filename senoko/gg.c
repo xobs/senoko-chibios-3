@@ -755,6 +755,10 @@ int ggStatus(uint16_t *word) {
   return gg_getword(0x16, word);
 }
 
+int ggHealth(uint16_t *percent) {
+  return gg_getword(0x4f, percent);
+}
+
 int ggSafetyAlert(uint16_t *word) {
   return gg_getword(0x50, word);
 }

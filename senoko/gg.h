@@ -24,6 +24,7 @@ int ggDesignCapacity(uint16_t *word);
 int ggCurrent(int16_t *word);
 int ggAverageCurrent(int16_t *word);
 int ggStatus(uint16_t *word);
+int ggHealth(uint16_t *percent);
 int ggSafetyAlert(uint16_t *word);
 int ggSafetyStatus(uint16_t *word);
 int ggFirmwareVersion(uint16_t *word);
