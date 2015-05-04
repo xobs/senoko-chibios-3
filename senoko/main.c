@@ -128,11 +128,6 @@ static event_listener_t event_listeners[ARRAY_SIZE(event_handlers)];
  * Application entry point.
  */
 int main(void) {
-  uint32_t crash_reason;
-
-  crash_reason  = (((*((uint32_t *)(0x40006c00 + 0x14))) & 0xffff) << 0) |
-            0x08000000;
-  *((uint32_t *)(0x40006c00 + 0x14)) = 0;
 
   /*
    * System initializations.
@@ -168,8 +163,6 @@ int main(void) {
       SENOKO_OS_VERSION_MAJOR,
       SENOKO_OS_VERSION_MINOR,
       gitversion);
-  if (crash_reason)
-    chprintf(stream, "Assertion on last boot: %s\r\n", (char *)crash_reason);
 
   /* Start the Senoko watchdog timer thread.*/
   senokoWatchdogInit();
