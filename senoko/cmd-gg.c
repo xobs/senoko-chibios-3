@@ -164,6 +164,23 @@ void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]) {
     else
       chprintf(chp, "Set fastcharge current to %d mA\r\n", current);
   }
+  else if (is_command(argc, argv, "cycle")) {
+    uint16_t count;
+    if (argc != 2) {
+      ggCycleCount(&count);
+      chprintf(chp, "Cycle count is currently: %u\r\n", count);
+      return;
+    }
+
+    count = strtoul(argv[1], NULL, 0);
+    chprintf(chp, "Setting cycle count... ");
+
+    ret = ggSetCycleCount(count);
+    if (ret < 0)
+      chprintf(chp, "Unable to set cycle count: 0x%x\r\n", ret);
+    else
+      chprintf(chp, "Set cycle count to %u\r\n", count);
+  }
   else if (is_command(argc, argv, "capacity")) {
     uint16_t capacity;
     int cells;
@@ -288,6 +305,7 @@ void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]) {
       "gg cells [2|3|4]   Set cell count\r\n"
       "gg current [cur] Set fastcharge current to [cur]\r\n"
       "gg cal           Calibrate battery pack\r\n"
+      "gg cycle [count] Set current battery cycle count\r\n"
       "gg templow [t]   Set charge-inhibit low temperature\r\n"
       "gg temphigh [t]  Set charge-inhibit high temperature\r\n"
       "gg prechg [t]    Set pre-chg temperature\r\n"
