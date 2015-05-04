@@ -21,6 +21,7 @@ static const struct cell_cfg {
   uint16_t design_voltage;
   uint16_t flash_update_ok_voltage;
   uint16_t shutdown_voltage;
+  uint16_t cell_shutdown_voltage;
   uint16_t term_voltage;
 } cell_cfgs[] = {
   [2] = {
@@ -35,6 +36,7 @@ static const struct cell_cfg {
     .design_voltage = 7200,
     .flash_update_ok_voltage = 6000,
     .shutdown_voltage = 5000,
+    .cell_shutdown_voltage = 2900,
     .term_voltage = 6000,
   },
   [3] = {
@@ -48,8 +50,9 @@ static const struct cell_cfg {
     .depleted_recovery = 8500,
     .design_voltage = 11100,
     .flash_update_ok_voltage = 7500,
-    .shutdown_voltage = 7000,
-    .term_voltage = 9000,
+    .shutdown_voltage = 8800,
+    .cell_shutdown_voltage = 2900,
+    .term_voltage = 9200,
   },
   [4] = {
     .pov_threshold = 17500,
@@ -63,6 +66,7 @@ static const struct cell_cfg {
     .design_voltage = 14400,
     .flash_update_ok_voltage = 7500,
     .shutdown_voltage = 7000,
+    .cell_shutdown_voltage = 2900,
     .term_voltage = 12000,
   },
 };
@@ -140,9 +144,60 @@ static const struct gg_string {
   },
 };
 
+static int gg_getflash_word(uint8_t subclass, uint8_t offset, void *d);
+
+static int gg_update_if_necessary(void) {
+
+  uint8_t cell_count;
+  uint16_t cell_shutdown_voltage;
+  uint16_t capacity;
+
+  senokoI2cAcquireBus();
+
+  if (ggCellCount(&cell_count))
+    goto out;
+
+  if (gg_getflash_word(68, 5, &cell_shutdown_voltage))
+    goto out;
+
+  if (gg_getflash_word(82, 8, &capacity))
+    goto out;
+
+  /* No update needed if the numbers match */
+  if (cell_cfgs[cell_count].cell_shutdown_voltage == cell_shutdown_voltage)
+    goto out_success;
+
+  /* Reset the voltages by resetting the cell count */
+  if (ggSetCellCount(cell_count))
+    goto out;
+
+  /* Recalibrate the mWh value, which was left uninitialized */
+  if (ggSetCapacity(cell_count, capacity))
+    goto out;
+
+out_success:
+  senokoI2cReleaseBus();
+  return 0;
+
+out:
+  senokoI2cReleaseBus();
+  return 1;
+}
+
 int ggInit(void) {
   /* Pull GG_SYSPRES low to bring gas gauge out of reset.*/
   palWritePad(GPIOA, PA11, 0);
+
+  /* Check to see if the flash data needs updating */
+  {
+    int i;
+    for (i = 0; i < 10; i++) {
+      if (!gg_update_if_necessary())
+        break;
+      chThdSleepMilliseconds(500);
+    }
+  }
+
   return 0;
 }
 
@@ -418,7 +473,7 @@ int ggSetCellCount(int cells) {
     return ret;
 
   /* Set various over/undervoltage flags */
-  
+
   ret = gg_setflash_word(0, 7, cell_cfgs[cells].pov_threshold);
   if (ret != MSG_OK)
     return ret;
@@ -438,31 +493,35 @@ int ggSetCellCount(int cells) {
   ret = gg_setflash_word(16, 0, cell_cfgs[cells].sov_threshold);
   if (ret != MSG_OK)
     return ret;
-  
+
   ret = gg_setflash_word(34, 2, cell_cfgs[cells].charging_voltage);
   if (ret != MSG_OK)
     return ret;
-  
+ 
   ret = gg_setflash_word(38, 8, cell_cfgs[cells].depleted_voltage);
   if (ret != MSG_OK)
     return ret;
-  
+
   ret = gg_setflash_word(38, 11, cell_cfgs[cells].depleted_recovery);
   if (ret != MSG_OK)
     return ret;
-  
+
   ret = gg_setflash_word(48, 8, cell_cfgs[cells].design_voltage);
   if (ret != MSG_OK)
     return ret;
-  
+
   ret = gg_setflash_word(68, 0, cell_cfgs[cells].flash_update_ok_voltage);
   if (ret != MSG_OK)
     return ret;
-  
+
   ret = gg_setflash_word(68, 2, cell_cfgs[cells].shutdown_voltage);
   if (ret != MSG_OK)
     return ret;
-  
+
+  ret = gg_setflash_word(68, 5, cell_cfgs[cells].cell_shutdown_voltage);
+  if (ret != MSG_OK)
+    return ret;
+
   ret = gg_setflash_word(80, 45, cell_cfgs[cells].term_voltage);
   if (ret != MSG_OK)
     return ret;
