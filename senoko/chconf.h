@@ -58,6 +58,12 @@
  */
 #define CH_CFG_ST_TIMEDELTA                 0
 
+/**
+ * @brief   Enable low-power "WFI" instruction.
+ * @note    Enabling this can cause problems when attaching a debugger.
+ */
+#define CORTEX_ENABLE_WFI_IDLE              TRUE
+
 /** @} */
 
 /*===========================================================================*/
