@@ -13,7 +13,7 @@
 #define CHG_ADDR 0x9
 
 /* Number of milliseconds between runthrus of the charger thread */
-#define THREAD_SLEEP_MS 2500
+#define THREAD_SLEEP_MS 52500
 
 /* Number of times to try looking for the gas gauge during startup */
 #define CHG_TRIES 50
