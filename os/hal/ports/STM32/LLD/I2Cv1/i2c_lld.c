@@ -635,6 +635,10 @@ void i2c_lld_start(I2CDriver *i2cp) {
                     STM32_DMA_CR_TEIE       | STM32_DMA_CR_TCIE |
                     STM32_DMA_CR_DIR_P2M;
 
+#if I2C_USE_SLAVE_MODE
+  i2cp->slave_mode = 0;
+#endif
+
   /* If in stopped state then enables the I2C and DMA clocks.*/
   if (i2cp->state == I2C_STOP) {
 
@@ -1013,6 +1017,46 @@ msg_t i2c_lld_slave_io_timeout(I2CDriver *i2cp, i2caddr_t addr,
     osalSysUnlock();
   }
 
+  /* Re-initialize */
+#if STM32_I2C_USE_I2C1
+  if (&I2CD1 == i2cp) {
+    nvicDisableVector(I2C1_EV_IRQn);
+    nvicDisableVector(I2C1_ER_IRQn);
+    rccDisableI2C1(FALSE);
+
+    rccResetI2C1();
+    rccEnableI2C1(FALSE);
+    nvicEnableVector(I2C1_EV_IRQn, STM32_I2C_I2C1_IRQ_PRIORITY);
+    nvicEnableVector(I2C1_ER_IRQn, STM32_I2C_I2C1_IRQ_PRIORITY);
+  }
+#endif /* STM32_I2C_USE_I2C1 */
+
+#if STM32_I2C_USE_I2C2
+  if (&I2CD2 == i2cp) {
+    nvicDisableVector(I2C2_EV_IRQn);
+    nvicDisableVector(I2C2_ER_IRQn);
+    rccDisableI2C2(FALSE);
+
+    rccResetI2C2();
+    rccEnableI2C2(FALSE);
+    nvicEnableVector(I2C2_EV_IRQn, STM32_I2C_I2C2_IRQ_PRIORITY);
+    nvicEnableVector(I2C2_ER_IRQn, STM32_I2C_I2C2_IRQ_PRIORITY);
+  }
+#endif /* STM32_I2C_USE_I2C2 */
+
+#if STM32_I2C_USE_I2C3
+  if (&I2CD3 == i2cp) {
+    nvicDisableVector(I2C3_EV_IRQn);
+    nvicDisableVector(I2C3_ER_IRQn);
+    rccDisableI2C3(FALSE);
+
+    rccResetI2C3();
+    rccEnableI2C3(FALSE);
+    nvicEnableVector(I2C3_EV_IRQn, STM32_I2C_I2C3_IRQ_PRIORITY);
+    nvicEnableVector(I2C3_ER_IRQn, STM32_I2C_I2C3_IRQ_PRIORITY);
+  }
+#endif /* STM32_I2C_USE_I2C3 */
+
   /* Initializes driver fields, LSB = 1 -> read.*/
   i2cp->addr    = (addr << 1);
   i2cp->errors  = 0;
@@ -1031,18 +1075,31 @@ msg_t i2c_lld_slave_io_timeout(I2CDriver *i2cp, i2caddr_t addr,
 
   i2cp->startcb = startcb;
 
-  i2cp->slave_mode = 1;
-  /* Starts the operation.*/
-  /* No start - slave mode.*/
-  dp->CR1 &= ~(I2C_CR1_START);
-  /* Turn off ISR and DMA.*/
-  dp->CR2 &= ~(I2C_CR2_DMAEN);
-  /* Own address.*/
-  dp->OAR1 = ((addr << 1) & (0xFE));
-  /* Turn interrupts and buffer interrupts on.*/
-  dp->CR2 |= (I2C_CR2_ITEVTEN | I2C_CR2_ITBUFEN);
-  /* Generate Ack on address match and IOs.*/
-  dp->CR1 |= I2C_CR1_ACK;
+  if (i2cp->slave_mode != 1) {
+    i2cp->slave_mode = 1;
+
+    /* Reset i2c peripheral.*/
+    dp->CR1 = I2C_CR1_SWRST;
+    dp->CR1 = 0;
+    dp->CR2 = I2C_CR2_ITERREN | I2C_CR2_DMAEN;
+
+    /* Setup I2C parameters.*/
+    i2c_lld_set_clock(i2cp);
+
+    /* Starts the operation.*/
+
+    /* Turn off ISR and DMA.*/
+    dp->CR2 &= ~(I2C_CR2_DMAEN);
+
+    /* Own address.*/
+    dp->OAR1 = ((addr << 1) & (0xFE));
+
+    /* Turn interrupts and buffer interrupts on.*/
+    dp->CR2 |= (I2C_CR2_ITEVTEN | I2C_CR2_ITBUFEN);
+
+    /* Generate Ack on address match and IOs.*/
+    dp->CR1 |= (I2C_CR1_ACK | I2C_CR1_PE);
+  }
 
   /* The Tx/Rx is primed, so return.*/
   return MSG_OK;
