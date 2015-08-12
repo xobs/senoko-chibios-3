@@ -117,6 +117,8 @@ static void senoko_i2c_mode_slave(void)
    * is what it looks like when we're a slave device.
    */
   if (powerIsOn()) {
+    i2cStop(i2cBus);
+    i2cStart(i2cBus, &senokoI2cMode);
     i2cSlaveIoTimeout(i2cBus, SENOKO_I2C_SLAVE_ADDR,
 
                       /* Tx buffer */
@@ -136,12 +138,41 @@ static void senoko_i2c_mode_slave(void)
   }
 }
 
+static THD_WORKING_AREA(waI2cUnstickThread, 128);
+static msg_t i2c_unstick_thread(void *arg) {
+  (void)arg;
+  int stuck_count = 0;
+  I2C_TypeDef *dp = i2cBus->i2c;
+
+  chRegSetThreadName("unstick i2c");
+
+  do {
+    if (dp->SR2 & I2C_SR2_BUSY)
+      stuck_count++;
+    else
+      stuck_count = 0;
+
+    if (stuck_count > 4) {
+      senoko_i2c_mode_slave();
+      stuck_count = 0;
+    }
+
+    chThdSleepMilliseconds(20);
+  } while(1);
+
+  return MSG_OK;
+}
+
+
 void senokoI2cInit(void)
 {
   chBSemObjectInit(&master_slave_sem, 0);
   chBSemObjectInit(&i2c_bus_sem, 0);
   i2cStart(i2cBus, &senokoI2cMode);
   senoko_i2c_mode_slave();
+
+  chThdCreateStatic(waI2cUnstickThread, sizeof(waI2cUnstickThread),
+                    HIGHPRIO - 15, i2c_unstick_thread, NULL);
 
   return;
 }
