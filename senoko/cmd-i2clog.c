@@ -82,6 +82,18 @@ void cmd_i2clog(BaseSequentialStream *chp, int argc, char *argv[]) {
       print_hex(i2clog.entries[idx].data, i2clog.entries[idx].size);
   }
 
+  I2C_TypeDef *dp = I2CD2.i2c;
+  chprintf(chp, "Register dump:\r\n");
+  chprintf(chp, "    CR1: 0x%04x\r\n", dp->CR1);
+  chprintf(chp, "    CR2: 0x%04x\r\n", dp->CR2);
+  chprintf(chp, "   OAR1: 0x%04x\r\n", dp->OAR1);
+  chprintf(chp, "   OAR2: 0x%04x\r\n", dp->OAR2);
+  chprintf(chp, "     DR: 0x%04x\r\n", dp->DR);
+  chprintf(chp, "    SR1: 0x%04x\r\n", dp->SR1);
+  chprintf(chp, "    SR2: 0x%04x\r\n", dp->SR2);
+  chprintf(chp, "    CCR: 0x%04x\r\n", dp->CCR);
+  chprintf(chp, "  TRISE: 0x%04x\r\n", dp->TRISE);
+
   memset(&i2clog, 0, sizeof(i2clog));
 }
 #else /* ! I2C_LOGGING */
