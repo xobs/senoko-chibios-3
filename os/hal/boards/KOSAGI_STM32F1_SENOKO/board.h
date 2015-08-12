@@ -28,11 +28,6 @@
 #define BOARD_NAME                  "Senoko STM32F1"
 
 /*
- * General ARM Cortex settings.
- */
-#define CORTEX_ENABLE_WFI_IDLE              TRUE
-
-/*
  * Board oscillators-related settings.
  * NOTE: HSE not fitted.
  */
