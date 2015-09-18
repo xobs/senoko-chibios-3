@@ -5,6 +5,7 @@
 #include "bionic.h"
 #include "board-type.h"
 #include "power.h"
+#include "uart.h"
 #include "senoko.h"
 #include "senoko-events.h"
 #include "senoko-slave.h"
@@ -135,6 +136,23 @@ void senokoSlaveDispatch(void *bfr, uint32_t size) {
       /* Watchdog */
       senokoWatchdogSet(b[count]);
       ((uint8_t *)&registers)[offset] = b[count];
+    }
+    else if (offset == REG_UART) {
+      /* UART */
+      switch (b[count] & REG_UART_STATE_MASK) {
+      case REG_UART_STATE_ON:
+        uartOn();
+        ((uint8_t *)&registers)[offset] = REG_UART_STATE_ON;
+        break;
+      
+      case REG_UART_STATE_OFF:
+        uartOff();
+        ((uint8_t *)&registers)[offset] = REG_UART_STATE_OFF;
+        break;
+      
+      default:
+        break;
+      }
     }
     else if ( (offset >= 0x10 && offset < 0x11) || 
          (offset >= 0x14 && offset < 0x1b)) {

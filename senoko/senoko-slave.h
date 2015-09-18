@@ -27,7 +27,8 @@ struct i2c_registers {
   uint8_t gpio_pull_ena_b;  /* 0x1b */
   uint8_t gpio_pull_dir_a;  /* 0x1c */
   uint8_t gpio_pull_dir_b;  /* 0x1d */
-  uint8_t padding1[2];      /* 0x1e - 0x1f */
+  uint8_t uart;	            /* 0x1e */
+  uint8_t padding1;   	    /* 0x1f */
 
   /* -- RTC block -- */
   uint8_t seconds[4];       /* 0x20 - 0x23 */
@@ -62,6 +63,11 @@ struct i2c_registers {
 #define REG_POWER_KEY_MASK        (3 << 6)
 #define REG_POWER_KEY_READ        (1 << 6)
 #define REG_POWER_KEY_WRITE       (2 << 6)
+
+#define REG_UART 0x1e
+#define REG_UART_STATE_MASK       (1 << 0)
+#define REG_UART_STATE_ON         (0 << 0)
+#define REG_UART_STATE_OFF        (1 << 0)
 
 #define REG_WATCHDOG_SECONDS 0x28
 
