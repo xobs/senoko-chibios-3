@@ -55,7 +55,7 @@ banks of I2C registers.
     +------+-----------------------------------------------------------------+
     | 0x0f | Power management (state of AC, power, power button, etc.)       |
     +------+-----------------------------------------------------------------+
-    | 0x10 | GPIO expansion                                                  |
+    | 0x10 | GPIO expansion and UART state                                   |
     +------+-----------------------------------------------------------------+
     | 0x20 | Realtime clock RTC alarm, and watchdog                          |
     +------+-----------------------------------------------------------------+
@@ -120,49 +120,71 @@ The following registers are defined
     +------+-------------------+---------------------------------------------+
     | ...................................................................... |
     +------+-------------------+---------------------------------------------+
-    | 0x10 | GPIO Direction    | Sets GPIO direction for each GPIO           |
+    | 0x10 | GPIOA Direction   | Sets GPIOA direction for each GPIO          |
     |      |                   |  Bits: 7654 3210                            |
     |      |                   |    0 - GPIO is an input                     |
     |      |                   |    1 - GPIO is an output                    |
     +------+-------------------+---------------------------------------------+
-    | 0x11 | Reserved          |                                             |
+    | 0x11 | GPIOB Direction   | Sets GPIOB direction for each GPIO          |
+    |      |                   |  Bits: 7654 3210                            |
+    |      |                   |    0 - GPIO is an input                     |
+    |      |                   |    1 - GPIO is an output                    |
     +------+-------------------+---------------------------------------------+
-    | 0x12 | GPIO Value        | For inputs, the current value. For outputs, |
+    | 0x12 | GPIOA Value       | For inputs, the current value. For outputs, |
     |      |                   | write a value to this register to output.   |
     |      |                   |  Bits: 7654 3210                            |
     +------+-------------------+---------------------------------------------+
-    | 0x13 | Reserved          |                                             |
+    | 0x13 | GPIOB Value       | For inputs, the current value. For outputs, |
+    |      |                   | write a value to this register to output.   |
+    |      |                   |  Bits: 7654 3210                            |
     +------+-------------------+---------------------------------------------+
-    | 0x14 | GPIO IRQ Rising   | Indicates whether an IRQ is generated       |
-    |      |                   | on GPIO rising event                        |
+    | 0x14 | GPIOA IRQ Rising  | Indicates whether an IRQ is generated       |
+    |      |                   | on GPIOA rising event                       |
     |      |                   |  Bits: 7654 3210                            |
     |      |                   |    0 - No interrupt is generated            |
     |      |                   |    1 - Generate an interrupt on rise        |
     +------+-------------------+---------------------------------------------+
-    | 0x15 | Reserved          |                                             |
+    | 0x15 | GPIOB IRQ Rising  | Indicates whether an IRQ is generated       |
+    |      |                   | on GPIOB rising event                       |
+    |      |                   |  Bits: 7654 3210                            |
+    |      |                   |    0 - No interrupt is generated            |
+    |      |                   |    1 - Generate an interrupt on rise        |
     +------+-------------------+---------------------------------------------+
     | 0x16 | GPIO IRQ Falling  | Indicates whether an IRQ is generated       |
-    |      |                   | on GPIO falling event                       |
+    |      | A                 | on GPIOA falling event                      |
     |      |                   |  Bits: 7654 3210                            |
     |      |                   |    0 - No interrupt is generated            |
     |      |                   |    1 - Generate an interrupt on fall        |
     +------+-------------------+---------------------------------------------+
-    | 0x17 | Reserved          |                                             |
+    | 0x17 | GPIO IRQ Falling  | Indicates whether an IRQ is generated       |
+    |      | B                 | on GPIOB falling event                      |
+    |      |                   |  Bits: 7654 3210                            |
+    |      |                   |    0 - No interrupt is generated            |
+    |      |                   |    1 - Generate an interrupt on fall        |
     +------+-------------------+---------------------------------------------+
-    | 0x18 | GPIO IRQ Status   | A given bit will be 1 if an event occurred. |
+    | 0x18 | GPIOA IRQ Status  | A given bit will be 1 if an event occurred. |
     |      |                   | Clear the bit by writing "0" to re-arm.     |
     +------+-------------------+---------------------------------------------+
-    | 0x19 | Reserved          |                                             |
+    | 0x19 | GPIOB IRQ Status  | A given bit will be 1 if an event occurred. |
+    |      |                   | Clear the bit by writing "0" to re-arm.     |
     +------+-------------------+---------------------------------------------+
     | 0x1a | GPIO Pull enable  | If a bit is set to 1, a pull up/down is     |
-    |      |                   | enabled on the pin.                         |
+    |      | A                 | enabled on the pin.                         |
     +------+-------------------+---------------------------------------------+
-    | 0x1b | Reserved          |                                             |
+    | 0x1b | GPIO Pull enable  | If a bit is set to 1, a pull up/down is     |
+    |      | B                 | enabled on the pin.                         |
     +------+-------------------+---------------------------------------------+
-    | 0x1c | GPIO Pull dir     | If a bit is set to 1, a pullup will be set. |
+    | 0x1c | GPIO Pull dir A   | If a bit is set to 1, a pullup will be set. |
     |      |                   | Otherwise, a pulldown will be set.          |
     +------+-------------------+---------------------------------------------+
-    | 0x1d | Reserved          |                                             |
+    | 0x1d | GPIO Pull dir B   | If a bit is set to 1, a pullup will be set. |
+    |      |                   | Otherwise, a pulldown will be set.          |
+    +------+-------------------+---------------------------------------------+
+    | 0x1e | UART enable       | If a bit 0 is set to 0, UART will be        |
+    |      |                   | enabled (default). If set to 1, the UART    |
+    |      |                   | pins will be tristated.                     |
+    +------+-------------------+---------------------------------------------+
+    | 0x1f | Reserved          |                                             |
     +------+-------------------+---------------------------------------------+
     | ...................................................................... |
     +------+-------------------+---------------------------------------------+
