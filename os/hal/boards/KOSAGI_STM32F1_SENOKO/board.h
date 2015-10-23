@@ -244,8 +244,9 @@
         | PIN_OSPEED_INPUT(PB0) \
         | PIN_MODE_FLOATING(PB0) \
         \
-        /* NC */ \
-        | PIN_UNUSED(PB1) \
+        /* Senoko Passthrough LED B101 */ \
+        | PIN_OSPEED_2M(PB1) \
+        | PIN_OTYPE_PUSHPULL(PB1) \
         \
         /* Programming mode */ \
         | PIN_UNUSED(PB2) \
@@ -299,8 +300,9 @@
         | 0 )
 
 /* master power (PB15) on */
-/* Pull alert (PB15) high */
-#define VAL_GPIOB_ODR ((1U << 15) | (1U << 12))
+/* Pull charge alert (PB12) high */
+/* Senoko Passthrough LED B101 off */
+#define VAL_GPIOB_ODR ((1U << 15) | (1U << 12) | (0U << 1))
 
 #define VAL_GPIOC_CRL   ( 0 \
         | PIN_NOTPRESENT(PC0) \
