@@ -11,6 +11,7 @@ static const IWDGConfig watchdogConfig = {
 
 static int enabled = 0;
 static int seconds;
+static int led = 0;
 
 int senokoWatchdogEnabled(void) {
   return enabled;
@@ -48,6 +49,9 @@ static msg_t wdt_thread(void *arg) {
       enabled = 0;
       powerReboot();
     }
+    if (led == 1)
+      palWritePad(GPIOB, PB1, !palReadPad(GPIOB, PB1));	//UD toggle passthrough LED
+    // if wdt_led not enabled, not forcing LED off here in case user wants to use it for other purpose.
   }
   return MSG_OK;
 }
@@ -59,3 +63,12 @@ void senokoWatchdogInit(void) {
   chThdCreateStatic(waWdtThread, sizeof(waWdtThread),
                     LOWPRIO, wdt_thread, NULL);
 }
+
+void senokoWatchdogLedDisable(void) {
+  led = 0;
+}
+
+void senokoWatchdogLedEnable(void) {
+  led = 1;
+}
+
