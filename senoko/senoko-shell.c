@@ -35,6 +35,7 @@ void cmd_stats(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_reboot(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_threads(BaseSequentialStream *chp, int argc, char *argv[]);
 void cmd_uptime(BaseSequentialStream *chp, int argc, char *argv[]);
+void cmd_wdtled(BaseSequentialStream *chp, int argc, char *argv[]);
 
 static const ShellCommand shellCommands[] = {
   {"chg", cmd_chg},
@@ -49,6 +50,7 @@ static const ShellCommand shellCommands[] = {
   {"reboot", cmd_reboot},
   {"threads", cmd_threads},
   {"uptime", cmd_uptime},
+  {"wdtled", cmd_wdtled},
   {NULL, NULL}
 };
 

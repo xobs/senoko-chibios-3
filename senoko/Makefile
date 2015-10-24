@@ -117,6 +117,7 @@ CSRC = $(PORTSRC) \
        cmd-stats.c \
        cmd-threads.c \
        cmd-uptime.c \
+       cmd-wdtled.c \
        gg.c \
        gitversion.c \
        localtime.c \

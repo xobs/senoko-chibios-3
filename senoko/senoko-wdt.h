@@ -18,5 +18,7 @@ int senokoWatchdogTimeToReset(void);
 void senokoWatchdogEnable(void);
 void senokoWatchdogDisable(void);
 void senokoWatchdogSet(int new_seconds);
+void senokoWatchdogLedDisable(void);
+void senokoWatchdogLedEnable(void);
 
 #endif /* __SENOKO_WDT_H__ */
