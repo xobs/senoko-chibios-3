@@ -9,6 +9,8 @@
 
 #define GG_ADDR 0xb
 
+#define GG_CONFIG_VERSION 0x0204 // Version 2.4
+
 static const struct cell_cfg {
   uint16_t pov_threshold;
   uint16_t pov_recovery;
@@ -42,17 +44,17 @@ static const struct cell_cfg {
   [3] = {
     .pov_threshold = 13000,
     .pov_recovery = 12600,
-    .puv_threshold = 8100,
-    .puv_recovery = 8500,
+    .puv_threshold = 9400,
+    .puv_recovery = 9600,
     .sov_threshold = 13500,
-    .charging_voltage = 12600,
-    .depleted_voltage = 8000,
-    .depleted_recovery = 8500,
+    .charging_voltage = 12400,
+    .depleted_voltage = 9100,
+    .depleted_recovery = 9200,
     .design_voltage = 11100,
     .flash_update_ok_voltage = 7500,
-    .shutdown_voltage = 8800,
-    .cell_shutdown_voltage = 2900,
-    .term_voltage = 9200,
+    .shutdown_voltage = 9000,
+    .cell_shutdown_voltage = 3100,
+    .term_voltage = 9300,
   },
   [4] = {
     .pov_threshold = 17500,
@@ -149,23 +151,22 @@ static int gg_getflash_word(uint8_t subclass, uint8_t offset, void *d);
 static int gg_update_if_necessary(void) {
 
   uint8_t cell_count;
-  uint16_t cell_shutdown_voltage;
   uint16_t capacity;
+  uint16_t current_version;
 
   senokoI2cAcquireBus();
+
+  if (ggConfigVersion(&current_version))
+    goto out;
+
+  if (current_version >= GG_CONFIG_VERSION)
+    goto out_success;
 
   if (ggCellCount(&cell_count))
     goto out;
 
-  if (gg_getflash_word(68, 5, &cell_shutdown_voltage))
-    goto out;
-
   if (gg_getflash_word(82, 8, &capacity))
     goto out;
-
-  /* No update needed if the numbers match */
-  if (cell_cfgs[cell_count].cell_shutdown_voltage == cell_shutdown_voltage)
-    goto out_success;
 
   /* Reset the voltages by resetting the cell count */
   if (ggSetCellCount(cell_count))
@@ -173,6 +174,10 @@ static int gg_update_if_necessary(void) {
 
   /* Recalibrate the mWh value, which was left uninitialized */
   if (ggSetCapacity(cell_count, capacity))
+    goto out;
+
+  /* Update the firmware version to prevent us from rewriting flash next time */
+  if (ggSetConfigVersion(GG_CONFIG_VERSION))
     goto out;
 
 out_success:
