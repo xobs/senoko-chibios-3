@@ -159,12 +159,14 @@ void powerInit(void) {
   cooling_off = 0;
 
   /* If the signature is not valid, assume fresh STM32, and power on.*/
-  if (((*power_state) & POWER_STATE_SIGNATURE_MASK) != POWER_STATE_SIGNATURE)
+  if (((*power_state) & POWER_STATE_SIGNATURE_MASK) != POWER_STATE_SIGNATURE) {
     powerOn();
+    return;
+  }
 
   if (powerIsOn())
-    powerOn();
+    power_set_state_x(power_on);
   else
-    powerOff();
+    power_set_state_x(power_off);
   return;
 }
