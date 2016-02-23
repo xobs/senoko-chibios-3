@@ -153,7 +153,14 @@ static msg_t i2c_unstick_thread(void *arg) {
       stuck_count = 0;
 
     if (stuck_count > 4) {
-      senoko_i2c_mode_slave();
+      if ((i2cBus->state == I2C_ACTIVE_RX)
+       || (i2cBus->state == I2C_ACTIVE_TX)) {
+        osalSysLock();
+        osalThreadResumeS(&(i2cBus)->thread, MSG_RESET);
+        osalSysUnlock();
+      }
+      else
+        senoko_i2c_mode_slave();
       stuck_count = 0;
     }
 
