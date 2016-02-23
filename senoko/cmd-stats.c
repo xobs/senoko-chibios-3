@@ -144,6 +144,7 @@ void cmd_stats(BaseSequentialStream *chp, int argc, char *argv[]) {
   print_str(chp, "Manufacturer:", ggManufacturer, "%s");
   print_str(chp, "Part name:", ggPartName, "%s");
   print_word(chp, "Firmware version:", ggFirmwareVersion, "0x%x");
+  print_word(chp, "Config version:", ggConfigVersion, "0x%x");
 
   ret = ggState(&word);
   if (ret)
