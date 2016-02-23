@@ -28,6 +28,8 @@ int ggHealth(uint16_t *percent);
 int ggSafetyAlert(uint16_t *word);
 int ggSafetyStatus(uint16_t *word);
 int ggFirmwareVersion(uint16_t *word);
+int ggConfigVersion(uint16_t *word);
+int ggSetConfigVersion(uint16_t word);
 int ggState(uint16_t *word);
 int ggSetLeds(int state);
 int ggSetChargeControl(int state);

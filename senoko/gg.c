@@ -771,6 +771,14 @@ int ggFirmwareVersion(uint16_t *word) {
   return gg_getmfgr(0x0002, word, 2);
 }
 
+int ggConfigVersion(uint16_t *word) {
+  return gg_getflash_word(56, 2, word);
+}
+
+int ggSetConfigVersion(uint16_t word) {
+  return gg_setflash_word(56, 2, word);
+}
+
 int ggState(uint16_t *word) {
   int ret;
   ret = gg_getmfgr(0x0006, word, 2);
