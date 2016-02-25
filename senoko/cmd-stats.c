@@ -198,6 +198,20 @@ void cmd_stats(BaseSequentialStream *chp, int argc, char *argv[]) {
   print_word(chp, "Serial number:", ggSerial, "0x%04x");
   print_word(chp, "Cycle count:", ggCycleCount, "%u");
   print_word(chp, "Battery health:", ggHealth, "%d%%");
+  {
+    uint8_t byte;
+    if (ggWakeCurrent(&byte))
+      chprintf(chp, "Wake current:       error\r\n");
+    else if (!byte)
+      chprintf(chp, "Wake current:       disabled\r\n");
+    else {
+      const char *current[] = { "Disabled", "2.5", "5", "10" };
+      const char *thresh[] = {"0.5", "1.0"};
+      chprintf(chp, "Wake current:       %sA, %s mOhm\r\n",
+          thresh[(byte >> 2) & 1],
+          current[byte & 3]);
+    }
+  }
   print_byte(chp, "Charge:", ggPercent, "%d%%");
 
   ggMode(&word);
