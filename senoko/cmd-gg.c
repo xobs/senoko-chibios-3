@@ -108,6 +108,71 @@ void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]) {
     chprintf(chp, "    average  - Use the average of TS1 and TS2\r\n");
     return;
   }
+  else if (is_command(argc, argv, "wakecurrent")) {
+    uint8_t byte;
+    if (argc == 3) {
+      byte = 0;
+
+      if (!strcasecmp(argv[1], "0.5"))
+        byte |= (0 << 2);
+      else if (!strcasecmp(argv[1], "1.0"))
+        byte |= (1 << 2);
+      else {
+        chprintf(chp, "Wake current threshold (arg 1) must be 0.5 or 1.0.\r\n");
+        return;
+      }
+
+      if (!strcasecmp(argv[2], "2.5"))
+        byte |= (1 << 0);
+      else if (!strcasecmp(argv[2], "5"))
+        byte |= (2 << 0);
+      else if (!strcasecmp(argv[2], "10"))
+        byte |= (3 << 0);
+      else {
+        chprintf(chp, "Wake current (arg 2) must be 2.5, 5, or 10.\r\n");
+        return;
+      }
+
+      ret = ggSetWakeCurrent(byte);
+      if (ret) {
+        chprintf(chp, "Unable to set wake current: 0x%x\r\n", ret);
+        return;
+      }
+
+      chprintf(chp, "Updated wake current successfully.\r\n");
+    }
+    else if (argc == 2 && !strcasecmp(argv[1], "off")) {
+      byte = 0;
+      ret = ggSetWakeCurrent(byte);
+      if (ret) {
+        chprintf(chp, "Unable to disable wake current: 0x%x\r\n", ret);
+        return;
+      }
+      chprintf(chp, "Disabled wake current.\r\n");
+    }
+    else if (argc == 1) {
+      ret = ggWakeCurrent(&byte);
+      if (ret) {
+        chprintf(chp, "Unable to get wake current setting: 0x%x\r\n", ret);
+        return;
+      }
+      chprintf(chp, "Wake current: %02x\r\n", byte);
+    }
+    else {
+      chprintf(chp, "Usage: gg wakecurrent [0.5 or 1.0] [2.5 or 5 or 10]\r\n"
+          "    Sets the wake threshold to 0.5 or 1.0A at 2.5, 5, or 10 mOhm.\r\n"
+          "    Use \"gg wakecurrent off\" to disable.\r\n");
+    }
+  }
+  else if (is_command(argc, argv, "zvchg")) {
+    if (argc != 2) {
+      uint8_t val;
+      ggZeroVoltMode(&val);
+      chprintf(chp, "Zero volt mode: %d\r\n", val);
+      return;
+    }
+    ggSetZeroVoltMode(strtoul(argv[1], NULL, 0));
+  }
   else if (is_command(argc, argv, "templow")) {
     if (argc != 2) {
       int16_t temp;
@@ -306,6 +371,8 @@ void cmd_gg(BaseSequentialStream *chp, int argc, char *argv[]) {
       "gg current [cur] Set fastcharge current to [cur]\r\n"
       "gg cal           Calibrate battery pack\r\n"
       "gg cycle [count] Set current battery cycle count\r\n"
+      "gg zvchg [value] Set the Zero-Volt CHG type\r\n"
+      "gg wakecurrent [t] [c]  Set wake current threshold to [t], current [c]\r\n"
       "gg templow [t]   Set charge-inhibit low temperature\r\n"
       "gg temphigh [t]  Set charge-inhibit high temperature\r\n"
       "gg prechg [t]    Set pre-chg temperature\r\n"
