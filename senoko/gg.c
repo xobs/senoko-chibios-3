@@ -9,7 +9,7 @@
 
 #define GG_ADDR 0xb
 
-#define GG_CONFIG_VERSION 0x0204 // Version 2.4
+#define GG_CONFIG_VERSION 0x0205 // Version 2.5
 
 static const struct cell_cfg {
   uint16_t pov_threshold;
@@ -17,6 +17,8 @@ static const struct cell_cfg {
   uint16_t puv_threshold;
   uint16_t puv_recovery;
   uint16_t sov_threshold;
+  uint16_t cov_threshold;
+  uint16_t cuv_threshold;
   uint16_t charging_voltage;
   uint16_t depleted_voltage;
   uint16_t depleted_recovery;
@@ -32,6 +34,8 @@ static const struct cell_cfg {
     .puv_threshold = 5400,
     .puv_recovery = 5700,
     .sov_threshold = 9000,
+    .cov_threshold = 4280,
+    .cuv_threshold = 2900,
     .charging_voltage = 8400,
     .depleted_voltage = 5000,
     .depleted_recovery = 5500,
@@ -44,12 +48,14 @@ static const struct cell_cfg {
   [3] = {
     .pov_threshold = 13000,
     .pov_recovery = 12600,
-    .puv_threshold = 9400,
-    .puv_recovery = 9600,
+    .puv_threshold = 9000,
+    .puv_recovery = 9300,
     .sov_threshold = 13500,
+    .cov_threshold = 4280,
+    .cuv_threshold = 2900,
     .charging_voltage = 12400,
-    .depleted_voltage = 9100,
-    .depleted_recovery = 9200,
+    .depleted_voltage = 9400,
+    .depleted_recovery = 9600,
     .design_voltage = 11100,
     .flash_update_ok_voltage = 7500,
     .shutdown_voltage = 9000,
@@ -62,6 +68,8 @@ static const struct cell_cfg {
     .puv_threshold = 11000,
     .puv_recovery = 12000,
     .sov_threshold = 18000,
+    .cov_threshold = 4280,
+    .cuv_threshold = 2900,
     .charging_voltage = 16800,
     .depleted_voltage = 11000,
     .depleted_recovery = 11500,
