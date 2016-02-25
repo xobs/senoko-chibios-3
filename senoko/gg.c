@@ -539,7 +539,48 @@ int ggSetCellCount(int cells) {
   if (ret != MSG_OK)
     return ret;
 
+  ret = gg_setflash_word(0, 0, cell_cfgs[cells].cov_threshold);
+  if (ret != MSG_OK)
+    return ret;
+
+  ret = gg_setflash_word(0, 10, cell_cfgs[cells].cuv_threshold);
+  if (ret != MSG_OK)
+    return ret;
+
   return 0;
+}
+
+int ggWakeCurrent(uint8_t *flags) {
+  return gg_getflash(68, 19, flags, 1);
+}
+
+int ggSetWakeCurrent(uint8_t flags) {
+  return gg_setflash(68, 19, &flags, 1);
+}
+
+int ggZeroVoltMode(uint8_t *flags) {
+  int ret;
+  uint8_t cfg_a[2];
+
+  ret = gg_getflash(64, 0, cfg_a, sizeof(cfg_a));
+  if (ret != MSG_OK)
+    return ret;
+  *flags = cfg_a[1] & 3;
+  return ret;
+}
+
+int ggSetZeroVoltMode(uint8_t flags) {
+  int ret;
+  uint8_t cfg_a[2];
+
+  ret = gg_getflash(64, 0, cfg_a, sizeof(cfg_a));
+  if (ret != MSG_OK)
+    return ret;
+
+  flags &= (3 << 0);
+  cfg_a[1] &= ~(3 << 0);
+  cfg_a[1] |= flags << 0;
+  return gg_setflash(64, 0, cfg_a, sizeof(cfg_a));
 }
 
 int ggSetTemperatureSource(enum gg_temp_source source) {
@@ -551,6 +592,7 @@ int ggSetTemperatureSource(enum gg_temp_source source) {
   if (ret != MSG_OK)
     return ret;
 
+  source &= (3 << 0);
   cfg_a[1] &= ~(3 << 3);
   cfg_a[1] |= source << 3;
   return gg_setflash(64, 0, cfg_a, sizeof(cfg_a));
